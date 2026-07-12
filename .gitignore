@@ -1,3 +1,10 @@
+# Reference data (not for version control)
+reference/
+
+# Experiment outputs
+test_outputs/
+outputs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
