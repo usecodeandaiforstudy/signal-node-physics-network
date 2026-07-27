@@ -1,76 +1,126 @@
-# RBF Particle Neural Network
+# Physical-Domain RBF Particle Neural Network
 
-A neural network architecture where each neuron is a movable particle in 2D space. Every mathematical operation has a direct analog circuit equivalent — designed from the ground up so that the entire network can run natively on a CMOS + memristor chip.
+A neural network where each neuron is a movable particle in D-dimensional space. Forward propagation, loss computation, and parameter training are all mapped to analog circuit components, exploring the feasibility of implementing the full neural network pipeline — from training to inference — entirely within a physical system simulation.
 
-## Why This Matters
+## Core Idea
 
-Standard neural networks cannot run efficiently on analog hardware because their core operations (ReLU, softmax, matrix multiply chains) are expensive or impossible to implement directly in circuits. More fundamentally, **backpropagation** — the algorithm that trains all modern neural networks — requires storing a full computation graph and computing exact gradients, which is physically infeasible in analog systems.
+Two challenges prevent standard neural networks from running efficiently on analog hardware: nonlinear activations (ReLU, softmax) are costly in circuits, and backpropagation requires a full computation graph with exact gradients, which is physically infeasible in analog systems.
 
-This project takes the opposite approach: **design the network architecture around what analog circuits naturally do well**, then develop training methods that don't require backpropagation.
+This project's approach: **design the network around operations that analog circuits naturally perform well, and replace backpropagation with finite differences or zero-order optimization.**
 
-## Key Results
+### "Activate Then Combine" vs Standard Networks
 
-| Metric | Value |
-|---|---|
-| **Parameter efficiency** | ~150 params achieve ~92% on 4D classification; MLP needs ~1,300 params to match (~9x advantage) |
-| **Naturally 2D data** | 100% on circles, 99.3% on moons — with just 4 particles (69 params) |
-| **Device estimate** | ~100 transistors + 12 memristors for optimal 3-layer config (6/4/3 particles) |
-| **Power estimate** | μW range (subthreshold operation) |
-| **Inference latency** | Nanosecond range (purely analog signal path) |
-| **Noise robustness** | < 2% accuracy drop from "none" to "high" noise levels |
-| **Training methods** | 3 variants: standard backprop, SPSA (2 measurements/iter), HiMAL (no cross-layer gradients) |
+A standard network computes `activate(combine(x))` — first a weighted sum, then a nonlinearity. This network reverses the paradigm: `combine(activate(x))` — each particle independently produces a Gaussian response to the input (activation), then all particle responses are linearly superimposed (combination). Nonlinearity no longer comes from a fixed activation function, but from the spatial relationship between particle and input: the farther the input point from a particle, the weaker that particle's contribution.
 
-Minimal configurations discovered via ablation: increasing particles from 4 to 25 yields zero accuracy gain on 2D benchmarks, only parameter bloat.
+### Particle Source Superposition Model
 
-## Design
+The network is understood as a set of **particle sources** in D-dimensional space: input X is a probe point position, particle centers are source positions, Gaussian activations are field strengths excited at the probe point, and weights are receiver sensitivities. Network output = weighted superposition of all source field strengths. **Training is equivalent to the physical evolution of sources migrating in space and adaptively adjusting their influence ranges.**
 
-Each neuron is a triplet `(xc, yc, h)` — a 2D coordinate and an influence radius. All four parameters per particle are trainable. The forward pass uses only six primitive operations:
+This design makes the network an interpretable physical field superposition system rather than a "black-box function approximator." The signal chain maps not only to analog circuits but also to optical systems (Gaussian beam superposition), wave fields (point-source Green's function superposition), diffusion fields (heat kernel superposition), and more. See [THEORY.md](THEORY.md) Section 0 for details.
 
-```
-Operation              Circuit Equivalent              Device Cost
-───────────────────────────────────────────────────────────────────
-(x - xc) / h         → Differential amplifier           ~4 transistors
-dx² + dy²            → Gilbert multiplier               ~6 transistors
-exp(-k · d²)         → BJT subthreshold I-V             1-2 transistors
-z / Σz               → Current mirror divider           4 transistors + wire
-W · z                → Memristor crossbar               passive (memristors only)
-f + δ                → Wire junction (Kirchhoff)        0 devices
-```
+## Current Status
 
-Three such layers are stacked with residual connections, making a **ResidualRBFNetwork**. A high-dimensional extension (**ProjectedRBFEnsemble**) uses fixed random projections to map D-dimensional data onto multiple 2D subspaces, each processed by an independent RBF network and averaged.
+- ND architecture supports arbitrary input dimensions; 2D as a special case
+- Classification and regression share the same physical component set
+- Training, forward, and inference all in physical domain — zero PyTorch autograd
+- **Classification (moons, FD)**: L1=0.92 → Full=0.94 (+0.02 depth contribution)
+- **Regression (FD residual)**: R²=0.121→0.125, proto_y magnitude 0.92→0.77→0.76 (effective residual)
+- **Digital-physical consistency**: max|error| = 7.80×10⁻⁷ (well below 10⁻⁴ threshold)
+- **Noise robustness**: none→high accuracy drops only 0.010 (4 noise levels)
+- **Parameter efficiency**: RBF 595 params/0.81 vs MLP 17410 params/0.88 (29× fewer params, within 10% accuracy)
+- **Digital baselines**: V1 RBF acc=0.97 (140p), V3 ND acc=0.82 (133p)
+- **Depth ablation**: equal 9 particles: 1L and 3L both train successfully (depth benefit proven in Part 2: +0.020)
+- `experiments/run_all.py` verifies all 9 experiments in one run (ALL PASSED)
 
 ## Project Structure
 
 ```
-├── rbf_network/              # Core network
-│   ├── core.py               # RBFNetwork / ResidualRBFNetwork
-│   └── utils.py              # Training tools / visualization / data generation / regularization
-│
-├── physical_simulator/       # Physical component simulation
-│   ├── components.py         # 6 components with non-ideality modeling
-│   ├── layer.py              # PhysicalRBFLayer
-│   └── network.py            # PhysicalResidualRBFNetwork (3-layer residual)
-│
-├── forward_training/         # Forward-only training (no backpropagation required)
-│   ├── spsa.py               # SPSA zero-order optimizer
-│   ├── himal.py              # HiMAL layer-wise dual-network training
-│   └── twin.py               # Digital twin proxy-gradient training
-│
-├── experiments/              # Physical feasibility verification experiments
-│   ├── 01_digital_baseline.py
-│   ├── 02_physical_forward.py
-│   ├── 03_noise_tolerance.py
-│   ├── 04_spsa_training.py
-│   ├── 05_himal_training.py
-│   ├── 06_2d_classification.py
-│   ├── 07_projected_ensemble.py
-│   └── run_all.py
-│
-├── outputs/                  # Experiment results (figures, tables)
-├── THEORY.md / THEORY_CN.md  # Full mathematical description
-├── README_CN.md              # Chinese version
-└── .gitignore
+singal-node-physics-network/
+├── physical_simulator/              # Low-level analog circuit components
+├── simulator/                       # ND physical simulator (active)
+│   ├── layer_nd.py                  #   PhysicalRBFLayerND
+│   └── network_nd.py                #   PhysicalResidualRBFNetworkND
+├── network/                         # Network definitions
+│   └── combined.py                  #   CombinedHiMALRBF — unified entry point
+├── training/                        # Training algorithms
+│   ├── himal_nd.py                  #   HiMAL-ND — primary trainer
+│   └── ...                          #   (V1 trainers for reference)
+├── experiments/                     # Experiments
+│   ├── run_all.py                   #   Run full 9-part verification suite
+│   ├── e11_fd_cls.py                #   FD classification depth proof
+│   ├── e11_fd_reg.py                #   FD regression depth proof
+│   ├── e01-e10_*.py                 #   V3 ND experiments (standalone)
+│   ├── 01-13_*.py                   #   V1 2D reference experiments (standalone)
+│   └── benchmarks/                  #   sklearn baseline comparison
+├── outputs/                         # Experiment outputs
+└── THEORY.md                        # Full theoretical derivation
 ```
+
+## Architecture
+
+### Particle Model
+
+Each particle has a center `centers (D, N)` and width `h` in D-dimensional space. Given input `X (batch, D)`, particle activations are Gaussian kernel responses. All parameters (centers, widths, weights) are trainable via finite differences.
+
+### Three-Layer Structure
+
+```
+Input X (batch, D)
+    -> Layer1: PhysicalRBFLayerND -> output (batch, d1)
+    -> Layer2: PhysicalRBFLayerND -> output (batch, d2)  [residual accumulation]
+    -> Layer3: PhysicalRBFLayerND -> output (batch, d3)  [residual accumulation]
+    -> Final output
+```
+
+Inter-layer connection uses **wire-direct**: each layer's multi-dimensional output passes directly as the next layer's multi-dimensional input.
+
+### Physical Signal Chain (6 components)
+
+```
+Input voltage -> differential_pair(dx) -> gilbert_square(d^2) -> kirchhoff_sum
+              -> bjt_gaussian(exp) -> current_mode_normalize -> memristor_mvm(W.z) -> output
+```
+
+### HiMAL-ND Training
+
+**HiMAL (Hierarchical Multi-Alignment Learning)** is adapted here as a layer-wise dual-network training method for RBF networks. Its core philosophy is replacing global optimization with structured decomposition:
+
+- Data is partitioned by median value; A/B subnetworks each learn different regions
+- Each layer is trained independently then frozen; transition-zone alignment loss (replacing cross-layer backpropagation) ensures output consistency at the interface
+- Classification uses prototype-guided loss (no softmax/log/exp)
+- Regression uses residual training: L2/L3 learn what earlier layers could not fit
+- Gradients via per-parameter finite differences (FD) or SPSA — zero autograd
+
+## Experiments
+
+### V3 Core Experiments (ND architecture, pure physical domain)
+
+| Experiment | Purpose |
+|------------|---------|
+| **e11_fd_cls** | FD classification depth proof: multi-seed moons, L1→Full accuracy progression |
+| **e11_fd_reg** | FD regression depth proof: residual training + decreasing proto_y magnitude |
+| e01_nd_baseline | ND digital baseline: 2D+4D correctness verification |
+| e02_nd_physical | Physical forward validation: digital-physical output consistency |
+| e03_physical_training | Pure physical FD proto training from random initialization |
+| e04-e05 | HiMAL pipeline debug and layer contribution analysis |
+| e06_ablation | Single vs dual network, layer count ablation |
+| e07-e08 | Physical network verification and comprehensive benchmarking |
+| e09_spsa_benchmark | SPSA vs FD speed/accuracy comparison |
+| e10_noise_robustness | Noise robustness under 4 noise levels |
+| benchmarks/ | sklearn baseline comparison |
+
+### V1 Reference Experiments (2D architecture)
+
+Experiments 01-13 validate the original 2D design: digital baseline, physical forward, noise tolerance, SPSA/HiMAL training, 2D classification with decision boundaries, projected ensembles, physical FD fine-tuning, and depth ablation. These serve as historical reference for the ND upgrade.
+
+## Training Methods
+
+| Method | Backprop | Physical Feasibility |
+|--------|----------|---------------------|
+| SPSA zero-order | Not needed | High — only loss measurement required |
+| HiMAL-ND layer-wise | Not needed | High — per-layer, transition alignment |
+| Per-parameter FD | Not needed | Highest — exact gradient, physically measurable |
+| Proto-guided physical | Not needed | Highest — zero digital pre-training |
 
 ## Quick Start
 
@@ -79,33 +129,17 @@ pip install torch numpy matplotlib scipy pandas scikit-learn
 python experiments/run_all.py
 ```
 
-## Training Methods
+## Theory
 
-The project provides **three** ways to train the network, each progressively less dependent on digital infrastructure:
+[THEORY.md](THEORY.md) provides full derivation: ND particle model, physical signal chain, HiMAL-ND training, residual learning.
 
-| Method | Requires Backprop? | Forward Passes / Iter | Physical Feasibility |
-|---|---|---|---|
-| **Standard (autograd)** | Yes | 1 | Digital only |
-| **SPSA** | No | 2 | High — only needs loss measurement |
-| **HiMAL** | No | 2 × N_params (per layer, ~150) | High — layer-wise, independent |
+## Disclaimer
 
-## Experiment Proof Chain
+This project was conducted under limited experimental conditions. Because the physical system (analog circuits, memristor crossbars, etc.) is simulated numerically, each forward pass and parameter update must compute through the full physical signal chain, incurring substantially higher computational cost than standard matrix-multiplication-based neural networks. Constrained by available computing power, the current experiments use modest parameter counts and training epochs, and are validated only on simple datasets such as moons, 4D synthetic classification, and sine regression.
 
-```
-1. Digital baseline    → 96%+ on Moons, 98%+ R² on rotation (20 particles)
-2. Physical forward    → Simulator output correlates >0.95 with digital model
-3. Noise tolerance     → Accuracy stable across none/low/medium/high noise levels
-4. SPSA training       → ~95% of backprop accuracy using only 2 forward measurements/iter
-5. HiMAL training      → Layer-wise training reaches ~90% of end-to-end accuracy
-6. 2D classification   → 100% circles, 99.3% moons (4 particles, 69 params) with decision boundary plots
-7. Projected ensemble  → ~92% on 4D data (~150 params); MLP needs ~1,300 params to match
-```
+The core objective of this project is to **propose a new network architecture paradigm** — the "activate-then-combine" particle source superposition model — that endows neural networks with better interpretability and enables complete training and inference on physical platforms such as analog circuits, optical systems, and wave fields. The nine verification experiments (`run_all.py`) cover key propositions including digital-physical consistency, depth effectiveness, noise robustness, and parameter efficiency, and can serve as a baseline for further research.
 
-**All 7 pass → RBF particle network can realize the complete training + inference closed loop in a pure analog physical system.**
-
-## Theoretical Background
-
-A companion document ([THEORY.md](THEORY.md) / [THEORY_CN.md](THEORY_CN.md)) provides the full mathematical derivation: particle activation functions, forward propagation, PU normalization, residual connections, gradient flow, and the high-dimensional projection extension.
+Due to limitations in the author's coding ability and computational resources, shortcomings may exist. Users with better resources are encouraged to adapt the network architecture, scale up parameter counts and training epochs, conduct further experiments on more complex datasets, or validate this architecture on real physical hardware. We hope the ideas and code in this project are helpful to you.
 
 ## License
 

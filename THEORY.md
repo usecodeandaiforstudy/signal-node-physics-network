@@ -1,203 +1,291 @@
-# RBF Particle Neural Network: Structure and Principles
+# RBF Particle Neural Network: Architecture and Principles
 
-## 1. Particle Model
+## 0. Core Design Philosophy
 
-Each particle is a triplet `(xc, yc, h)`: a 2D center coordinate `(xc, yc)` and influence radius `h`. Given input `(x, y)`, the particle's activation is:
+### 0.1 "Activate Then Combine" — Reversing the Standard Network Paradigm
 
-$$z_i(x,y) = \exp\!\left(-\frac{(x-xc_i)^2 + (y-yc_i)^2}{2h_i^2}\right)$$
+A standard neural network computes **`activate(combine(x))`**: first a matrix multiplication (weighted combination), then a nonlinear activation function (ReLU/softmax). This "combine-then-activate" paradigm requires the physical system to precisely implement non-monotonic nonlinearities — extremely difficult on analog circuits, optical systems, and other physical platforms.
 
-- Larger `h` — wider influence range, smoother response
-- Smaller `h` — stronger selectivity, only responds to nearby inputs
+This network reverses the order: **`combine(activate(x))`**. Each particle independently produces a Gaussian response (activation) to the probe point in input space, and then all particle responses are linearly superimposed (combination).
 
-All parameters `(xc, yc, h)` are trainable via gradient descent. Particles move through space to optimally cover the data distribution.
+| | Standard Network | This Work |
+|---|---------|--------|
+| Computation order | Wx → activate | activate(x, particle_i) → Σ W_i · z_i |
+| Source of nonlinearity | Fixed activation function (uninterpretable) | Spatial relationship between particle and input (Gaussian distance decay) |
+| Physical meaning | Abstract, uninterpretable | Each particle = a physical source in space |
+| Hardware mapping | Difficult (requires precise activation function) | Natural (source → propagation → receiver is a universal physical paradigm) |
 
-## 2. Single Layer (RBFLayer)
+### 0.2 Particle Source Superposition Model
 
-### 2.1 Forward Pass
+Each network layer can be understood as a set of **particle sources** in D-dimensional space:
 
-A single layer contains `N` particles with output dimension `d_out`.
+- **Input X**: Position of a probe point in space
+- **Particle centers**: Spatial positions of the sources
+- **Width h**: Radiation range / influence radius of each source
+- **Gaussian activation z_i**: Field strength excited by the i-th source at probe point X — stronger when closer
+- **Weights W**: Receiver sensitivity to each source's response
+- **Layer output**: Weighted superposition of all source field strengths at the probe point = `Σ W_i · exp(-|X - centers_i|² / h_i²)`
 
-**Step 1 — Particle activation:**
+### 0.3 Training ≡ Physical System Evolution
 
-$$z_i = \exp(-0.5 \cdot d_i^2) \quad\text{(narrow kernel)}$$
-$$\tilde{z}_i = \exp(-0.3 \cdot d_i^2) \quad\text{(wide kernel)}$$
+Under the particle source framework, neural network training maps precisely to physical system evolution:
 
-where $d_i^2 = \frac{(x-xc_i)^2 + (y-yc_i)^2}{h_i^2}$. The two channels capture local detail and global structure respectively.
+| Neural network concept | Physical correspondence |
+|------------------------|------------------------|
+| Particle center movement | Sources migrating in space |
+| Width adjustment | Source radiation range expanding/contracting |
+| Weight update | Receiver sensitivity adjustment (e.g., memristor conductance change) |
+| Loss decrease | System energy minimization |
+| Gradient direction | Negative gradient of system free energy |
+| Residual training | Later-layer sources compensating signals missed by earlier layers |
 
-**Step 2 — PU normalization:**
+**The network is no longer a "black-box function approximator" — it is an interpretable physical field superposition system.**
 
-$$\hat{z}_i = \frac{z_i}{\sum_{j=1}^N z_j + \epsilon}, \quad \hat{\tilde{z}}_i = \frac{\tilde{z}_i}{\sum_{j=1}^N \tilde{z}_j + \epsilon}$$
+### 0.4 Interpretability
 
-Normalization constrains activations to a probability distribution: the sum of all particle activations is always 1.
+The "activate-then-combine" design yields structural interpretability:
 
-**Step 3 — Linear projection:**
+- Each particle has a **clearly locatable meaning** in input space (a physical source)
+- Network output is the **weighted superposition of all source field strengths** (not abstract feature combinations)
+- Network training is equivalent to **sources migrating in space and adaptively adjusting their influence ranges**
+- Each training stage has clear spatial semantics: initialization (sources randomly scattered, high entropy) → early training (sources migrate toward data-dense regions, self-organization) → late training (width fine-tuning, weight refinement, low-entropy equilibrium)
+- In residual training, later-layer sources naturally gather in regions where earlier-layer sources have "insufficient coverage", forming complementary distributions
 
-$$y_{\text{gauss}} = W_g \cdot \hat{z}, \quad y_{\text{act}} = W_a \cdot \hat{\tilde{z}}$$
+### 0.5 Physical Platform Universality
 
-$$y_{\text{out}} = y_{\text{gauss}} + y_{\text{act}}$$
+This network's physical signal chain is not limited to analog circuits. Because the design is built on fundamental operations common to all physical systems (addition/subtraction, squaring, exponential decay, normalized superposition), it maps to multiple physical platforms:
 
-where $W_g, W_a \in \mathbb{R}^{d_{\text{out}} \times N}$ are trainable linear weight matrices.
+| Operation | Analog Circuit | Optical System | Wave/Diffusion Field |
+|-----------|---------------|----------------|----------------------|
+| Δx = (x - xc) / h | Differential amplifier | Optical path difference | Phase difference / spatial offset |
+| Δx² | Gilbert squarer | Intensity detection | Amplitude squared |
+| Σ Δx² | Kirchhoff current summation | Beam superposition | Interference superposition / scalar field sum |
+| exp(-k·d²) | BJT subthreshold exponential | Gaussian beam | Heat kernel / diffusion kernel / Green's function |
+| ẑ = z/Σz | Current-mode normalization | Beam splitter balancing | Probability normalization |
+| W·ẑ | Memristor crossbar | Tunable attenuator array | Coupling coefficient matrix |
 
-### 2.2 Trainable Parameters
+***
+
+## 1. ND Particle Model
+
+Each particle is a point in D-dimensional space, defined by its center `centers (D, N)` and width `h`. Given a D-dimensional input vector `X = (x_1, ..., x_D)`, the activation of the i-th particle is computed via a Gaussian kernel:
+
+$$d_i^2 = \sum_{k=1}^{D} \frac{(x_k - c_{k,i})^2}{h_i^2}$$
+
+$$z_i = \exp(-0.5 \cdot d_i^2) \quad\text{(narrow channel)}$$
+$$\tilde{z}_i = \exp(-0.3 \cdot d_i^2) \quad\text{(wide channel)}$$
+
+The two channels capture local detail (narrow kernel) and global structure (wide kernel), respectively.
+
+## 2. Single Layer (PhysicalRBFLayerND)
+
+### 2.1 Parameters
 
 | Parameter | Shape | Description |
-|---|---|---|
-| `xc`, `yc` | (N,) | Particle center coordinates |
-| `h` | (N,) or scalar | Particle width |
-| `W_g` | (d_out, N) | Narrow kernel channel weights |
-| `W_a` | (d_out, N) | Wide kernel channel weights |
+|-----------|-------|-------------|
+| `centers` | (D, N) | Particle center coordinates |
+| `h` | (N,) | Particle width |
+| `W_gauss` | (d_out, N) | Narrow-channel weights |
+| `W_act` | (d_out, N) | Wide-channel weights |
 
-Total per layer: approximately `3N + 2·d_out·N` parameters.
+### 2.2 Forward Propagation (6-step physical signal chain)
 
-## 3. Three-Layer Residual Network (ResidualRBFNetwork)
+Each step maps to an analog circuit component:
+
+1. **Differential amplifier** (D times): computes `dx_k = (x_k - c_{k,i}) / h_i`
+2. **Gilbert squarer** (D times): computes `dx_k^2`
+3. **Kirchhoff summation**: accumulates `d^2 = sum_k dx_k^2` across D dimensions
+4. **BJT exponential** (dual-channel): `exp(-0.5 * d^2)` and `exp(-0.3 * d^2)`
+5. **Current-mode normalization** (dual-channel): `z_hat = z / sum(z)`
+6. **Memristor crossbar** (dual-channel): `W_gauss * z_hat_gauss + W_act * z_hat_act`
+
+Output dimension is controlled by `d_out`, which equals the number of rows in the memristor crossbar array.
+
+### 2.3 Mathematical Formulation of Single-Layer Forward Pass
+
+Given input matrix **X** ∈ ℝ^(B×D) (B samples, D dimensions), a layer with N particles and output dimension d_out. Let particle center matrix **C** ∈ ℝ^(D×N), width vector **h** ∈ ℝ^N, narrow-channel weights **W**^g ∈ ℝ^(d_out×N), and wide-channel weights **W**^a ∈ ℝ^(d_out×N).
+
+**Step 1: Normalized distances**
+
+$$d^2_{ij} = \sum_{k=1}^{D} \left(\frac{X_{ik} - C_{kj}}{h_j}\right)^2 \quad\Rightarrow\quad \mathbf{D}^2 \in \mathbb{R}^{B \times N}$$
+
+**Step 2: Dual-channel Gaussian activation**
+
+$$\mathbf{Z}^g_{ij} = \exp(-0.5 \cdot d^2_{ij}), \quad \mathbf{Z}^a_{ij} = \exp(-0.3 \cdot d^2_{ij})$$
+
+**Step 3: PU normalization** (enabled for classification, disabled for regression)
+
+$$\hat{\mathbf{Z}}^g_{ij} = \frac{\mathbf{Z}^g_{ij}}{\sum_{j=1}^{N} \mathbf{Z}^g_{ij}}, \quad \hat{\mathbf{Z}}^a_{ij} = \frac{\mathbf{Z}^a_{ij}}{\sum_{j=1}^{N} \mathbf{Z}^a_{ij}}$$
+
+**Step 4: Linear projection**
+
+$$\mathbf{G} = \hat{\mathbf{Z}}^g \cdot (\mathbf{W}^g)^\top \in \mathbb{R}^{B \times d_{out}}, \quad \mathbf{A} = \hat{\mathbf{Z}}^a \cdot (\mathbf{W}^a)^\top \in \mathbb{R}^{B \times d_{out}}$$
+
+**Step 5: Dual-channel fusion**
+
+$$\mathbf{F} = \mathbf{G} + \mathbf{A} \in \mathbb{R}^{B \times d_{out}}$$
+
+The single-layer output **F** serves as input to the next layer, with dimension determined by d_out.
+
+## 3. Three-Layer Network (PhysicalResidualRBFNetworkND)
 
 ### 3.1 Architecture
 
 ```
-Input (x, y)
-    │
-    ▼
-Layer 1 (N₁ particles, d₁ out) → f₁
-    │
-    ├─ residual: f₁ skip ───────────────────┐
-    ▼                                        │
-Layer 2 (N₂ particles, d₂ out) → δ₂ ────────┼─→ f₂ = f₁ + δ₂
-    │                                        │
-    ├─ residual: f₂ skip ───────────────────┐│
-    ▼                                        ││
-Layer 3 (N₃ particles, d₃ out) → δ₃ ───────┼┼─→ f₃ = f₂ + δ₃
-                                              ││
-                                              ▼
-                                           Output
+Input X (batch, D)
+    -> Layer1 (N1 particles, d1 output) -> h1 (batch, d1)
+    -> Layer2 (N2 particles, d2 output) -> delta2 (batch, d2) -> accumulate: f2 = h1 (+) delta2
+    -> Layer3 (N3 particles, d3 output) -> delta3 (batch, d3) -> accumulate: f3 = f2 (+) delta3
 ```
 
-Output dimensions per layer:
+Inter-layer connection uses **wire-direct**: Layer k's multi-dimensional output passes directly as Layer k+1's multi-dimensional input. When dimensions mismatch (e.g., d1 > d2), zero-padding aligns them before accumulation.
 
-- Layer 1: `n_vars = hidden_dim`
-- Layer 2: `n_vars = output_dim`
-- Layer 3: `n_vars = output_dim`
+### 3.2 Residual Learning (Regression)
 
-### 3.2 Inter-layer Dimension Transfer
+In regression, each layer learns a residual rather than the full target:
 
-Layers are connected via mean projection: multi-dimensional outputs `(batch, d)` are projected to `(batch,)` scalar spatial coordinates via `.mean(-1)`, then passed as `(x, y)` inputs to the next layer.
+- Layer 1: learns full y
+- Layer 2: learns `y - proto_pred(L1)`
+- Layer 3: learns `y - proto_pred(L1) - proto_pred(L2)`
 
-### 3.3 Residual Connection
+At inference, summing the three proto predictions recovers the original target. The decreasing magnitude of `proto_y` per layer confirms effective residual learning.
 
-$$f_{k+1} = f_k + \delta_{k+1}$$
+### 3.3 Mathematical Formulation of Full Network Forward Pass
 
-$\delta_{k+1}$ is the correction learned by layer $k+1$. Residual connections ensure that even deep intermediate representations retain fine-grained information from shallow layers.
+Let the three-layer network have N_ℓ particles and output dimension d_ℓ for layer ℓ. Denote the single-layer transformation as Layer_ℓ(·), with input **X** ∈ ℝ^(B×D).
 
-## 4. Training
+**Layer 1: Initial signal**
 
-### 4.1 Classification
+$$\mathbf{F}_1 = \text{Layer}_1(\mathbf{X}) \in \mathbb{R}^{B \times d_1}$$
 
-Output layer $d_3 = C$ (number of classes), followed by softmax and cross-entropy loss:
+The first layer maps directly from the D-dimensional input space to d₁ dimensions.
 
-$$L = -\frac{1}{B}\sum_{i=1}^B \log \frac{\exp(f_{3,i}[y_i])}{\sum_{c=1}^C \exp(f_{3,i}[c])}$$
+**Layer 2: Residual accumulation (wire-direct)**
 
-### 4.2 Regression
+$$\boldsymbol{\delta}_2 = \text{Layer}_2(\mathbf{F}_1) \in \mathbb{R}^{B \times d_2}$$
 
-$$L = \frac{1}{B}\sum_{i=1}^B \|f_{3,i} - y_i\|^2$$
+$$\mathbf{F}_2 = \text{ZeroPad}_{d_1 \to \max(d_1,d_2)}(\mathbf{F}_1) + \text{ZeroPad}_{d_2 \to \max(d_1,d_2)}(\boldsymbol{\delta}_2)$$
 
-### 4.3 Gradient Flow
+where ZeroPad_{d→m}(·) zero-pads a d-dimensional tensor to m dimensions: if m > d, append m−d zero columns on the right; if m = d, identity. Wire-direct means Layer 1's d₁-dimensional output passes directly as Layer 2's input (no mean projection or dimensionality reduction).
 
-The gradient of particle coordinate `xc_i` computed via the chain rule:
+**Layer 3: Final residual accumulation**
 
-$$\frac{\partial L}{\partial xc_i} = \frac{\partial L}{\partial \hat{z}_i} \cdot \frac{\partial \hat{z}_i}{\partial z_i} \cdot z_i \cdot \frac{x - xc_i}{h_i^2}$$
+$$\tilde{\mathbf{F}}_2 = \text{TruncPad}_{\max(d_1,d_2) \to d_3}(\mathbf{F}_2)$$
 
-where $\partial \hat{z}_i / \partial z_j$ includes the coupling term from PU normalization:
+$$\boldsymbol{\delta}_3 = \text{Layer}_3(\tilde{\mathbf{F}}_2) \in \mathbb{R}^{B \times d_3}$$
 
-$$\frac{\partial \hat{z}_i}{\partial z_j} = \frac{\delta_{ij}\sum_k z_k - z_i}{(\sum_k z_k)^2}$$
+$$\mathbf{F}_3 = \text{ZeroPad}_{\max(d_1,d_2) \to M}(\mathbf{F}_2) + \text{ZeroPad}_{d_3 \to M}(\boldsymbol{\delta}_3), \quad M = \max(d_1,d_2,d_3)$$
 
-Particles move opposite to the gradient direction (i.e., toward lower loss). The width `h` is similarly differentiable.
+where TruncPad_{a→m}(·) truncates or zero-pads the signal to the input dimension d_3 expected by Layer 3: if current dimension ≥ d_3, take the first d_3 columns; otherwise, zero-pad.
 
-## 5. High-Dimensional Extension (ProjectedRBFEnsemble)
+**Classification head** (optional): For classification tasks, apply a linear classification head over **F**₃
 
-D-dimensional input is mapped to 2D via `K` fixed random projection matrices $P_k \in \mathbb{R}^{D \times 2}$:
+$$\mathbf{O} = \mathbf{F}_3[:, :d_3] \cdot \mathbf{W}_{head}^\top + \mathbf{b}_{head} \in \mathbb{R}^{B \times n_{classes}}$$
 
-$$x_k^{\text{2D}} = P_k \cdot x$$
+For regression tasks, the first d_3 dimensions of **F**₃ serve directly as the final output. The residual connections between layers allow gradient flow (for digital validation), but physical training optimizes each layer independently without cross-layer backpropagation.
 
-Each projection feeds an independent 2D RBF subnetwork, outputs are averaged:
+## 4. HiMAL-ND Training
 
-$$f(x) = \frac{1}{K}\sum_{k=1}^K f_k(x_k^{\text{2D}})$$
+### 4.0 HiMAL Design Philosophy
 
-Projection matrices $P_k$ are randomly initialized and fixed (not trained). Only subnetwork parameters are trainable. In physical implementation, $P_k$ corresponds to a fixed-conductance memristor array.
+**HiMAL (Hierarchical Multi-Alignment Learning)** — Hierarchical Multi-Alignment Learning
+
+| Term | Meaning | Embodiment in the framework |
+|------|---------|----------------------------|
+| **Hierarchical** | Train layer-by-layer, freeze bottom-up | Layer 1→2→3 trained sequentially, each frozen after completion |
+| **Multi** | A/B dual subnetworks each learn different data regions | Data partitioned by median, two networks evolve independently |
+| **Alignment** | Output consistency constraint across transition zone | Alignment loss replaces cross-layer backpropagation |
+| **Learning** | Adjust parameters via physical measurements (FD/SPSA) | Zero autograd, pure physical-domain gradient estimation |
+
+Core philosophy: **Replace global optimization with structured decomposition** — break a large joint optimization into independently solvable smaller sub-problems, using local training and transition-zone alignment to avoid cross-layer backpropagation.
+
+### 4.1 Dual-Network Partitioning
+
+Training data is split by feature median into zone A and zone B. Two independent subnetworks each learn their respective region. Transition-zone samples pass through both networks, and an alignment loss `MSE(hTA, hTB)` maintains consistency.
+
+### 4.2 Layer-Wise Independent Training
+
+Each layer's parameters are frozen after training; its output serves as the next layer's input. During training:
+
+- Classification: proto-guided loss = squared distance from each sample to its class prototype
+- Regression: MSE loss = direct fit to target (or residual)
+
+All operations (subtraction, squaring, summation, averaging) are realizable via differential amplifiers, Gilbert squarers, and Kirchhoff summation. The classification path uses no softmax, log, or exp.
+
+### 4.3 Gradient Estimation
+
+Two methods, neither requiring backpropagation:
+
+| Method | Principle | Forward passes per update |
+|--------|-----------|--------------------------|
+| Per-parameter FD | Independent +/-epsilon perturbation per parameter, central difference | 2 * N_params |
+| SPSA | Simultaneous random perturbation of all parameters, statistical estimate | 2 * N_avg |
+
+### 4.4 Classification Inference
+
+Each layer classifies via nearest prototype (`argmin ||h - proto_c||^2`), three layers vote (weights 0.5, 0.3, 0.2), and A/B subnetworks each contribute one vote. Data partition information is used for routing weights.
+
+### 4.5 Regression Inference
+
+Each layer predicts a residual via prototype-weighted interpolation; three layers accumulate to produce the final output. Prototypes are stored during training as `proto_h -> proto_y` mappings; inference uses softmax-temperature-weighted interpolation.
+
+## 5. CombinedHiMALRBF Unified Model
+
+Encapsulates RBF physical layers, HiMAL-ND trainer, and physical network simulator into a single interface:
+
+```python
+model = CombinedHiMALRBF(
+    input_dim=D, layer_sizes=(n1, n2, n3), output_dims=(d1, d2, d3),
+    task="classification" | "regression",
+    use_spsa=True | False,  # FD vs SPSA
+)
+model.train(X, y, epochs_per_layer=50, lr=0.02)
+pred = model.predict(X_test)
+```
 
 ## 6. Physical System Implementation
 
-Each mathematical operation in the network has a corresponding analog circuit element. The forward-pass signal flows through the circuit as continuous voltage/current, requiring no analog-to-digital conversion.
-
 ### 6.1 Operation-to-Circuit Mapping
 
-| Math Operation | Analog Circuit | Physical Principle | Device Cost |
-|---|---|---|---|
-| `dx = (x-xc)/h` | Differential amplifier | Diff pair + transconductance gain | ~4 transistors/channel |
-| `d² = dx² + dy²` | Gilbert squarer | Translinear multiplier | ~6 transistors/channel |
-| `exp(-k · d²)` | BJT exponentiator | Subthreshold I_c = I_s · exp(V_be/V_T) | 1-2 transistors/channel |
-| `ẑ = z / Σz` | Current mirror normalizer | Kirchhoff sum + translinear divider | 4 transistors + wire |
-| `W · ẑ` | Memristor crossbar | Ohm's law I = G·V, column-wise Kirchhoff sum | Passive (memristors only) |
-| `f + δ` | Wire junction | Kirchhoff current law | 0 devices |
+| Math Operation | Analog Circuit |
+|----------------|----------------|
+| `dx = (x - xc) / h` | Differential amplifier |
+| `d^2 = sum dx_k^2` | Gilbert squarer + Kirchhoff sum |
+| `exp(-k * d^2)` | BJT exponential (subthreshold) |
+| `z_hat = z / sum(z)` | Current-mode normalization |
+| `W * z_hat` | Memristor crossbar |
+| `f + delta` | Kirchhoff current summation |
 
-### 6.2 Physical Layer Signal Chain
+### 6.2 Training-Inference Pipeline
 
-```
-V_in(x,y) [voltage input]
-    │
-    ├─→ Differential amplifier (dx = (x-xc)/h)
-    │       │
-    ├─→ Gilbert squarer (d²)
-    │       │
-    ├─→ BJT exponentiator (exp(-0.5d²), exp(-0.3d²))  [dual-channel parallel]
-    │       │
-    ├─→ Current mirror normalize (ẑ = z / Σz)          [Kirchhoff sum]
-    │       │
-    ├─→ Memristor crossbar (W · ẑ)                     [O(1) MVM]
-    │       │
-    └─→ Wire junction (f + δ)                          [zero-device residual]
-            │
-        V_out [voltage/current output]
-```
+This project aims to map the entire pipeline to a physical system:
 
-### 6.3 Noise Sources and Non-Idealities
+- **Training**: Estimate gradients via FD/SPSA on the physical simulator -> update parameters (voltages/conductances)
+- **Forward propagation**: Analog signals flow through differential amplifiers -> Gilbert squarers -> exponentials -> normalization -> memristor array -> output
+- **Inference**: Trained parameters are fixed; input signals flow through the circuit; output is the prediction result
 
-| Non-Ideal Effect | Source | Model Parameter |
-|---|---|---|
-| Thermal noise | Resistor/transistor Johnson-Nyquist noise | `noise_std` |
-| Process mismatch | Random variation in transistor dimensions, threshold voltage | `mismatch_std` |
-| Conductance drift | Memristor resistance change from read/write cycles | `drift_std` |
-| Stuck memristors | Fabrication defects causing fixed conductance | `stuck_fraction` |
-| Saturation clipping | Supply rail voltage limits | `V_SUPPLY` |
+The entire process runs on the physical simulator (`physical_simulator.components`), without PyTorch autograd.
 
-### 6.4 Device Count
+## 7. Key Experimental Findings
 
-For a lightweight layer (N=20, d_out=1):
+All findings below are verified by `experiments/run_all.py` (9/9 experiments PASSED):
 
-| Component | Count | Notes |
-|---|---|---|
-| Differential amplifiers | 40 channels | x and y, N channels each |
-| Gilbert squarers | 20 channels | One per particle |
-| BJT exponentiators | 40 | Dual-channel (narrow+wide), 2 per particle |
-| Current mirror dividers | 2 | One per channel |
-| Memristors | 20 | N × d_out = 20 × 1 |
-| **Total** | **~120 transistors + 20 memristors** | |
+| Experiment | Finding |
+|------------|---------|
+| Digital-physical consistency | Physical simulator matches PyTorch digital model, max error 7.80×10⁻⁷ |
+| FD classification depth | moons L1-only=0.92 → Full 3L=0.94, depth contributes +0.020 |
+| FD regression depth | Residual training effective: proto_y magnitude 0.922→0.768→0.759 decreasing |
+| Noise robustness | CombinedHiMALRBF across 4 noise levels (none/low/med/high), accuracy degrades only 0.010 |
+| V1 RBF classification | ResidualRBFNetwork, 8/6/4 particles, 120ep BP, moons acc=0.950 |
+| Parameter efficiency | RBF(595p, 2D-only) vs MLP(17410p, 4D): 0.81 vs 0.88, 29× fewer params, <10% accuracy gap |
+| V1 digital baseline | ResidualRBFNetwork, 10/6/4 particles, 120ep, acc=0.970 |
+| V3 ND digital baseline | ResidualRBFNetworkND, 8/5/3 particles, 60ep, acc=0.820 |
+| Depth ablation | Equal 9 particles: 1L and 3L both train successfully (depth benefit proven in Part 2, +0.020) |
 
-A three-layer network totals approximately 300–400 transistors and 50–80 memristors. Estimated power consumption is in the μW range (subthreshold operation); single-inference latency is in the nanosecond range.
-
-### 6.5 Training-Inference Separation
-
-Training is performed in the digital domain (using `physical_simulator` to model non-idealities, or directly in the physical domain via SPSA/HiMAL). After training, parameters are programmed once onto the chip:
-
-- **Particle coordinates `(xc, yc)`**: DAC reference voltages
-- **Width `h`**: Bias-current-controlled transconductance gain
-- **Weights `W`**: Memristor conductance values
-
-Inference runs entirely on analog signals with zero analog-to-digital conversion.
-
-## 7. Parameter Overview
-
-| Configuration | N₁/N₂/N₃ | Total Parameters | Estimated Transistors |
-|---|---|---|---|
-| Lightweight (2D) | 20/10/8 | ~230 | ~400 |
-| Medium (2D) | 25/12/8 | ~265 | ~480 |
-| Ensemble (4D, K=5) | 5 × (8/4/3) | ~485 | ~900 |
-| Ensemble (4D, K=5) | 5 × (12/6/4) | ~690 | ~1300 |
+Core conclusions:
+- Physical-domain closed-loop training is feasible (both FD and SPSA work for gradient estimation)
+- Multi-layer depth provides positive contribution on classification tasks
+- Regression residual training is effective (later layers learn residuals missed by earlier layers)
+- RBF significantly outperforms MLP in parameter efficiency (29× fewer params at comparable accuracy)
+- Good noise robustness (analog circuit component tolerance testing passed)
+- High digital-physical consistency

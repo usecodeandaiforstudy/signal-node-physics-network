@@ -1,5 +1,6 @@
 # Reference data (not for version control)
 reference/
+v2/
 
 # Experiment outputs
 test_outputs/
