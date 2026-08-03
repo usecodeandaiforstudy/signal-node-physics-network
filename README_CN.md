@@ -1,176 +1,203 @@
 # 物理域 RBF 粒子神经网络
 
-将每个神经元设计为 D 维空间可移动粒子的神经网络架构。网络的前向传播、损失计算和参数训练全部映射到模拟电路元件，旨在探索神经网络从训练到推理的完整流程在物理系统中模拟实现的可行性。
+## 📖 简介
 
-## 核心思路
+> 一种基于物理场叠加原理的新型神经网络架构——每个"神经元"是 D 维空间中可移动的粒子，非线性来自粒子与输入的空间距离。本架构可映射到多种物理平台（模拟电路、光学系统、波动场等）；本项目选择模拟电路作为实现载体，便于在计算机上进行仿真验证。
 
-标准神经网络在模拟硬件上高效运行面临两个困难：非线性激活函数（ReLU、softmax）在电路中实现代价高；反向传播需要完整计算图和精确梯度，模拟系统物理上不可行。
+本项目探索神经网络在物理系统中从训练到推理完整流程的可行性。核心设计是"先激活后组合"：粒子先对输入产生高斯响应，再线性叠加——非线性来自粒子与输入的空间距离，而非固定的激活函数。网络支持分类、回归和高维图像处理，提供 SPSA、有限差分、数字孪生等多种训练方式，全部前向操作有对应模拟电路实现，数字-物理导出精度极高。
 
-本项目的路径：**围绕模拟电路天然擅长的运算设计网络架构，用有限差分或零阶优化替代反向传播。**
+主要成果：
+- 以 2884 参数在 CIFAR-10 5 类上达到 39.3% 分类准确率，超过同量级 MLP（34.0%），泛化比 73% 为三者最高
+- 数字-物理模拟器匹配误差仅 7.80×10⁻⁷，权重可从 PyTorch 直接导出到物理模拟器
+- 证明参数分组独立——RBF 粒子的输出贡献互不依赖，天然支持多路硬件并行训练
+- 四级硬件复杂度下均实现有效梯度估计（0 ADC / 1 ADC / 全模拟梯度链 / 数字孪生）
 
-### "先激活，后组合" vs 标准网络
+## ✨ 核心特性
 
-标准网络的计算顺序是 `activate(combine(x))`——先加权求和再过非线性。本网络逆转这一范式：`combine(activate(x))`——每个粒子先独立对输入产生高斯响应（激活），再将所有粒子的响应线性叠加（组合）。非线性不再来自固定的激活函数，而是来自粒子与输入的空间关系：输入点离粒子越远，该粒子的贡献越小。
+- 🧠 **可物理部署**：每个运算（距离、高斯核、MVM、梯度估计）均有对应模拟电路，全模拟推理零数字依赖
+- 🔬 **数字-物理等价**：物理模拟器与 PyTorch 模型数学精确等价，支持直接导出权重
+- 🖼️ **打破高维限制**：3D 结构化编码使 RBF 能处理 1024 维图像，2884 参数超越同任务更大 MLP
+- ⚡ **无反向传播训练**：SPSA（0 ADC）/ 逐参数 FD（1 ADC）/ 模拟梯度链（O(1) 延迟）
+- 🔀 **天然高并行**：参数分组独立，K 组参数 = K 路硬件可并行训练，互不依赖
+- 🛡️ **物理噪声鲁棒**：四档电路噪声下精度仅降 0.01，适应真实硬件非理想性
 
-### 粒子信源叠加模型
+## 🏗️ 架构概览
 
-将网络理解为 D 维空间中的一组**粒子信源**：输入 X 是探测点位置，粒子中心是信源位置，高斯激活是信源在探测点处激发的场强，权重是接收器灵敏度。网络输出 = 所有信源的场强加权叠加。**训练等价于信源在空间中迁移、自适应调整影响范围的物理演化过程。**
-
-这种设计使网络不再是一个"黑箱函数拟合器"，而是一个可解释的物理场叠加系统。信号链不仅适用于模拟电路，还可映射到光学系统（高斯光束叠加）、波动场（点源格林函数叠加）、扩散场（热核叠加）等多种物理平台。详见 [THEORY_CN.md](THEORY_CN.md) 第 0 节。
-
-## 当前状态
-
-- ND 架构支持任意维度输入，2D 为特例
-- 分类和回归共用一套物理组件
-- 训练→前向→推理全物理域，零 PyTorch autograd
-- **分类 moons（FD）**：L1=0.92 → Full=0.94（+0.02 深度贡献）
-- **回归（FD 残差）**：R²=0.121→0.125，proto_y 幅度 0.92→0.77→0.76（残差有效）
-- **数字-物理一致性**：max|误差| = 7.80×10⁻⁷（远低于 10⁻⁴ 阈值）
-- **噪声鲁棒性**：none→high 精度下降仅 0.010（四档噪声级别）
-- **参数效率**：RBF 595 参数/0.81 vs MLP 17410 参数/0.88（29× 更少参数，精度差 <10%）
-- **数字基线**：V1 RBF acc=0.97（140p），V3 ND acc=0.82（133p）
-- **深度消融**：等 9 粒子下 1L 和 3L 均成功训练（深度贡献见 Part 2: +0.020）
-- `experiments/run_all.py` 一键验证全部（9 项实验全部 PASS）
-
-## 项目结构
-
-```
-singal-node-physics-network/
-├── physical_simulator/              # 底层模拟电路元件
-│   ├── components.py                #   6 种电路元件（差分对、Gilbert、BJT、电流镜、忆阻器、基尔霍夫求和）
-│   ├── layer.py                     #   2D 物理 RBF 层（V1 参考）
-│   └── network.py                   #   2D 物理残差网络（V1 参考）
-│
-├── simulator/                       # ND 物理模拟器（当前主力）
-│   ├── layer_nd.py                  #   PhysicalRBFLayerND — D 维粒子 RBF 层
-│   └── network_nd.py                #   PhysicalResidualRBFNetworkND — 三层残差网络
-│
-├── network/                         # 网络定义
-│   ├── combined.py                  #   CombinedHiMALRBF — 统一分类+回归入口
-│   ├── core_nd.py                   #   ND 数字 RBF 层（PyTorch，参考）
-│   └── utils_nd.py
-│
-├── training/                        # 训练算法
-│   ├── himal_nd.py                  #   HiMAL-ND — 当前主力训练器（分类+回归）
-│   ├── proto_nd.py                  #   ND 原型引导训练
-│   └── proto_layerwise.py           #   2D 原型引导训练（V1 参考）
-│
-├── rbf_network/                     # 2D 数字 RBF 网络（PyTorch，V1 参考）
-│
-├── experiments/                     # 实验
-│   ├── run_all.py                   #   一键验证全部 9 项（一致性/深度/噪声/效率/消融）
-│   ├── e11_fd_cls.py                #   FD 分类深度证明（核心）
-│   ├── e11_fd_reg.py                #   FD 回归深度证明（核心）
-│   ├── e01-e10_*.py                 #   V3 ND 实验套件（独立运行）
-│   ├── 01-13_*.py                   #   V1 2D 参考实验（独立运行）
-│   └── benchmarks/                  #   sklearn 基线对比
-│
-├── outputs/                         # 实验输出
-├── reference/                       # 理论参考文献
-├── README_CN.md                     # 本文件
-└── THEORY_CN.md                     # 完整理论推导
-```
-
-## 网络架构
-
-### 粒子模型
-
-每个粒子在 D 维空间中有一个中心坐标 `centers (D, N)` 和影响半径 `h`。给定输入 `X (batch, D)`，粒子激活值为高斯核响应。所有参数（中心、宽度、权重）均可通过有限差分训练。
-
-### 三层结构
+网络由 D 维空间中可移动的粒子构成，每层 N 个粒子，各有中心坐标和影响半径 h。输入进入后依次经过三层 RBF 层，每层独立计算高斯核响应并通过忆阻器交叉阵列做线性投影，层间 wire-direct 直连。
 
 ```
 输入 X (batch, D)
-    → Layer1: PhysicalRBFLayerND → 输出 (batch, d1)
-    → Layer2: PhysicalRBFLayerND → 输出 (batch, d2)  [残差累积]
-    → Layer3: PhysicalRBFLayerND → 输出 (batch, d3)  [残差累积]
+    → Layer 1: 差分对(dx) → Gilbert平方器(d²) → BJT指数器(exp) → 忆阻器MVM → 输出
+    → Layer 2: 差分对(dx) → Gilbert平方器(d²) → BJT指数器(exp) → 忆阻器MVM → 残差叠加
+    → Layer 3: 差分对(dx) → Gilbert平方器(d²) → BJT指数器(exp) → 忆阻器MVM → 残差叠加
     → 最终输出
 ```
 
-层间使用 **wire-direct** 直连：上一层的多维输出直接作为下一层的多维输入，不做均值投影。
+物理信号链包含 6 种电路元件：差分放大器 → Gilbert 平方器 → 基尔霍夫电流求和 → BJT 亚阈值指数器 → 电流镜归一化 → 忆阻器交叉阵列。
 
-### 物理信号链（6 组件）
+完整推导（物理系统映射、训练算法、理论分析）见 [THEORY_CN.md](THEORY_CN.md)。
 
-```
-输入电压 → 差分放大器(dx) → Gilbert平方器(d²) → 基尔霍夫求和
-        → BJT指数器(exp) → 电流镜归一化 → 忆阻器交叉阵列(W·ẑ) → 输出
-```
+## 🚀 快速开始
 
-### HiMAL-ND 训练
+### 环境要求
 
-***HiMAL（Hierarchical Multi-Alignment Learning，分层多对齐学习）*** 在本项目中适配为 RBF 网络的逐层双网络训练方法。核心哲学是用结构化分解替代全局优化：
+- Python >= 3.8
+- pip
 
-- 数据按中位数分区，A/B 两个子网络各自学习不同区域
-- 每层独立训练后冻结，过渡区对齐损失（替代跨层反向传播）保证两网络在交界面输出一致
-- 分类使用 prototype-guided 损失（无 softmax/log/exp）
-- 回归使用残差训练：L2/L3 学习前层未拟合的剩余部分
-- 梯度通过逐参数有限差分（FD）或 SPSA 估计，零 autograd
-
-## 实验目录
-
-### V3 核心实验（ND 架构，纯物理域）
-
-| 实验 | 作用 |
-|------|------|
-| **e11_fd_cls** ★ | FD 分类深度证明：moons 多 seed 取最优，验证 L1→L1+L2→Full 精度递增 |
-| **e11_fd_reg** ★ | FD 回归深度证明：残差训练 + proto_y 幅度递减，验证 L2/L3 学到残差 |
-| e01_nd_baseline | ND 数字基线：验证 ND 网络在 2D+4D 上的正确性 |
-| e02_nd_physical | 物理前向验证：PhysicalRBFLayerND 与数字模型输出一致 |
-| e03_physical_training | 纯物理 FD 原型训练：从随机初始化在物理域收敛 |
-| e04_himal_ffa_nd | HiMAL-FFA-ND 管线调试：split/训练/预测全流程 |
-| e04b_himal_comparison | HiMAL 分层贡献对比：量化每层精度贡献 |
-| e05_nonlinear_regression | 非线性回归层贡献：复杂函数上测试深度帮助 |
-| e06_ablation | 消融研究：单/双网络、层数对精度的影响 |
-| e07_physical_rbf_net | 物理网络验证：前向一致性和 proto 预测正确性 |
-| e08_comprehensive | 综合实验：三种配置 + 噪声鲁棒性 |
-| e09_spsa_benchmark | SPSA vs FD 速度/精度对比 |
-| e10_noise_robustness | 噪声鲁棒性：四种噪声级别下的精度退化 |
-| benchmarks/run_benchmark.py | sklearn 基线对比：产出可引用性能表格 |
-
-### V1 参考实验（2D 架构，PyTorch + 物理模拟器）
-
-| 实验 | 作用 |
-|------|------|
-| 01_digital_baseline | PyTorch 数字基线：moons 分类 + 回归 |
-| 02_physical_forward | 2D 物理前向验证 |
-| 03_noise_tolerance | 噪声容限测试 |
-| 06_2d_classification | 2D 分类 + 决策边界可视化 |
-| 07_projected_ensemble | 4D 随机投影集成 |
-| 08_physical_classification | 物理网络 2D 分类 |
-| 09_spsa_rbf_classification | HiMAL 双网络 RBF 分类（autograd, ~90%+） |
-| 10_himal_rbf_classification | HiMAL 训练后物理评估 |
-| 11_physical_himal_fd | 物理 FD 逐层微调 |
-| 12_proto_physical_fd | 原型引导纯物理 FD 训练（零 autograd） |
-| 13_layer_depth_ablation | 层深度消融：等粒子数下多层优于单层 |
-
-## 训练方法
-
-| 方法 | 反向传播 | 物理可行性 |
-|------|---------|-----------|
-| SPSA 零阶优化 | 不需要 | 高 — 仅需测量损失值 |
-| HiMAL-ND 逐层双网络 | 不需要 | 高 — 逐层独立，过渡区对齐 |
-| 逐参数有限差分 (FD) | 不需要 | 最高 — 精确梯度，物理可测量 |
-| 原型引导纯物理 | 不需要 | 最高 — 零数字预训练 |
-
-## 快速开始
+### 安装
 
 ```bash
-pip install torch numpy matplotlib scipy pandas scikit-learn
-python experiments/run_all.py
+git clone https://github.com/usecodeandaiforstudy/signal-node-physics-network.git
+cd signal-node-physics-network
+pip install -r requirements.txt
 ```
 
-## 理论文档
+可选：以可编辑模式安装，使项目模块可被任意路径直接 import：
 
-[THEORY_CN.md](THEORY_CN.md) 提供完整推导：ND 粒子模型、物理信号链、HiMAL-ND 训练算法、残差学习。
+```bash
+pip install -e .
+```
 
-## 声明
+### 最小示例
 
-本项目是在有限的实验条件下进行的。由于采用数值模拟来仿真物理系统（模拟电路、忆阻器阵列等物理组件），每次前向传播和参数更新都需要通过物理信号链计算，计算开销远高于标准神经网络的矩阵乘法。受限于算力，当前实验的参数量和训练轮次都较小，仅在 moons、4D 合成分类、正弦回归等简单数据集上完成验证。
+**方式一：SPSA 训练（物理域，0 ADC，最简硬件）**
 
-本项目的核心目标是**提出一种新的网络架构范式**——"先激活后组合"的粒子信源叠加模型——使神经网络具备更好的可解释性，并能在模拟电路、光学系统、波动场等物理平台上实现完整的训练和推理。九个验证实验（`run_all.py`）覆盖了数字-物理一致性、深度有效性、噪声鲁棒性、参数效率等关键命题，可作为后续研究的基准。
+```python
+from network.combined import CombinedHiMALRBF
+from experiments.benchmarks.datasets import load_dataset
 
-受作者代码水平和算力所限，项目可能存在不足。欢迎条件更好的使用者在本代码基础上调整网络结构、增加参数规模和训练轮次、在更复杂的数据集上开展进一步实验，或在真实物理硬件上验证本架构。希望本项目的思路和代码对你有帮助。
+X_tr, X_te, y_tr, y_te, _ = load_dataset("moons")
 
-## License
+model = CombinedHiMALRBF(
+    input_dim=2, layer_sizes=(8, 5, 3), output_dims=(3, 2, 2),
+    task="classification", n_classes=2, use_spsa=True, spsa_avg=3,
+)
+model.train(X_tr, y_tr, epochs_per_layer=30, lr=0.02)
+print(f"Acc: {(model.predict(X_te).ravel() == y_te.ravel()).mean():.3f}")
+```
 
-MIT
+**方式二：逐参数 FD 训练（物理域，1 ADC，精确梯度）**
+
+```python
+model = CombinedHiMALRBF(
+    input_dim=2, layer_sizes=(8, 5, 3), output_dims=(3, 2, 2),
+    task="classification", n_classes=2, use_spsa=False,
+)
+model.train(X_tr, y_tr, epochs_per_layer=40, lr=0.015, eps=1e-3)
+print(f"Acc: {(model.predict(X_te).ravel() == y_te.ravel()).mean():.3f}")
+```
+
+**方式三：数字孪生训练（PyTorch autograd，快速原型）**
+
+```python
+# 参考 experiments/cifar_01_baseline.py —— 构建网络、autograd 训练、
+# 训练完成后通过 from_digital() 将权重导出到物理模拟器
+```
+
+## 📂 项目结构
+
+```
+singal-node-physics-network/
+├── README.md / README_CN.md        # 项目说明
+├── THEORY.md / THEORY_CN.md        # 完整理论推导
+├── LICENSE                         # MIT
+├── requirements.txt                # 依赖清单
+├── setup.py                        # pip install -e . 支持
+│
+├── physical_simulator/             # 模拟电路元件
+│   └── components.py               #   差分对、Gilbert平方器、BJT指数器、忆阻器MVM等
+├── simulator/                      # ND 物理模拟器
+│   ├── layer_nd.py                 #   PhysicalRBFLayerND
+│   └── network_nd.py               #   PhysicalResidualRBFNetworkND
+├── network/                        # 数字网络定义（PyTorch，参考 / 数字孪生）
+│   ├── combined.py                 #   CombinedHiMALRBF 统一入口
+│   └── core_nd.py                  #   RBFLayerND + ResidualRBFNetworkND
+├── training/                       # 训练算法
+│   └── himal_nd.py                 #   HiMAL-ND 逐层双网络训练器
+├── rbf_network/                    # 2D RBF 网络（早期版本，保留供参考）
+│
+├── experiments/
+│   ├── run_all.py                  #   快速冒烟测试（10 项基本验证，约 5 分钟）
+│   ├── ref2d/                      #   简单 2D 参考实现（13 files，仅供入门参考）
+│   ├── reg_01_proto_baseline.py    #   三通道架构 + Proto 残差基线
+│   ├── reg_02_direct_residual.py   #   直接残差使深度生效
+│   ├── reg_03_noise_robustness.py  #   噪声鲁棒性验证
+│   ├── reg_04_fd_reg_1d.py         #   1D sin(x) 最简验证
+│   ├── reg_05_fd_cls_moons.py      #   FD 分类深度证明
+│   ├── reg_06_california_v6.py     #   California Housing 真实数据基准
+│   ├── cifar_01_baseline.py        #   CIFAR-10 5 类：首次成功
+│   ├── cifar_02_regularized.py     #   CIFAR-10 5 类：正则化（最优 39.3%）
+│   ├── cifar_03_3layer_reg.py      #   CIFAR-10 5 类：三层消融
+│   ├── cifar_04_large_data.py      #   CIFAR-10 5 类：容量瓶颈分析
+│   ├── cifar_05_mlp_baseline.py    #   CIFAR-10 5 类：MLP 对比
+│   ├── cifar_06_three_way_compare.py  # CIFAR-10 5 类：RBF vs MLP vs CNN
+│   ├── train_01_grouped_fd.py      #   分组 FD：证明参数组间独立
+│   ├── train_02_grouped_spsa.py    #   分组 SPSA
+│   ├── train_03_analog_spsa.py     #   零 ADC SPSA：最简硬件方案
+│   ├── nd_01_baseline.py           #   ND 数字基线
+│   ├── nd_02_physical.py           #   物理前向验证
+│   └── ...（到 nd_09_spsa_benchmark.py，共 9 files）
+│
+├── outputs/                        # 实验输出
+└── reference/                      # 参考文献与实验总结（gitignore）
+```
+
+## 📊 实验结果
+
+### 冒烟测试
+
+```bash
+python experiments/run_all.py   # 快速验证 10 项基本指标，约 5 分钟，全部 PASS
+```
+
+`run_all.py` 是一个快速冒烟测试，用小规模数据和精简训练轮次验证数字-物理一致性、深度有效性、噪声鲁棒性、参数效率等基本命题。**它不会运行完整的 CIFAR-10 训练或其他耗时实验。**
+
+> **关于实验结果的说明**：受限于计算资源，部分实验的训练轮次和参数规模未达到最优配置。例如 CIFAR-10 分类实验的 600 epochs 和 2884 参数，在更大的训练轮次或更多粒子数下仍有提升空间。当前报告的数字应视为方法有效性的下界认证，而非该架构的性能上限。使用者可在此基础上增加训练资源以探索更高精度。
+
+### 复现完整实验结果
+
+| 要验证的结论 | 运行命令 | 预计耗时 |
+|---|---|---|
+| CIFAR-10 5 类 RBF 最佳精度 | `python experiments/cifar_02_regularized.py` | ~30 min |
+| CIFAR-10 5 类三模型对比 | `python experiments/cifar_06_three_way_compare.py` | ~60 min |
+| MLP 同量级对比 | `python experiments/cifar_05_mlp_baseline.py` | ~1 min |
+| 回归深度有效性（直接残差） | `python experiments/reg_02_direct_residual.py` | ~5 min |
+| 物理噪声鲁棒性 | `python experiments/reg_03_noise_robustness.py` | ~2 min |
+| California Housing 真实数据 | `python experiments/reg_06_california_v6.py` | ~10 min |
+| 分组并行可行性证明 | `python experiments/train_01_grouped_fd.py` | ~5 min |
+| 零 ADC SPSA 验证 | `python experiments/train_03_analog_spsa.py` | ~2 min |
+
+### 主要结果
+
+| 实验 | 任务 | 指标 | RBF | MLP | CNN |
+|------|------|------|-----|-----|-----|
+| CIFAR-10 5 类 | 32×32 灰度图 | 准确率 | **39.3%** (2884p) | 34.0% (4295p) / 38.7% (33644p) | 61.3% (2632p) |
+| 数字-物理一致性 | 多种维度、粒子数 | 最大误差 | **7.80×10⁻⁷** | —— | —— |
+| 回归深度 | 2D 非线性函数 | R² 增益 | +0.064（直接残差）vs +0.013（Proto） | —— | —— |
+| 回归真实数据 | California Housing | R² | 0.530 | 0.551 | —— |
+| 噪声鲁棒性 | 4 档电路噪声 | 精度下降 | 0.010 | —— | —— |
+| 参数效率 | 4D 合成分类 | 准确率/参数 | 0.81 / 595p | 0.88 / 17410p (29×) | —— |
+
+**CIFAR-10 5 类核心对比**：
+
+| 模型 | 参数量 | Test Acc | Train Acc | 泛化比 | 全模拟可部署 |
+|------|--------|----------|-----------|--------|:---:|
+| RBF | 2,884 | 39.3% | 53.6% | 73% | ✓ |
+| MLP (同量级) | 4,295 | 34.0% | 99.6% | 34% | ✗ |
+| MLP (充足) | 33,644 | 38.7% | 97.8% | 40% | ✗ |
+| CNN | 2,632 | 61.3% | 100.0% | 61% | ✗ |
+
+RBF 是唯一可全模拟电路部署的方案；同量级 MLP 严重过拟合；MLP 在放大到 11.7× 参数后才能接近 RBF 的测试精度。
+
+## 📝 许可证
+
+MIT License
+
+## 📖 引用
+
+```bibtex
+@article{singal-node-physics-network,
+  title={Physical-Domain RBF Particle Neural Network},
+  year={2026}
+}
+```

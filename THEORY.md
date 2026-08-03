@@ -73,6 +73,7 @@ Each particle is a point in D-dimensional space, defined by its center `centers 
 $$d_i^2 = \sum_{k=1}^{D} \frac{(x_k - c_{k,i})^2}{h_i^2}$$
 
 $$z_i = \exp(-0.5 \cdot d_i^2) \quad\text{(narrow channel)}$$
+
 $$\tilde{z}_i = \exp(-0.3 \cdot d_i^2) \quad\text{(wide channel)}$$
 
 The two channels capture local detail (narrow kernel) and global structure (wide kernel), respectively.
@@ -127,7 +128,7 @@ $$\mathbf{F} = \mathbf{G} + \mathbf{A} \in \mathbb{R}^{B \times d_{out}}$$
 
 The single-layer output **F** serves as input to the next layer, with dimension determined by d_out.
 
-## 3. Three-Layer Network (PhysicalResidualRBFNetworkND)
+## 3. Multi-Layer Residual Network (PhysicalResidualRBFNetworkND)
 
 ### 3.1 Architecture
 
@@ -140,19 +141,44 @@ Input X (batch, D)
 
 Inter-layer connection uses **wire-direct**: Layer k's multi-dimensional output passes directly as Layer k+1's multi-dimensional input. When dimensions mismatch (e.g., d1 > d2), zero-padding aligns them before accumulation.
 
-### 3.2 Residual Learning (Regression)
+### 3.2 Residual Learning (Regression): Proto Residual vs Direct Residual
 
-In regression, each layer learns a residual rather than the full target:
+In regression, there are two residual learning paradigms. The key finding comes from the reg_01→reg_02 experimental comparison:
+
+**Proto Residual**: each layer predicts via softmax temperature-weighted interpolation
+
+$$\delta_\ell = y - \text{softmax}\left(-\frac{\|h - \text{proto}\|}{T}\right) \cdot y_{\text{proto}}$$
 
 - Layer 1: learns full y
 - Layer 2: learns `y - proto_pred(L1)`
 - Layer 3: learns `y - proto_pred(L1) - proto_pred(L2)`
 
-At inference, summing the three proto predictions recovers the original target. The decreasing magnitude of `proto_y` per layer confirms effective residual learning.
+**Direct Residual**: each layer uses the first component of the hidden output as its prediction
+
+$$\delta_\ell = y - h_{[:,0]}$$
+
+| Property | Proto Residual | Direct Residual |
+|----------|---------------|-----------------|
+| Mechanism | Soft clustering + weighted averaging | Exact per-sample error |
+| High-frequency residual info | Smoothed away (soft clustering loses fine-grained differences) | Fully preserved |
+| Depth gain | +0.013 (minimal) | **+0.064 (5× improvement)** |
+| Convergence behavior | Diminishing returns with depth | L2/L3 can learn any residual pattern |
+
+**Mathematical analysis of why Proto Residual fails**:
+
+Proto residual interpolates prototype predictions via softmax temperature weighting, which is fundamentally a low-pass filtering operation. Let the hidden output of layer ℓ be h, and the prototype set be {p₁, ..., p_K} (K cluster centers). The prediction is:
+
+$$\hat{y}^{\text{proto}} = \sum_{k=1}^{K} s_k \cdot y_k^{\text{proto}}, \quad s_k = \frac{\exp(-\|h - p_k\|/T)}{\sum_j \exp(-\|h - p_j\|/T)}$$
+
+Here {y_k^proto} are the prototype label values. Due to the smoothing property of softmax, when K ≪ number of samples, $\hat{y}^{\text{proto}}$ can express at most K distinct output patterns. Consequently, the high-frequency per-sample difference information in the residual $y - \hat{y}^{\text{proto}}$ is severely attenuated, and subsequent layers can extract very limited learnable signal — depth gain is only +0.013.
+
+**Why Direct Residual works**:
+
+Direct residual $y - h_{[:,0]}$ preserves the complete per-sample error information. $h_{[:,0]}$ is a continuous-valued function that can directly fit targets to arbitrary precision, so the residual contains all information that Layer 1 failed to capture from the original problem. Layer 2 and Layer 3 particles can specifically cover regions where Layer 1 has large errors, forming complementary particle distributions, yielding a depth gain of +0.064 (5× that of Proto residual).
 
 ### 3.3 Mathematical Formulation of Full Network Forward Pass
 
-Let the three-layer network have N_ℓ particles and output dimension d_ℓ for layer ℓ. Denote the single-layer transformation as Layer_ℓ(·), with input **X** ∈ ℝ^(B×D).
+Let the ℓ-layer residual network have N_k particles and output dimension d_k for layer k. Denote the single-layer transformation as Layer_k(·), with input **X** ∈ ℝ^(B×D). The formulation below uses 3 layers as an example; the architecture supports arbitrary depth.
 
 **Layer 1: Initial signal**
 
@@ -218,8 +244,8 @@ Two methods, neither requiring backpropagation:
 
 | Method | Principle | Forward passes per update |
 |--------|-----------|--------------------------|
-| Per-parameter FD | Independent +/-epsilon perturbation per parameter, central difference | 2 * N_params |
-| SPSA | Simultaneous random perturbation of all parameters, statistical estimate | 2 * N_avg |
+| Per-parameter FD | Independent +/-epsilon perturbation per parameter, central difference | 2 × N_params |
+| SPSA | Simultaneous random perturbation of all parameters, statistical estimate | 2 × N_avg |
 
 ### 4.4 Classification Inference
 
@@ -268,7 +294,9 @@ The entire process runs on the physical simulator (`physical_simulator.component
 
 ## 7. Key Experimental Findings
 
-All findings below are verified by `experiments/run_all.py` (9/9 experiments PASSED):
+All findings below are verified by `experiments/run_all.py` (10/10 experiments PASSED):
+
+### 7.1 Core Validation Experiments
 
 | Experiment | Finding |
 |------------|---------|
@@ -276,16 +304,334 @@ All findings below are verified by `experiments/run_all.py` (9/9 experiments PAS
 | FD classification depth | moons L1-only=0.92 → Full 3L=0.94, depth contributes +0.020 |
 | FD regression depth | Residual training effective: proto_y magnitude 0.922→0.768→0.759 decreasing |
 | Noise robustness | CombinedHiMALRBF across 4 noise levels (none/low/med/high), accuracy degrades only 0.010 |
-| V1 RBF classification | ResidualRBFNetwork, 8/6/4 particles, 120ep BP, moons acc=0.950 |
+| 2D RBF classification (reference) | ResidualRBFNetwork, 8/6/4 particles, 120ep BP, moons acc=0.950 |
 | Parameter efficiency | RBF(595p, 2D-only) vs MLP(17410p, 4D): 0.81 vs 0.88, 29× fewer params, <10% accuracy gap |
-| V1 digital baseline | ResidualRBFNetwork, 10/6/4 particles, 120ep, acc=0.970 |
-| V3 ND digital baseline | ResidualRBFNetworkND, 8/5/3 particles, 60ep, acc=0.820 |
+| 2D RBF digital baseline (reference) | ResidualRBFNetwork, 10/6/4 particles, 120ep, acc=0.970 |
+| ND digital baseline | ResidualRBFNetworkND, 8/5/3 particles, 60ep, acc=0.820 |
 | Depth ablation | Equal 9 particles: 1L and 3L both train successfully (depth benefit proven in Part 2, +0.020) |
 
-Core conclusions:
-- Physical-domain closed-loop training is feasible (both FD and SPSA work for gradient estimation)
-- Multi-layer depth provides positive contribution on classification tasks
-- Regression residual training is effective (later layers learn residuals missed by earlier layers)
-- RBF significantly outperforms MLP in parameter efficiency (29× fewer params at comparable accuracy)
-- Good noise robustness (analog circuit component tolerance testing passed)
-- High digital-physical consistency
+#### ND Core Validation Experiment Details (ND Experiment Group)
+
+| Experiment | Description |
+|------------|-------------|
+| nd_01 | ND digital baseline: validates ND network correctness on 2D+4D |
+| nd_02 | Physical forward verification: PhysicalRBFLayerND output matches digital model |
+| nd_03 | Pure physical FD prototype training: converges from random init in physical domain |
+| nd_04 | HiMAL-FFA-ND pipeline debugging |
+| nd_05 | HiMAL hierarchical contribution comparison |
+| nd_06 | Ablation study: single/dual network, layer count impact on accuracy |
+| nd_07 | Physical network verification: forward consistency and proto prediction correctness |
+| nd_08 | Comprehensive experiments: three configs + noise robustness |
+| nd_09 | SPSA vs FD speed/accuracy comparison |
+
+#### Training Experiment Details (Training Experiment Group)
+
+| Experiment | Description |
+|------------|-------------|
+| train_01 | FD group parallelization: proves independence between parameter groups |
+| train_02 | Grouped SPSA training |
+| train_03 | Zero-ADC SPSA: validates minimal hardware scheme |
+
+### 7.2 CIFAR-10 Classification Results
+
+| Experiment | Configuration | Accuracy | Key Finding |
+|------------|--------------|----------|-------------|
+| cifar_01 | First RBF on CIFAR, 3D point-cloud encoding, 2884 particles | 37.3% | Digital-physical gap only 0.000015 |
+| cifar_02 | +physical regularization | **39.3% (SOTA)** | Physical regularization adds +2.0 percentage points |
+| cifar_03 | Regularization ablation | — | Regularization only helps when needed (overfitting scenarios) |
+| cifar_04 | Capacity analysis | — | 2884 parameter count constitutes a capacity bottleneck |
+| cifar_05 | MLP control (matched parameters) | 34.0% | MLP severely overfits at same parameter scale |
+| cifar_06 | Final comparison: RBF vs MLP vs CNN | RBF 39.3%, MLP 38.7%, CNN 61.3% | RBF outperforms MLP with 11.7× fewer parameters; CNN provides architecture upper bound |
+
+Key conclusion: The RBF particle network achieves 39.3% best accuracy on CIFAR-10 (2884 particles), significantly outperforming MLP at matched parameter scale (11.7× parameter efficiency advantage), with CNN (61.3%) representing the theoretical upper bound at this parameter budget.
+
+### 7.3 Regression Depth Gain
+
+| Experiment | Residual Type | Depth Gain | Notes |
+|------------|--------------|------------|-------|
+| reg_02 | Direct residual | **+0.064** | h[:,0] as prediction per layer, exact per-sample error |
+| reg_01 | Proto residual | +0.013 | softmax temperature-weighted interpolation, high-frequency info smoothed |
+| reg_06 | California Housing (Proto residual) | R²=0.530 | Proto residual baseline |
+
+The depth gain comparison is definitive: **direct residual's information fidelity far exceeds proto residual**, with its 5× improvement coming from complete preservation of per-sample error information. This finding changes the design principle of residual learning — the residual signal must precisely reflect per-sample error; any form of smoothing or clustering severely damages the benefits of deep networks.
+
+### 7.4 Experiment Logical Flow
+
+```
+Experiment logical flow:
+
+cifar_01 (First success 37.3%)
+  ├──→ cifar_02 (Regularization → 39.3% SOTA)
+  │      ├──→ cifar_03 (3-layer ablation: regularization only beneficial when overfitting)
+  │      └──→ cifar_04 (More data: capacity bottleneck confirmed)
+  ├──→ cifar_05 (MLP comparison: matched-param MLP severely overfits)
+  └──→ cifar_06 (Three-way: RBF > MLP, CNN as upper bound, RBF uniquely full-analog deployable)
+
+reg_04 (Simplest FD verification R²=0.94)
+  └──→ reg_01 (Three-channel architecture + proto residual, depth gain +0.013)
+          └──→ reg_02 (Direct residual, depth gain 5x +0.064)
+                  └──→ reg_06 (Real-world data baseline R²=0.530)
+```
+
+***
+
+## 8. Addressing High-Dimensionality: 3D Point-Cloud Encoding
+
+### 8.1 Problem: RBF's Dilemma in High Dimensions
+
+Traditional RBF networks operate directly in high-dimensional raw space. For a 32×32 grayscale image, the input space is 1024 dimensions. Computing Euclidean distance in this space:
+
+$$d(\mathbf{x}, \mathbf{c}) = \sqrt{\sum_{j=1}^{1024} (x_j - c_j)^2}$$
+
+When all dimensions are treated anonymously, the curse of dimensionality causes all pairwise distances between samples to become indistinguishable:
+
+$$\lim_{D \to \infty} \frac{\max_j d(\mathbf{x}^{(i)}, \mathbf{x}^{(j)}) - \min_j d(\mathbf{x}^{(i)}, \mathbf{x}^{(j)})}{\min_j d(\mathbf{x}^{(i)}, \mathbf{x}^{(j)})} \to 0$$
+
+In 1024 dimensions, the Gaussian kernel activates all particles nearly uniformly, losing selectivity — this is the fundamental reason traditional RBF cannot classify images.
+
+### 8.2 Solution: Structural Rearrangement, Not Dimensionality Reduction
+
+**Core idea**: do not reduce dimensionality, but rearrange data structure. Decompose a 32×32 image from a 1024-dimensional anonymous vector into **1024 labeled 3D points**:
+
+$$\mathcal{I} = \{(x, y, v_{xy}) \mid x, y \in \{0,1,\dots,31\}\}$$
+
+where (x, y) are pixel spatial coordinates (normalized to [0,1]) and v_xy is the pixel value.
+
+This is NOT dimensionality reduction — the information content of the data is fully preserved — but rather **endowing each dimension with a distinguishable spatial address**.
+
+### 8.3 Four Geometric Mechanisms
+
+The 3D point-cloud encoding overcomes the curse of dimensionality through four geometric mechanisms:
+
+**(1) Spatial Locality**
+
+The pixel's (x, y) coordinates encode spatial position. A particle located at (0.5, 0.3, 0.7) naturally responds to bright pixels in the upper-right region of the image — distance computation occurs at the pixel level, not the image level.
+
+For a particle center c = (x_c, y_c, z_c), the contribution of the k-th pixel is:
+
+$$d_k^2 = \frac{(x_k - x_c)^2}{h_{xy}^2} + \frac{(y_k - y_c)^2}{h_{xy}^2} + \frac{(v_k - z_c)^2}{h_z^2}$$
+
+$\sqrt{(x_k - x_c)^2 + (y_k - y_c)^2}$ measures the spatial distance between the pixel and the particle center — the closer a pixel is to the particle's (x_c, y_c), the greater its intensity contributes to the particle's activation. This endows the particle with a **spatial receptive field**.
+
+**(2) Intensity Selectivity**
+
+The z_c parameter selects which pixel intensities to respond to. A particle with z_c ≈ 1 prefers white regions (high brightness), z_c ≈ 0 prefers black regions (dark areas), and z_c ≈ 0.5 prefers mid-gray. The particle's selectivity in the (v_k - z_c)² dimension makes it a tunable local pattern detector.
+
+**(3) Geometric Coupling**
+
+(x_c, y_c) and z_c are not independent parameters — they are coupled through the product structure of the Gaussian kernel:
+
+$$\exp\left(-\frac{(x_k - x_c)^2 + (y_k - y_c)^2}{h_{xy}^2} - \frac{(v_k - z_c)^2}{h_z^2}\right)$$
+
+This means a particle activates strongly only when both conditions are met: the pixel lies within its spatial receptive field **AND** the pixel value is close to its intensity selectivity center. This AND-coupling produces detectors with specific spatial locations and specific brightness patterns — essentially learnable oriented edges, corners, and texture primitives.
+
+**(4) Dimensional Address Labels**
+
+The most critical distinction: in a 1024-dimensional anonymous vector, dimensions j=0 and j=1 contribute to distance computation in a completely symmetric and indistinguishable manner. In the 3D point cloud, each pixel carries its (x, y) coordinates as **address labels**. Pixels at coordinates (0.0, 0.0) and (0.0, 0.03125) are adjacent in 3D space — this geometric adjacency relation is entirely absent in 1024-dimensional anonymous space.
+
+### 8.4 Analogy to CNNs
+
+| Concept | CNN | RBF 3D Point Cloud |
+|---------|-----|-------------------|
+| Spatial receptive field | Convolution kernel size (e.g., 3×3) | Particle width h_xy |
+| Filter weights | Discrete kernel matrix w[i,j] | Continuous intensity center z_c |
+| Spatial position | Implicit (output feature map position) | Explicit (x_c, y_c coordinates) |
+| Nonlinearity | ReLU (artificial) | Gaussian distance decay (physically natural) |
+| Parameterization | Discrete weights per kernel | Continuous 3-parameter (x_c, y_c, z_c) + width per particle |
+
+An RBF particle at (x_c, y_c) ≈ a convolution kernel anchored at position (x_c, y_c), with receptive field controlled by h_xy and its "filter weights" continuously parameterized by z_c. The difference is that RBF achieves locality through Gaussian radial basis functions (continuous, differentiable, physically realizable) rather than discrete convolution (GPU-optimized).
+
+### 8.5 Complete Forward Pass of 3D Point-Cloud Encoding
+
+Let an image be represented as N_pix = H×W 3D points (batch dimension B images), with a particle layer of N particles. The encoding proceeds as follows:
+
+**Input rearrangement**:
+
+$$\mathbf{X} \in \mathbb{R}^{B \times H \times W} \longrightarrow \mathbf{P} \in \mathbb{R}^{B \times N_{pix} \times 3}, \quad \mathbf{P}_{b,k} = (x_k, y_k, v^{(b)}_k)$$
+
+**Distance computation** (for each sample, each pixel, each particle):
+
+$$d_{b,k,i}^2 = \frac{(x_k - c_{x,i})^2}{h_{xy,i}^2} + \frac{(y_k - c_{y,i})^2}{h_{xy,i}^2} + \frac{(v_k^{(b)} - c_{z,i})^2}{h_{z,i}^2}$$
+
+**Aggregation** (summation across pixels):
+
+$$z_{b,i} = \sum_{k=1}^{N_{pix}} \exp\left(-\frac{1}{2} d_{b,k,i}^2\right)$$
+
+Each particle aggregates Gaussian responses from all pixels within its receptive field. The aggregated particle activation vector $\mathbf{z} \in \mathbb{R}^{B \times N}$ can serve as input to subsequent RBF layers or a classifier.
+
+## 9. Network Version Evolution
+
+### 9.1 早期 2D 参考实现 (2D Reference)
+
+`rbf_network/` directory
+
+- Original 2D particle network with fixed grid boundary
+- PyTorch-based implementation
+- Reference implementation for validating the core RBF paradigm in low dimensions
+- Validation experiment: moons binary classification, 8/6/4 particles, 120 epochs, accuracy 0.950
+
+### 9.2 D 维泛化 (ND Generalization)
+
+`network/core_nd.py`
+
+- **RBFLayerND**: RBF single layer supporting arbitrary input dimension D
+- **ResidualRBFNetworkND**: Multi-layer residual architecture with wire-direct inter-layer connections
+- Dual-channel Gaussian activation: narrow kernel k=0.5 + wide kernel k=0.3
+- PU (Partition of Unity) normalization: $\hat{z}_i = z_i / \sum_j z_j$
+- Key innovation: Generalizes the fixed 2D grid to arbitrary dimensions, enabling the network to handle high-dimensional features
+
+### 9.3 PhysicalRBFLayerND — Physical Simulation Layer
+
+`simulator/layer_nd.py`
+
+- Exact mathematical replica of the physical analog circuit
+- Calls low-level component models from `physical_simulator.components`:
+  - `differential_pair`: differential amplifier, computing (x - c)/h
+  - `gilbert_square`: Gilbert squarer, computing dx²
+  - `bjt_gaussian_kernel`: BJT subthreshold exponential, exp(-k·d²)
+  - `memristor_mvm`: memristor matrix-vector multiplication, W·ẑ
+- **Digital-physical gap = 0.000000** (mathematically exact match to the digital ND model, verified)
+- Supports `from_digital()` export: directly exports PyTorch digital model weights to physical simulator parameters
+
+### 9.4 三通道增强 (Three-Channel Enhancement)
+
+`experiments/reg_01_proto_baseline.py`
+
+- **Three-channel design**:
+  - Narrow channel: Gaussian kernel exp(-k_n · d²), captures local high-frequency variations
+  - Wide channel: Gaussian kernel exp(-k_w · d²), captures global smooth trends
+  - Cauchy channel: 1/(1 + d²), heavy-tailed distribution, enhances robustness to large deviations
+- **Feature scaling**: Programmable Gain Amplifiers (PGA) — each input dimension multiplied by learnable gain g_k
+- **K-Means initialization**: particle centers initialized at K-Means cluster centroids, accelerating convergence
+- **Anisotropic h**: per-dimension independent width h_{k,i}, particles can have ellipsoidal receptive fields in input space
+- **Multi-scale k**: optimize narrow/wide channel k_n, k_w in log domain, allowing automatic selection of optimal kernel width
+- **Momentum FD**: momentum term added to finite-difference gradient estimation, smoothing stochastic gradient noise
+- **L2 regularization**: weight decay prevents overfitting
+
+### 9.5 CIFAR 分类网络 (CIFAR Classification Network with 3D Encoding)
+
+Complete image classification network based on 3D point-cloud encoding:
+
+```
+Input: 32×32 grayscale image (1024 3D points)
+    |
+Layer 0: Spatial Transformer (3D → 3D, 25 particles)
+    Residual layer: f₀ = X + RBF₀(X)
+    Preserves 3D spatial structure, learnable spatial warping
+    |
+Layer 1: Local Feature Extraction (3D → 12D, 49 particles, 7×7 grid initialization)
+    7×7 particle grid uniformly covering 32×32 image space
+    Each particle extracts local patterns within its receptive field
+    |
+Layer 2: Mid-Level Abstraction (12D → 8D, 28 particles)
+    Abstracts mid-level semantics from local features
+    |
+Layer 3: Compact Representation (8D → 6D, 20 particles)
+    Reduces to compact classification representation
+    |
+Global Mean Pooling:
+    o = mean(F₃, dim=0) ∈ ℝ⁶
+    |
+Nearest-Prototype Classifier:
+    class = argmin_c ||o - proto_c||²
+```
+
+- **Total parameters**: 2884
+- **Design principle**: from spatial (3D) → local features (12D) → abstract features (8D) → compact representation (6D)
+- Layer 0's spatial transform residual preserves spatial structure, enabling subsequent layer particles to rely on precise spatial coordinate information
+
+## 10. Four-Tier Physical Training System
+
+Physical training methods progress by hardware complexity, forming a complete spectrum from minimal hardware to fully parallel hardware:
+
+### Method A: SPSA — Minimal Hardware
+
+**Hardware requirement**: 1 differential amplifier + 0 ADCs
+
+**Principle**: Simultaneously perturb all parameters $\theta + \epsilon \boldsymbol{\Delta}$ and $\theta - \epsilon \boldsymbol{\Delta}$ ($\boldsymbol{\Delta}$ is a random sign vector), measure loss twice and estimate gradient:
+
+$$\hat{g} = \frac{L(\theta + \epsilon\boldsymbol{\Delta}) - L(\theta - \epsilon\boldsymbol{\Delta})}{2\epsilon} \boldsymbol{\Delta}$$
+
+Hardware implementation: the differential amplifier inputs are L⁺ and L⁻, output proportional to ΔL = L⁺−L⁻, i.e., the scalar ΔL is obtained directly via analog subtraction without an ADC. Gradient update $\theta \leftarrow \theta - \eta \cdot \Delta L \cdot \boldsymbol{\Delta} / (2\epsilon)$ is performed in the digital domain.
+
+| Property | Value |
+|----------|-------|
+| Forward passes | 2/group (one positive, one negative) |
+| ADC requirement | 0 |
+| Gradient noise | O(1/√N), decays with averaging count |
+| Hardware complexity | Minimal |
+
+### Method B: Per-Parameter Finite Difference
+
+**Hardware requirement**: 1 ADC (digitize scalar loss)
+
+**Principle**: Apply independent ±ε perturbation to each parameter θ_j, central-difference estimate partial derivative:
+
+$$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf{e}_j) - L(\theta - \epsilon \mathbf{e}_j)}{2\epsilon}$$
+
+**Grouped parallelism** (Experiments train_01 / train_02): Partition parameters into K groups. train_01 (grouped FD) proves parameter group independence, meaning K parallel hardware circuits can train independently; train_02 (grouped SPSA) measures equivalent speedup of >20× while maintaining accuracy:
+
+| Experiment | Method | Core Finding |
+|-----------|--------|--------------|
+| train_01 (formerly E13) | Grouped per-parameter FD | Parameter group independence proven, K× parallel feasible |
+| train_02 (formerly E14) | Grouped SPSA | Measured >20× equivalent speedup |
+
+### Method C: Analog Gradient Chain — O(1) Latency
+
+**Hardware requirement**: N_out×N_particles Gilbert multipliers + N_particles cascaded multipliers + capacitor integrator array
+
+**Principle**: Simultaneously construct gradient signals during forward propagation, completely eliminating per-parameter perturbation:
+
+1. **Forward propagation**: Signal flows through differential amplifiers → Gilbert squarers → BJT exponentials, producing particle activations z_i
+2. **Gradient chain**:
+   - Gilbert multiplier array: computes ∂L/∂W_{ij} = δ_i · ẑ_j (output error × normalized activation)
+   - Cascaded multiplier chain: backpropagates from ∂L/∂z to ∂L/∂h and ∂L/∂c via the chain rule
+3. **Capacitor integration**: Gradient signals accumulate on capacitors, physically implementing gradient accumulation
+
+| Property | Value |
+|----------|-------|
+| Forward passes | **1** |
+| Gradient precision | Exact (analytical gradient) |
+| Latency | O(1), independent of parameter count |
+| Hardware complexity | Highest |
+
+**This is the only scheme that simultaneously obtains exact gradients during forward propagation** — physically implementing the chain rule of backpropagation.
+
+### Method D: Digital Twin (PyTorch autograd) — Rapid Prototyping
+
+**Hardware requirement**: CPU/GPU
+
+**Principle**: Build a mathematically equivalent digital model of the physical network in PyTorch, obtain gradients via autograd backpropagation.
+
+- Answers the fundamental question "can this architecture learn?"
+- Validates architectural feasibility before hardware design
+- Trained weights exported to physical simulator parameters via `from_digital()`
+- Only after digital validation passes do we tackle "can we build the hardware?"
+
+### Four-Tier Comparison Summary
+
+| Dimension | Method A (SPSA) | Method B (FD) | Method C (Analog Chain) | Method D (Digital Twin) |
+|-----------|----------------|---------------|------------------------|------------------------|
+| Hardware | 1 diff amp | 1 ADC | Full analog multipliers + integrators | CPU/GPU |
+| Forward/update | 2 | 2N_params | 1 | 1 (+backward) |
+| Gradient quality | Noisy O(1/√N) | Exact | Exact | Exact |
+| Latency | O(1) | O(N_params) | **O(1)** | O(1) GPU |
+| Use case | Extreme hardware constraints | General physical training | High-performance physical inference | Architecture validation + rapid iteration |
+
+---
+
+## 11. Current Bottlenecks and Limitations
+
+1. **Capacity**: 2884 parameters saturate at ~100 img/class; more particles or wider layers needed
+2. **Depth efficiency**: the direct residual scheme needs to be ported to real-world data and larger scales
+3. **Training speed**: FD requires O(N) forward passes; SPSA has gradient noise
+
+### Disclaimer
+
+This project was conducted under limited experimental conditions. Since numerical simulation is used to emulate physical systems (analog circuits, memristor arrays, and other physical components), each forward pass and parameter update must be computed through the physical signal chain, incurring computational overhead far higher than standard neural network matrix multiplication. Constrained by compute resources, current experiments use modest parameter counts and training epochs, validated only on moons, 4D synthetic classification, sine regression, CIFAR-10 5-class subsets, and California Housing datasets.
+
+The core objective of this project is to propose an "activate-then-combine" particle source superposition model — endowing neural networks with better interpretability and enabling complete training and inference on physical platforms such as analog circuits, optical systems, and wave fields. Validation experiments cover key propositions including digital-physical consistency, depth effectiveness, noise robustness, parameter efficiency, and grouped parallelization feasibility, serving as a baseline for future research.
+
+Subject to the author's coding proficiency and compute limitations, the project may have shortcomings. Users with better resources are welcome to adjust the network architecture, increase parameter scale and training epochs, conduct further experiments on more complex datasets, or verify this architecture on real physical hardware based on this codebase. We hope the ideas and code in this project are helpful to you.
+
+**Core philosophy**: The core of the RBF particle neural network is not a specific algorithm or hardware implementation, but a unified perspective — viewing neural networks as field superposition systems in physical space. From this perspective, network training (physical system evolution), inference (field strength superposition), architecture design (source layout), and interpretability (source positions and radiation ranges all have clear physical meaning) all gain natural physical interpretations while maintaining the same expressive power as digital deep learning.

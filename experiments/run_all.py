@@ -93,7 +93,7 @@ L("  Part 2: FD Classification Depth Proof (moons, multi-seed)")
 L("─" * 50)
 
 try:
-    r = subprocess.run([sys.executable, os.path.join(BASE, "e11_fd_cls.py")],
+    r = subprocess.run([sys.executable, os.path.join(BASE, "reg_05_fd_cls_moons.py")],
                        cwd=ROOT, capture_output=True, text=True, timeout=600)
     ok = r.returncode == 0
     elapsed_match = re.search(r'Done:\s+(\d+)s', r.stdout or "")
@@ -135,14 +135,14 @@ L("  Part 3: FD Regression Depth Proof (residual training)")
 L("─" * 50)
 
 try:
-    r = subprocess.run([sys.executable, os.path.join(BASE, "e11_fd_reg.py")],
+    r = subprocess.run([sys.executable, os.path.join(BASE, "reg_04_fd_reg_1d.py")],
                        cwd=ROOT, capture_output=True, text=True, timeout=300)
     ok = r.returncode == 0
     out = r.stdout or ""
 
-    # Parse R2
-    m = re.search(r'wire-direct.*?L1-only:\s+([-\d.]+).*?Full:\s+([-\d.]+)', out, re.DOTALL)
-    # Parse proto_y
+    # Parse R2: "L1-only:  0.9500" ... "Full:     0.9700"
+    m = re.search(r'L1-only:\s+([-\d.]+).*?Full:\s+([-\d.]+)', out, re.DOTALL)
+    # Parse proto_y: "L1: 0.3478   L2: 0.1234   L3: 0.0567"
     mp = re.search(r'L1:\s+([\d.]+)\s+L2:\s+([\d.]+)\s+L3:\s+([\d.]+)', out)
 
     if ok and m and mp:

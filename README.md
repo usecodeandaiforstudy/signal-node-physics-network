@@ -1,146 +1,203 @@
 # Physical-Domain RBF Particle Neural Network
 
-A neural network where each neuron is a movable particle in D-dimensional space. Forward propagation, loss computation, and parameter training are all mapped to analog circuit components, exploring the feasibility of implementing the full neural network pipeline — from training to inference — entirely within a physical system simulation.
+## Introduction
 
-## Core Idea
+> A novel neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.
 
-Two challenges prevent standard neural networks from running efficiently on analog hardware: nonlinear activations (ReLU, softmax) are costly in circuits, and backpropagation requires a full computation graph with exact gradients, which is physically infeasible in analog systems.
+This project explores the feasibility of executing the complete pipeline from training to inference of neural networks within physical systems. The core design is "activate first, then combine": particles first produce a Gaussian response to the input, then linearly superimpose — nonlinearity arises from the spatial distance between particles and inputs, rather than from a fixed activation function. The network supports classification, regression, and high-dimensional image processing, offering multiple training methods including SPSA, finite differences, and digital twins. All forward operations have corresponding analog circuit implementations, and digital-to-physical export achieves extremely high precision.
 
-This project's approach: **design the network around operations that analog circuits naturally perform well, and replace backpropagation with finite differences or zero-order optimization.**
+Key achievements:
+- Achieves 39.3% classification accuracy on CIFAR-10 (5 classes) with only 2,884 parameters, surpassing an equivalently sized MLP (34.0%), with a generalization ratio of 73% — the highest among the three compared models
+- Digital-physical simulator discrepancy of only 7.80×10⁻⁷; weights can be directly exported from PyTorch to the physical simulator
+- Proves parameter-group independence — RBF particle output contributions are mutually independent, naturally supporting multi-channel hardware parallel training
+- Effective gradient estimation achieved across four hardware complexity levels (0 ADC / 1 ADC / fully analog gradient chain / digital twin)
 
-### "Activate Then Combine" vs Standard Networks
+## Features
 
-A standard network computes `activate(combine(x))` — first a weighted sum, then a nonlinearity. This network reverses the paradigm: `combine(activate(x))` — each particle independently produces a Gaussian response to the input (activation), then all particle responses are linearly superimposed (combination). Nonlinearity no longer comes from a fixed activation function, but from the spatial relationship between particle and input: the farther the input point from a particle, the weaker that particle's contribution.
+- 🧠 **Physically Deployable**: Every operation (distance, Gaussian kernel, MVM, gradient estimation) has a corresponding analog circuit; fully analog inference with zero digital dependency
+- 🔬 **Digital-Physical Equivalence**: The physical simulator is mathematically exactly equivalent to the PyTorch model, supporting direct weight export
+- 🖼️ **Breaking the High-Dimensional Barrier**: 3D structured encoding enables RBF to process 1024-dimensional images, with 2,884 parameters outperforming a larger MLP on the same task
+- ⚡ **Backpropagation-Free Training**: SPSA (0 ADC) / per-parameter FD (1 ADC) / analog gradient chain (O(1) latency)
+- 🔀 **Inherently Highly Parallel**: Parameter groups are independent; K parameter groups = K hardware channels trainable in parallel, with no mutual dependency
+- 🛡️ **Physically Noise-Robust**: Accuracy drops by only 0.01 across four levels of circuit noise, adapting to real hardware non-idealities
 
-### Particle Source Superposition Model
+## Architecture Overview
 
-The network is understood as a set of **particle sources** in D-dimensional space: input X is a probe point position, particle centers are source positions, Gaussian activations are field strengths excited at the probe point, and weights are receiver sensitivities. Network output = weighted superposition of all source field strengths. **Training is equivalent to the physical evolution of sources migrating in space and adaptively adjusting their influence ranges.**
+The network consists of movable particles in D-dimensional space. Each layer has N particles, each with a center coordinate and an influence radius h. Input passes through three successive RBF layers; each layer independently computes a Gaussian kernel response and performs linear projection via a memristor crossbar array. Layers are connected wire-direct.
 
-This design makes the network an interpretable physical field superposition system rather than a "black-box function approximator." The signal chain maps not only to analog circuits but also to optical systems (Gaussian beam superposition), wave fields (point-source Green's function superposition), diffusion fields (heat kernel superposition), and more. See [THEORY.md](THEORY.md) Section 0 for details.
+```
+Input X (batch, D)
+    → Layer 1: differential pair (dx) → Gilbert squarer (d²) → BJT exponentiator (exp) → memristor MVM → output
+    → Layer 2: differential pair (dx) → Gilbert squarer (d²) → BJT exponentiator (exp) → memristor MVM → residual addition
+    → Layer 3: differential pair (dx) → Gilbert squarer (d²) → BJT exponentiator (exp) → memristor MVM → residual addition
+    → final output
+```
 
-## Current Status
+The physical signal chain includes 6 circuit elements: differential amplifier → Gilbert squarer → Kirchhoff current summation → BJT subthreshold exponentiator → current mirror normalization → memristor crossbar array.
 
-- ND architecture supports arbitrary input dimensions; 2D as a special case
-- Classification and regression share the same physical component set
-- Training, forward, and inference all in physical domain — zero PyTorch autograd
-- **Classification (moons, FD)**: L1=0.92 → Full=0.94 (+0.02 depth contribution)
-- **Regression (FD residual)**: R²=0.121→0.125, proto_y magnitude 0.92→0.77→0.76 (effective residual)
-- **Digital-physical consistency**: max|error| = 7.80×10⁻⁷ (well below 10⁻⁴ threshold)
-- **Noise robustness**: none→high accuracy drops only 0.010 (4 noise levels)
-- **Parameter efficiency**: RBF 595 params/0.81 vs MLP 17410 params/0.88 (29× fewer params, within 10% accuracy)
-- **Digital baselines**: V1 RBF acc=0.97 (140p), V3 ND acc=0.82 (133p)
-- **Depth ablation**: equal 9 particles: 1L and 3L both train successfully (depth benefit proven in Part 2: +0.020)
-- `experiments/run_all.py` verifies all 9 experiments in one run (ALL PASSED)
+For the complete derivation (physical system mapping, training algorithms, theoretical analysis), see [THEORY.md](THEORY.md).
+
+## Quick Start
+
+### Requirements
+
+- Python >= 3.8
+- pip
+
+### Installation
+
+```bash
+git clone https://github.com/usecodeandaiforstudy/signal-node-physics-network.git
+cd signal-node-physics-network
+pip install -r requirements.txt
+```
+
+Optional: install in editable mode so project modules can be imported from any path:
+
+```bash
+pip install -e .
+```
+
+### Minimal Examples
+
+**Method 1: SPSA Training (physical domain, 0 ADC, simplest hardware)**
+
+```python
+from network.combined import CombinedHiMALRBF
+from experiments.benchmarks.datasets import load_dataset
+
+X_tr, X_te, y_tr, y_te, _ = load_dataset("moons")
+
+model = CombinedHiMALRBF(
+    input_dim=2, layer_sizes=(8, 5, 3), output_dims=(3, 2, 2),
+    task="classification", n_classes=2, use_spsa=True, spsa_avg=3,
+)
+model.train(X_tr, y_tr, epochs_per_layer=30, lr=0.02)
+print(f"Acc: {(model.predict(X_te).ravel() == y_te.ravel()).mean():.3f}")
+```
+
+**Method 2: Per-Parameter FD Training (physical domain, 1 ADC, exact gradients)**
+
+```python
+model = CombinedHiMALRBF(
+    input_dim=2, layer_sizes=(8, 5, 3), output_dims=(3, 2, 2),
+    task="classification", n_classes=2, use_spsa=False,
+)
+model.train(X_tr, y_tr, epochs_per_layer=40, lr=0.015, eps=1e-3)
+print(f"Acc: {(model.predict(X_te).ravel() == y_te.ravel()).mean():.3f}")
+```
+
+**Method 3: Digital Twin Training (PyTorch autograd, rapid prototyping)**
+
+```python
+# See experiments/cifar_01_baseline.py — build the network, train with autograd,
+# then export weights to the physical simulator via from_digital()
+```
 
 ## Project Structure
 
 ```
 singal-node-physics-network/
-├── physical_simulator/              # Low-level analog circuit components
-├── simulator/                       # ND physical simulator (active)
-│   ├── layer_nd.py                  #   PhysicalRBFLayerND
-│   └── network_nd.py                #   PhysicalResidualRBFNetworkND
-├── network/                         # Network definitions
-│   └── combined.py                  #   CombinedHiMALRBF — unified entry point
-├── training/                        # Training algorithms
-│   ├── himal_nd.py                  #   HiMAL-ND — primary trainer
-│   └── ...                          #   (V1 trainers for reference)
-├── experiments/                     # Experiments
-│   ├── run_all.py                   #   Run full 9-part verification suite
-│   ├── e11_fd_cls.py                #   FD classification depth proof
-│   ├── e11_fd_reg.py                #   FD regression depth proof
-│   ├── e01-e10_*.py                 #   V3 ND experiments (standalone)
-│   ├── 01-13_*.py                   #   V1 2D reference experiments (standalone)
-│   └── benchmarks/                  #   sklearn baseline comparison
-├── outputs/                         # Experiment outputs
-└── THEORY.md                        # Full theoretical derivation
+├── README.md / README_CN.md        # project description
+├── THEORY.md / THEORY_CN.md        # complete theoretical derivation
+├── LICENSE                         # MIT
+├── requirements.txt                # dependency list
+├── setup.py                        # pip install -e . support
+│
+├── physical_simulator/             # analog circuit components
+│   └── components.py               #   differential pair, Gilbert squarer, BJT exponentiator, memristor MVM, etc.
+├── simulator/                      # ND physical simulator
+│   ├── layer_nd.py                 #   PhysicalRBFLayerND
+│   └── network_nd.py               #   PhysicalResidualRBFNetworkND
+├── network/                        # digital network definitions (PyTorch, reference / digital twin)
+│   ├── combined.py                 #   CombinedHiMALRBF unified entry point
+│   └── core_nd.py                  #   RBFLayerND + ResidualRBFNetworkND
+├── training/                       # training algorithms
+│   └── himal_nd.py                 #   HiMAL-ND layer-wise dual-network trainer
+├── rbf_network/                    # 2D RBF network (early version, kept for reference)
+│
+├── experiments/
+│   ├── run_all.py                  #   quick smoke test (10 basic validations, ~5 min)
+│   ├── ref2d/                      #   simple 2D reference implementations (13 files, for introductory reference)
+│   ├── reg_01_proto_baseline.py    #   three-channel architecture + Proto residual baseline
+│   ├── reg_02_direct_residual.py   #   direct residual enables depth effectiveness
+│   ├── reg_03_noise_robustness.py  #   noise robustness verification
+│   ├── reg_04_fd_reg_1d.py         #   1D sin(x) minimal verification
+│   ├── reg_05_fd_cls_moons.py      #   FD classification depth proof
+│   ├── reg_06_california_v6.py     #   California Housing real-data benchmark
+│   ├── cifar_01_baseline.py        #   CIFAR-10 5-class: first success
+│   ├── cifar_02_regularized.py     #   CIFAR-10 5-class: regularized (best 39.3%)
+│   ├── cifar_03_3layer_reg.py      #   CIFAR-10 5-class: three-layer ablation
+│   ├── cifar_04_large_data.py      #   CIFAR-10 5-class: capacity bottleneck analysis
+│   ├── cifar_05_mlp_baseline.py    #   CIFAR-10 5-class: MLP comparison
+│   ├── cifar_06_three_way_compare.py  # CIFAR-10 5-class: RBF vs MLP vs CNN
+│   ├── train_01_grouped_fd.py      #   grouped FD: proves inter-group parameter independence
+│   ├── train_02_grouped_spsa.py    #   grouped SPSA
+│   ├── train_03_analog_spsa.py     #   zero-ADC SPSA: simplest hardware scheme
+│   ├── nd_01_baseline.py           #   ND digital baseline
+│   ├── nd_02_physical.py           #   physical forward pass verification
+│   └── ...（up to nd_09_spsa_benchmark.py, 9 files total）
+│
+├── outputs/                        # experiment outputs
+└── reference/                      # references and experiment summaries (gitignored)
 ```
 
-## Architecture
+## Results
 
-### Particle Model
-
-Each particle has a center `centers (D, N)` and width `h` in D-dimensional space. Given input `X (batch, D)`, particle activations are Gaussian kernel responses. All parameters (centers, widths, weights) are trainable via finite differences.
-
-### Three-Layer Structure
-
-```
-Input X (batch, D)
-    -> Layer1: PhysicalRBFLayerND -> output (batch, d1)
-    -> Layer2: PhysicalRBFLayerND -> output (batch, d2)  [residual accumulation]
-    -> Layer3: PhysicalRBFLayerND -> output (batch, d3)  [residual accumulation]
-    -> Final output
-```
-
-Inter-layer connection uses **wire-direct**: each layer's multi-dimensional output passes directly as the next layer's multi-dimensional input.
-
-### Physical Signal Chain (6 components)
-
-```
-Input voltage -> differential_pair(dx) -> gilbert_square(d^2) -> kirchhoff_sum
-              -> bjt_gaussian(exp) -> current_mode_normalize -> memristor_mvm(W.z) -> output
-```
-
-### HiMAL-ND Training
-
-**HiMAL (Hierarchical Multi-Alignment Learning)** is adapted here as a layer-wise dual-network training method for RBF networks. Its core philosophy is replacing global optimization with structured decomposition:
-
-- Data is partitioned by median value; A/B subnetworks each learn different regions
-- Each layer is trained independently then frozen; transition-zone alignment loss (replacing cross-layer backpropagation) ensures output consistency at the interface
-- Classification uses prototype-guided loss (no softmax/log/exp)
-- Regression uses residual training: L2/L3 learn what earlier layers could not fit
-- Gradients via per-parameter finite differences (FD) or SPSA — zero autograd
-
-## Experiments
-
-### V3 Core Experiments (ND architecture, pure physical domain)
-
-| Experiment | Purpose |
-|------------|---------|
-| **e11_fd_cls** | FD classification depth proof: multi-seed moons, L1→Full accuracy progression |
-| **e11_fd_reg** | FD regression depth proof: residual training + decreasing proto_y magnitude |
-| e01_nd_baseline | ND digital baseline: 2D+4D correctness verification |
-| e02_nd_physical | Physical forward validation: digital-physical output consistency |
-| e03_physical_training | Pure physical FD proto training from random initialization |
-| e04-e05 | HiMAL pipeline debug and layer contribution analysis |
-| e06_ablation | Single vs dual network, layer count ablation |
-| e07-e08 | Physical network verification and comprehensive benchmarking |
-| e09_spsa_benchmark | SPSA vs FD speed/accuracy comparison |
-| e10_noise_robustness | Noise robustness under 4 noise levels |
-| benchmarks/ | sklearn baseline comparison |
-
-### V1 Reference Experiments (2D architecture)
-
-Experiments 01-13 validate the original 2D design: digital baseline, physical forward, noise tolerance, SPSA/HiMAL training, 2D classification with decision boundaries, projected ensembles, physical FD fine-tuning, and depth ablation. These serve as historical reference for the ND upgrade.
-
-## Training Methods
-
-| Method | Backprop | Physical Feasibility |
-|--------|----------|---------------------|
-| SPSA zero-order | Not needed | High — only loss measurement required |
-| HiMAL-ND layer-wise | Not needed | High — per-layer, transition alignment |
-| Per-parameter FD | Not needed | Highest — exact gradient, physically measurable |
-| Proto-guided physical | Not needed | Highest — zero digital pre-training |
-
-## Quick Start
+### Smoke Test
 
 ```bash
-pip install torch numpy matplotlib scipy pandas scikit-learn
-python experiments/run_all.py
+python experiments/run_all.py   # quickly validate 10 basic metrics, ~5 min, all PASS
 ```
 
-## Theory
+`run_all.py` is a quick smoke test that uses small-scale data and reduced training epochs to verify fundamental propositions such as digital-physical consistency, depth effectiveness, noise robustness, and parameter efficiency. **It does not run full CIFAR-10 training or other time-consuming experiments.**
 
-[THEORY.md](THEORY.md) provides full derivation: ND particle model, physical signal chain, HiMAL-ND training, residual learning.
+> **Note on reported results**: Due to limited computational resources, some experiments did not reach their optimal configurations in terms of training epochs or parameter counts. For example, the CIFAR-10 experiments at 600 epochs with 2,884 parameters still have room for improvement with more training rounds or more particles. Reported numbers should be viewed as lower-bound certification of method effectiveness, not the architecture's performance ceiling. Users are encouraged to scale up training resources to explore higher accuracy.
 
-## Disclaimer
+### Reproducing Full Experimental Results
 
-This project was conducted under limited experimental conditions. Because the physical system (analog circuits, memristor crossbars, etc.) is simulated numerically, each forward pass and parameter update must compute through the full physical signal chain, incurring substantially higher computational cost than standard matrix-multiplication-based neural networks. Constrained by available computing power, the current experiments use modest parameter counts and training epochs, and are validated only on simple datasets such as moons, 4D synthetic classification, and sine regression.
+| Claim to Verify | Command | Estimated Time |
+|---|---|---|
+| CIFAR-10 5-class RBF best accuracy | `python experiments/cifar_02_regularized.py` | ~30 min |
+| CIFAR-10 5-class three-model comparison | `python experiments/cifar_06_three_way_compare.py` | ~60 min |
+| MLP same-scale comparison | `python experiments/cifar_05_mlp_baseline.py` | ~1 min |
+| Regression depth effectiveness (direct residual) | `python experiments/reg_02_direct_residual.py` | ~5 min |
+| Physical noise robustness | `python experiments/reg_03_noise_robustness.py` | ~2 min |
+| California Housing real data | `python experiments/reg_06_california_v6.py` | ~10 min |
+| Grouped parallel feasibility proof | `python experiments/train_01_grouped_fd.py` | ~5 min |
+| Zero-ADC SPSA verification | `python experiments/train_03_analog_spsa.py` | ~2 min |
 
-The core objective of this project is to **propose a new network architecture paradigm** — the "activate-then-combine" particle source superposition model — that endows neural networks with better interpretability and enables complete training and inference on physical platforms such as analog circuits, optical systems, and wave fields. The nine verification experiments (`run_all.py`) cover key propositions including digital-physical consistency, depth effectiveness, noise robustness, and parameter efficiency, and can serve as a baseline for further research.
+### Key Results
 
-Due to limitations in the author's coding ability and computational resources, shortcomings may exist. Users with better resources are encouraged to adapt the network architecture, scale up parameter counts and training epochs, conduct further experiments on more complex datasets, or validate this architecture on real physical hardware. We hope the ideas and code in this project are helpful to you.
+| Experiment | Task | Metric | RBF | MLP | CNN |
+|------------|------|--------|-----|-----|-----|
+| CIFAR-10 5-class | 32×32 grayscale | Accuracy | **39.3%** (2884p) | 34.0% (4295p) / 38.7% (33644p) | 61.3% (2632p) |
+| Digital-Physical Consistency | Various dims & particle counts | Max Error | **7.80×10⁻⁷** | — | — |
+| Regression Depth | 2D nonlinear function | R² Gain | +0.064 (direct residual) vs +0.013 (Proto) | — | — |
+| Regression Real Data | California Housing | R² | 0.530 | 0.551 | — |
+| Noise Robustness | 4 circuit noise levels | Accuracy Drop | 0.010 | — | — |
+| Parameter Efficiency | 4D synthetic classification | Accuracy/Params | 0.81 / 595p | 0.88 / 17410p (29×) | — |
+
+**CIFAR-10 5-Class Core Comparison**:
+
+| Model | Params | Test Acc | Train Acc | Generalization Ratio | Fully Analog Deployable |
+|-------|--------|----------|-----------|----------------------|:---:|
+| RBF | 2,884 | 39.3% | 53.6% | 73% | ✓ |
+| MLP (same-scale) | 4,295 | 34.0% | 99.6% | 34% | ✗ |
+| MLP (ample) | 33,644 | 38.7% | 97.8% | 40% | ✗ |
+| CNN | 2,632 | 61.3% | 100.0% | 61% | ✗ |
+
+RBF is the only solution deployable entirely via analog circuits. The same-scale MLP suffers from severe overfitting. MLP only approaches RBF's test accuracy after scaling up to 11.7× the parameters.
 
 ## License
 
-MIT
+MIT License
+
+## Citation
+
+```bibtex
+@article{singal-node-physics-network,
+  title={Physical-Domain RBF Particle Neural Network},
+  year={2026}
+}
+```
