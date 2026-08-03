@@ -3,7 +3,6 @@
 [![CI](https://github.com/usecodeandaiforstudy/singal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/singal-node-physics-network/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
-[![Last Commit](https://img.shields.io/github/last-commit/usecodeandaiforstudy/singal-node-physics-network)](https://github.com/usecodeandaiforstudy/singal-node-physics-network)
 
 ## Introduction
 
