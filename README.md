@@ -1,5 +1,10 @@
 # Physical-Domain RBF Particle Neural Network
 
+[![CI](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
+[![Last Commit](https://img.shields.io/github/last-commit/usecodeandaiforstudy/signal-node-physics-network)](https://github.com/usecodeandaiforstudy/signal-node-physics-network)
+
 ## Introduction
 
 > A novel neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.

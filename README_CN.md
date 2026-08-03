@@ -1,5 +1,10 @@
 # 物理域 RBF 粒子神经网络
 
+[![CI](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
+[![Last Commit](https://img.shields.io/github/last-commit/usecodeandaiforstudy/signal-node-physics-network)](https://github.com/usecodeandaiforstudy/signal-node-physics-network)
+
 ## 📖 简介
 
 > 一种基于物理场叠加原理的新型神经网络架构——每个"神经元"是 D 维空间中可移动的粒子，非线性来自粒子与输入的空间距离。本架构可映射到多种物理平台（模拟电路、光学系统、波动场等）；本项目选择模拟电路作为实现载体，便于在计算机上进行仿真验证。
