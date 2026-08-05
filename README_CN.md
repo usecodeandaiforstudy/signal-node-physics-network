@@ -196,12 +196,3 @@ RBF 是唯一可全模拟电路部署的方案；同量级 MLP 严重过拟合�
 ## 📝 许可证
 
 MIT License
-
-## 📖 引用
-
-```bibtex
-@article{singal-node-physics-network,
-  title={Physical-Domain RBF Particle Neural Network},
-  year={2026}
-}
-```

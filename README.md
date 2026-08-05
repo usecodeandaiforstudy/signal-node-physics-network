@@ -196,12 +196,3 @@ RBF is the only solution deployable entirely via analog circuits. The same-scale
 ## License
 
 MIT License
-
-## Citation
-
-```bibtex
-@article{singal-node-physics-network,
-  title={Physical-Domain RBF Particle Neural Network},
-  year={2026}
-}
-```
