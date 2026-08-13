@@ -122,6 +122,7 @@ singal-node-physics-network/
 │
 ├── experiments/
 │   ├── run_all.py                  #   快速冒烟测试（10 项基本验证，约 5 分钟）
+│   ├── download_cifar.py           #   下载 CIFAR-10 数据集到 cifar/ 目录
 │   ├── ref2d/                      #   简单 2D 参考实现（13 files，仅供入门参考）
 │   ├── reg_01_proto_baseline.py    #   三通道架构 + Proto 残差基线
 │   ├── reg_02_direct_residual.py   #   直接残差使深度生效
@@ -143,6 +144,7 @@ singal-node-physics-network/
 │   └── ...（到 nd_09_spsa_benchmark.py，共 9 files）
 │
 ├── outputs/                        # 实验输出
+├── cifar/                          # CIFAR-10 数据（由 download_cifar.py 下载，gitignore）
 └── reference/                      # 参考文献与实验总结（gitignore）
 ```
 
@@ -159,6 +161,14 @@ python experiments/run_all.py   # 快速验证 10 项基本指标，约 5 分钟
 > **关于实验结果的说明**：受限于计算资源，部分实验的训练轮次和参数规模未达到最优配置。例如 CIFAR-10 分类实验的 600 epochs 和 2884 参数，在更大的训练轮次或更多粒子数下仍有提升空间。当前报告的数字应视为方法有效性的下界认证，而非该架构的性能上限。使用者可在此基础上增加训练资源以探索更高精度。
 
 ### 复现完整实验结果
+
+运行 CIFAR-10 相关实验前，需先下载数据集（约 180MB）：
+
+```bash
+python experiments/download_cifar.py
+```
+
+如果你已手动下载过 CIFAR-10，也可直接将解压后的数据放到项目根目录的 `cifar/` 目录即可。
 
 | 要验证的结论 | 运行命令 | 预计耗时 |
 |---|---|---|

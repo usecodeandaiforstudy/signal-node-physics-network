@@ -2,6 +2,9 @@
 reference/
 v2/
 
+# Downloaded datasets (run experiments/download_cifar.py to fetch)
+cifar/
+
 # Experiment outputs
 test_outputs/
 outputs/

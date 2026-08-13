@@ -41,7 +41,7 @@ REPORT_FILE = os.path.join(OUT_DIR, "e21_regularized_report.txt")
 PLOT_FILE   = os.path.join(OUT_DIR, "e21_regularized_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))), "reference", "annode", "cidata", "cifar-10-batches-py")
+    os.path.abspath(__file__))), "cifar")
 CLASS_NAMES = ["airplane", "automobile", "bird", "cat", "deer",
                "dog", "frog", "horse", "ship", "truck"]
 

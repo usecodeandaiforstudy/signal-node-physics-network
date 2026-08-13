@@ -38,7 +38,7 @@ REPORT_FILE = os.path.join(OUT_DIR, "e24_mlp_baseline_report.txt")
 PLOT_FILE   = os.path.join(OUT_DIR, "e24_mlp_baseline_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))), "reference", "annode", "cidata", "cifar-10-batches-py")
+    os.path.abspath(__file__))), "cifar")
 CLASS_NAMES = ["airplane", "automobile", "bird", "cat", "deer",
                "dog", "frog", "horse", "ship", "truck"]
 
