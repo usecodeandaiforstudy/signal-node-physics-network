@@ -122,6 +122,7 @@ singal-node-physics-network/
 │
 ├── experiments/
 │   ├── run_all.py                  #   quick smoke test (10 basic validations, ~5 min)
+│   ├── download_cifar.py           #   download CIFAR-10 dataset to cifar/ directory
 │   ├── ref2d/                      #   simple 2D reference implementations (13 files, for introductory reference)
 │   ├── reg_01_proto_baseline.py    #   three-channel architecture + Proto residual baseline
 │   ├── reg_02_direct_residual.py   #   direct residual enables depth effectiveness
@@ -143,6 +144,7 @@ singal-node-physics-network/
 │   └── ...（up to nd_09_spsa_benchmark.py, 9 files total）
 │
 ├── outputs/                        # experiment outputs
+├── cifar/                          # CIFAR-10 data (downloaded by download_cifar.py, gitignored)
 └── reference/                      # references and experiment summaries (gitignored)
 ```
 
@@ -159,6 +161,14 @@ python experiments/run_all.py   # quickly validate 10 basic metrics, ~5 min, all
 > **Note on reported results**: Due to limited computational resources, some experiments did not reach their optimal configurations in terms of training epochs or parameter counts. For example, the CIFAR-10 experiments at 600 epochs with 2,884 parameters still have room for improvement with more training rounds or more particles. Reported numbers should be viewed as lower-bound certification of method effectiveness, not the architecture's performance ceiling. Users are encouraged to scale up training resources to explore higher accuracy.
 
 ### Reproducing Full Experimental Results
+
+Before running CIFAR-10 experiments, download the dataset first (~180MB):
+
+```bash
+python experiments/download_cifar.py
+```
+
+If you have already downloaded CIFAR-10, you can simply place the extracted data into the `cifar/` directory at the project root.
 
 | Claim to Verify | Command | Estimated Time |
 |---|---|---|
