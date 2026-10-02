@@ -280,10 +280,20 @@ State this in the design, measure the trade, keep the linear option available.
 measured control variable (section 6.8), and it is the quantity the design moves.
 
 **C4 — the extension must degenerate exactly to the base version** under
-`k = m`, shared geometry, combination = selection, `A = I`. This is the single most
-valuable test in the whole programme, because it is a bit-level correctness anchor:
-if the special case does not reproduce the base numbers, the new code is wrong and
+`k = m`, shared geometry, combination = selection, `C = I`.  This is the single most
+valuable test in the whole programme, because it is a correctness anchor: if the
+special case does not reproduce the base numbers, the new code is wrong and
 nothing else it reports can be trusted.
+
+> **Measured correction (ext_01, and it changes what C4 may claim).**  "Bit for bit"
+> is achievable only when a stage has **`n_vars == 1`**.  Above that the base
+> evaluates all rows in ONE `(B,N)x(N,V)` BLAS call while the extension stacks
+> single-row reads, so the float32 results differ in the last bits.  Measured on
+> arch G: `1.8e-07` relative on the circuit cell (float32 agreement, not identity)
+> and exactly `0.0` on the diffusion cell; on arch F2 both substrates are exactly
+> `0.0`.  The anchor therefore asserts identity where it is attainable and float32
+> agreement elsewhere, and **reports which case it was** — quietly loosening the
+> tolerance for every case would hide a real wiring error.
 
 ## 7. Open questions, to settle before coding
 

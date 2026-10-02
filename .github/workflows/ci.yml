@@ -66,3 +66,41 @@ jobs:
       run: |
         python experiments/run_all.py
       timeout-minutes: 20
+
+  # ---------------------------------------------------------------------------
+  # The EXTENSION is a SEPARATE job on purpose.
+  #
+  # It is not part of the base version's guarantee, so putting it in the matrix
+  # above would multiply its cost by three Python versions for no benefit.  It
+  # also needs only numpy: experiments/abl_common.py imports numpy and the two
+  # substrate packages, and simulator/layer_nd.py imports torch lazily inside
+  # methods -- so no torch install here, unlike the base job (whose sub_01
+  # --assert does build a digital reference model and therefore needs torch).
+  #
+  # The step below is the correctness ANCHOR, not a smoke test: the extension
+  # must reproduce the base version in the degenerate configuration
+  # (k = m, shared geometry, C = I).  If it does not, every later extension
+  # number is measured against the wrong baseline, so this is the cheapest and
+  # most valuable gate the extension has.
+  # ---------------------------------------------------------------------------
+  extension:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy
+
+    - name: Extension correctness anchor (degenerate case must match the base)
+      run: |
+        python extensions/multigraph/ext_01_baseline.py --assert
+      timeout-minutes: 10
