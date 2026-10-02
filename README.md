@@ -4,6 +4,31 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
 
+---
+
+> ## ⚠️ Status: six claims on this page have been measured and retracted
+>
+> This README predates the experiments in [`FINDINGS.md`](FINDINGS.md), which is the
+> current statement of what the project establishes. **Read
+> [FINDINGS.md section 9](FINDINGS.md) before citing anything below.** In short:
+>
+> | claim on this page | measured status |
+> |---|---|
+> | "39.3% on CIFAR-10 (SOTA-class result)" | Not SOTA: 5 of 10 classes, grayscale, 100 images per class, and the model is selected on the **test** set ("peak test accuracy") — as are the MLP and CNN baselines |
+> | "digital-physical discrepancy 7.80×10⁻⁷" | That number is float32 rounding plus a `+1e-8` guard in the partition-of-unity divide. It is **not** a physical-fidelity statement. The kernel is now verified against an independent PDE solve instead |
+> | "proves parameter-group independence" | The cited experiment (`experiments/train_01_grouped_fd.py`) indexed particles with the **wrong convention** (fixed now; results must be regenerated). Measured properly: independence holds **exactly** without normalisation and is **false** under the PU normalisation the classification path uses |
+> | "K parameter groups = K hardware channels, no mutual dependency" | Same as above — coupling under PU measures 0.063–0.261 |
+> | "analog gradient chain (O(1) latency)" | Those functions are **defined but never called** anywhere in the repository |
+> | "four hardware complexity levels (0 ADC / 1 ADC / …)" | Superseded: the tiers differ only in how the *geometry* is optimised. The source strengths should be **calibrated in closed form, not searched** |
+>
+> What replaced them is stronger and is measured: a second, PDE-verified physical
+> substrate; a substrate cost model; and a training rule — **calibrate the source
+> strengths, spend every physical measurement on the geometry** — that buys the
+> same accuracy for **15–30× fewer measurements**. See
+> [`FINDINGS.md`](FINDINGS.md).
+
+---
+
 ## Introduction
 
 > A novel neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.
@@ -11,19 +36,19 @@
 This project explores the feasibility of executing the complete pipeline from training to inference of neural networks within physical systems. The core design is "activate first, then combine": particles first produce a Gaussian response to the input, then linearly superimpose — nonlinearity arises from the spatial distance between particles and inputs, rather than from a fixed activation function. The network supports classification, regression, and high-dimensional image processing, offering multiple training methods including SPSA, finite differences, and digital twins. All forward operations have corresponding analog circuit implementations, and digital-to-physical export achieves extremely high precision.
 
 Key achievements:
-- Achieves 39.3% classification accuracy on CIFAR-10 (5 classes) with only 2,884 parameters, surpassing an equivalently sized MLP (34.0%), with a generalization ratio of 73% — the highest among the three compared models
-- Digital-physical simulator discrepancy of only 7.80×10⁻⁷; weights can be directly exported from PyTorch to the physical simulator
-- Proves parameter-group independence — RBF particle output contributions are mutually independent, naturally supporting multi-channel hardware parallel training
-- Effective gradient estimation achieved across four hardware complexity levels (0 ADC / 1 ADC / fully analog gradient chain / digital twin)
+- Achieves 39.3% classification accuracy on CIFAR-10 (5 classes) with only 2,884 parameters, surpassing an equivalently sized MLP (34.0%), with a generalization ratio of 73% — the highest among the three compared models *(retracted: see the status box above and [FINDINGS.md](FINDINGS.md) §9.4 — not SOTA, and the model was selected on the test set)*
+- Digital-physical simulator discrepancy of only 7.80×10⁻⁷; weights can be directly exported from PyTorch to the physical simulator *(retracted: that is float32 rounding plus a PU epsilon, not physical fidelity — [FINDINGS.md](FINDINGS.md) §9.2. Weight export itself does hold, and is now demonstrated across two unrelated substrates)*
+- Proves parameter-group independence — RBF particle output contributions are mutually independent, naturally supporting multi-channel hardware parallel training *(retracted and replaced by a measurement: independence is exact without normalisation, false under PU — [FINDINGS.md](FINDINGS.md) §7)*
+- Effective gradient estimation achieved across four hardware complexity levels (0 ADC / 1 ADC / fully analog gradient chain / digital twin) *(the analog gradient chain is dead code and the ADC interface is never called; the four tiers differ only in how the geometry is optimised — [FINDINGS.md](FINDINGS.md) §9)*
 
 ## Features
 
 - 🧠 **Physically Deployable**: Every operation (distance, Gaussian kernel, MVM, gradient estimation) has a corresponding analog circuit; fully analog inference with zero digital dependency
 - 🔬 **Digital-Physical Equivalence**: The physical simulator is mathematically exactly equivalent to the PyTorch model, supporting direct weight export
 - 🖼️ **Breaking the High-Dimensional Barrier**: 3D structured encoding enables RBF to process 1024-dimensional images, with 2,884 parameters outperforming a larger MLP on the same task
-- ⚡ **Backpropagation-Free Training**: SPSA (0 ADC) / per-parameter FD (1 ADC) / analog gradient chain (O(1) latency)
-- 🔀 **Inherently Highly Parallel**: Parameter groups are independent; K parameter groups = K hardware channels trainable in parallel, with no mutual dependency
-- 🛡️ **Physically Noise-Robust**: Accuracy drops by only 0.01 across four levels of circuit noise, adapting to real hardware non-idealities
+- ⚡ **Backpropagation-Free Training**: SPSA (0 ADC) / per-parameter FD (1 ADC) / analog gradient chain (O(1) latency) *(the gradient chain is defined but never called — see the status box)*
+- 🔀 **Inherently Highly Parallel**: Parameter groups are independent; K parameter groups = K hardware channels trainable in parallel, with no mutual dependency *(holds without normalisation; false under PU — [FINDINGS.md](FINDINGS.md) §7)*
+- 🛡️ **Physically Noise-Robust**: Accuracy drops by only 0.01 across four levels of circuit noise, adapting to real hardware non-idealities *(that measurement was taken on the training set; see [FINDINGS.md](FINDINGS.md) §6.2 for the device-robustness result that replaced it)*
 
 ## Architecture Overview
 
@@ -183,16 +208,30 @@ If you have already downloaded CIFAR-10, you can simply place the extracted data
 
 ### Key Results
 
+> Every row below except the last two is **superseded**; see the status box at the
+> top and [`FINDINGS.md`](FINDINGS.md). Kept for provenance, not for citation.
+
 | Experiment | Task | Metric | RBF | MLP | CNN |
 |------------|------|--------|-----|-----|-----|
-| CIFAR-10 5-class | 32×32 grayscale | Accuracy | **39.3%** (2884p) | 34.0% (4295p) / 38.7% (33644p) | 61.3% (2632p) |
-| Digital-Physical Consistency | Various dims & particle counts | Max Error | **7.80×10⁻⁷** | — | — |
-| Regression Depth | 2D nonlinear function | R² Gain | +0.064 (direct residual) vs +0.013 (Proto) | — | — |
+| CIFAR-10 5-class | 32×32 grayscale | Accuracy | **39.3%** (2884p) *(test-set model selection — [FINDINGS.md](FINDINGS.md) §9.4)* | 34.0% (4295p) / 38.7% (33644p) | 61.3% (2632p) |
+| Digital-Physical Consistency | Various dims & particle counts | Max Error | **7.80×10⁻⁷** *(float32 + PU epsilon, not physical fidelity — §9.2)* | — | — |
+| Regression Depth | 2D nonlinear function | R² Gain | +0.064 (direct residual) vs +0.013 (Proto) *(not reproduced; `residual_mode="direct"` now exists in `training/himal_nd.py` so it can be re-measured)* | — | — |
 | Regression Real Data | California Housing | R² | 0.530 | 0.551 | — |
-| Noise Robustness | 4 circuit noise levels | Accuracy Drop | 0.010 | — | — |
+| Noise Robustness | 4 circuit noise levels | Accuracy Drop | 0.010 *(measured on the training set — §6.2 supersedes)* | — | — |
 | Parameter Efficiency | 4D synthetic classification | Accuracy/Params | 0.81 / 595p | 0.88 / 17410p (29×) | — |
 
-**CIFAR-10 5-Class Core Comparison**:
+**Current results** (measured, reproducible — see [`FINDINGS.md`](FINDINGS.md)):
+
+| Result | Metric | Value |
+|---|---|---|
+| Calibrate strengths + measure geometry, vs searching either | measurements to reach R² = 0.30 | **15–30× fewer** |
+| Same, at 3 000 measurements | test R² | **+0.39 / +0.53 / +0.54** vs ≤ +0.06 for every search arm |
+| Capacity split, equal measurement cost | winner | readout, 8/8 architecture×protocol cells (parameter-count rule) |
+| Particle independence | activation coupling | exact 0 without normalisation; 0.063–0.261 under PU |
+| Second substrate | kernel vs independent PDE solve | 1.62e-05 (the solver's own error) |
+| Calibration robustness | device levels survived | 8/8, while charged 2.11× the measurement budget |
+
+**CIFAR-10 5-Class Core Comparison** *(superseded — test-set model selection; kept for provenance)*:
 
 | Model | Params | Test Acc | Train Acc | Generalization Ratio | Fully Analog Deployable |
 |-------|--------|----------|-----------|----------------------|:---:|

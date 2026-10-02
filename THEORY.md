@@ -1,5 +1,36 @@
 # RBF Particle Neural Network: Architecture and Principles
 
+---
+
+> ## ⚠️ Status: parts of this document are superseded
+>
+> [`FINDINGS.md`](FINDINGS.md) is the current statement of what the project
+> establishes, with measured numbers. Before citing anything here, read
+> [FINDINGS.md section 9](FINDINGS.md). Retracted or corrected in this document:
+>
+> * §7.x "digital-physical consistency 7.80×10⁻⁷" — that is float32 rounding plus
+>   a partition-of-unity epsilon, not physical fidelity. The kernel is now
+>   verified against an independent PDE solve instead (1.6e-05, which is the
+>   solver's own error).
+> * §9.x "39.3% (SOTA)" — 5 of 10 classes, grayscale, and the model was selected
+>   on the **test** set. Not a SOTA figure.
+> * §10.x "`train_01` proves parameter-group independence" — that script indexed
+>   particles with the wrong convention (now fixed; rerun before citing). Measured
+>   properly, independence is **exact without normalisation** and **false under
+>   PU**, which is what the classification path uses.
+> * §11.x "analog gradient chain, latency O(1)" — those functions are **defined
+>   but never called** anywhere in the repository. The receiver-ADC path is never
+>   called either.
+> * The depth claim: equal-particle 1-layer reached 1.000 against 0.983 for
+>   3-layer in the repository's own verification suite.
+>
+> **What replaces them**, measured: the source strengths should be **calibrated in
+> closed form, not searched**, and every physical measurement should go into the
+> geometry — the same accuracy for **15–30× fewer measurements**, robust at 8/8
+> device levels. See [`FINDINGS.md`](FINDINGS.md) §6.
+
+---
+
 ## 0. Core Design Philosophy
 
 ### 0.1 "Activate Then Combine" — Reversing the Standard Network Paradigm
@@ -300,10 +331,10 @@ All findings below are verified by `experiments/run_all.py` (10/10 experiments P
 
 | Experiment | Finding |
 |------------|---------|
-| Digital-physical consistency | Physical simulator matches PyTorch digital model, max error 7.80×10⁻⁷ |
-| FD classification depth | moons L1-only=0.92 → Full 3L=0.94, depth contributes +0.020 |
+| Digital-physical consistency | Physical simulator matches PyTorch digital model, max error 7.80×10⁻⁷ *(retracted — that is float32 + a PU epsilon, not physical fidelity; see [FINDINGS.md](FINDINGS.md) §9.2)* |
+| FD classification depth | moons L1-only=0.92 → Full 3L=0.94, depth contributes +0.020 *(the repository's own equal-particle ablation later gave 1-layer 1.000 vs 3-layer 0.983, i.e. the opposite sign)* |
 | FD regression depth | Residual training effective: proto_y magnitude 0.922→0.768→0.759 decreasing |
-| Noise robustness | CombinedHiMALRBF across 4 noise levels (none/low/med/high), accuracy degrades only 0.010 |
+| Noise robustness | CombinedHiMALRBF across 4 noise levels (none/low/med/high), accuracy degrades only 0.010 *(measured on the training set; superseded by [FINDINGS.md](FINDINGS.md) §6.2)* |
 | 2D RBF classification (reference) | ResidualRBFNetwork, 8/6/4 particles, 120ep BP, moons acc=0.950 |
 | Parameter efficiency | RBF(595p, 2D-only) vs MLP(17410p, 4D): 0.81 vs 0.88, 29× fewer params, <10% accuracy gap |
 | 2D RBF digital baseline (reference) | ResidualRBFNetwork, 10/6/4 particles, 120ep, acc=0.970 |
@@ -337,13 +368,13 @@ All findings below are verified by `experiments/run_all.py` (10/10 experiments P
 | Experiment | Configuration | Accuracy | Key Finding |
 |------------|--------------|----------|-------------|
 | cifar_01 | First RBF on CIFAR, 3D point-cloud encoding, 2884 particles | 37.3% | Digital-physical gap only 0.000015 |
-| cifar_02 | +physical regularization | **39.3% (SOTA)** | Physical regularization adds +2.0 percentage points |
+| cifar_02 | +physical regularization | **39.3% (SOTA)** | Physical regularization adds +2.0 percentage points *(retracted: not SOTA — 5 classes, grayscale, test-set model selection; [FINDINGS.md](FINDINGS.md) §9.4)* |
 | cifar_03 | Regularization ablation | — | Regularization only helps when needed (overfitting scenarios) |
 | cifar_04 | Capacity analysis | — | 2884 parameter count constitutes a capacity bottleneck |
 | cifar_05 | MLP control (matched parameters) | 34.0% | MLP severely overfits at same parameter scale |
 | cifar_06 | Final comparison: RBF vs MLP vs CNN | RBF 39.3%, MLP 38.7%, CNN 61.3% | RBF outperforms MLP with 11.7× fewer parameters; CNN provides architecture upper bound |
 
-Key conclusion: The RBF particle network achieves 39.3% best accuracy on CIFAR-10 (2884 particles), significantly outperforming MLP at matched parameter scale (11.7× parameter efficiency advantage), with CNN (61.3%) representing the theoretical upper bound at this parameter budget.
+Key conclusion: The RBF particle network achieves 39.3% best accuracy on CIFAR-10 (2884 particles), significantly outperforming MLP at matched parameter scale (11.7× parameter efficiency advantage), with CNN (61.3%) representing the theoretical upper bound at this parameter budget. *(Retracted: the 39.3% is not SOTA — 5 of 10 classes, grayscale, 100 images per class, and all three models selected on the test set. See [FINDINGS.md](FINDINGS.md) §9.4.)*
 
 ### 7.3 Regression Depth Gain
 
@@ -372,6 +403,14 @@ reg_04 (Simplest FD verification R²=0.94)
           └──→ reg_02 (Direct residual, depth gain 5x +0.064)
                   └──→ reg_06 (Real-world data baseline R²=0.530)
 ```
+
+> **Note on the direct-residual claim.** `reg_02` is a standalone script; the
+> production trainer `training/himal_nd.py` kept using the **proto** residual
+> accumulation, so the "+0.064 vs +0.013" comparison was never adopted in the
+> main path. A `residual_mode="direct"` option now exists in `HiMALND` so the
+> comparison can be re-measured; the default remains `"proto"` because the 5×
+> claim has not been reproduced in this codebase (a short check gave the right
+> *direction* but nowhere near that magnitude).
 
 ***
 
@@ -571,6 +610,16 @@ $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf
 
 **Grouped parallelism** (Experiments train_01 / train_02): Partition parameters into K groups. train_01 (grouped FD) proves parameter group independence, meaning K parallel hardware circuits can train independently; train_02 (grouped SPSA) measures equivalent speedup of >20× while maintaining accuracy:
 
+> **Correction.** The index convention in both scripts was wrong: they grouped
+> dimension `d` of several different particles rather than all dimensions of one
+> particle (the parameter vector layout is `centers.ravel()` of a `(D, N)` array,
+> so particle `p` sits at `d*N + p`, not `p*D + d`). Both scripts are fixed; their
+> previously reported numbers must be regenerated. The claim itself was then
+> measured independently: under the partition-of-unity normalisation that the
+> classification path uses, particle activations are **coupled**
+> (0.063–0.261), and only without normalisation are they exactly independent.
+> See [FINDINGS.md](FINDINGS.md) §7.
+
 | Experiment | Method | Core Finding |
 |-----------|--------|--------------|
 | train_01 (formerly E13) | Grouped per-parameter FD | Parameter group independence proven, K× parallel feasible |
@@ -595,7 +644,21 @@ $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf
 | Latency | O(1), independent of parameter count |
 | Hardware complexity | Highest |
 
-**This is the only scheme that simultaneously obtains exact gradients during forward propagation** — physically implementing the chain rule of backpropagation.
+> **Implementation status.** This method is **not implemented**. The functions
+> that would realise it — `analog_gradient_mac`, `analog_center_gradient`,
+> `analog_width_gradient`, `analog_weight_gradient` in
+> `physical_simulator/components.py` — are defined and re-exported, but there is
+> **no call site anywhere in the repository**, and no experiment trains with
+> them. The same applies to the receiver-ADC path (`analog_adc`,
+> `analog_loss_readout`), so the "1 ADC" tier is nominal as well. Either implement
+> and measure this method, or remove it from the feature list; see
+> [FINDINGS.md](FINDINGS.md) §9.
+>
+> Note also that with the training rule found in [FINDINGS.md](FINDINGS.md) §6 the
+> gradient chain would only ever be needed for the **geometry** — the source
+> strengths should be calibrated in closed form instead of differentiated.
+
+**This is the only scheme that simultaneously obtains exact gradients during forward propagation** — physically implementing the chain rule of backpropagation. *(Claim only; not implemented — see the note above.)*
 
 ### Method D: Digital Twin (PyTorch autograd) — Rapid Prototyping
 
