@@ -22,11 +22,22 @@ cifar/
 # caches), outputs/acl_diag/, and the legacy eNN_* reports, which are the live
 # outputs of the older experiment scripts -- experiments/cifar_07_4d_rgb.py READS
 # outputs/e18_digital_physical_report.txt, so those must not be moved or deleted.
-outputs/*
-!outputs/abl_*.txt
-!outputs/abl_*.png
-!outputs/sub_01_*.txt
-!outputs/sub_01_*.png
+# The patterns below are ANCHORED with a leading slash on purpose.  Unanchored,
+# `outputs/*` and its negations match a directory named `outputs` at ANY depth,
+# so `experiments/outputs/abl_something.txt` would have been whitelisted too.
+# Verified with `git check-ignore -v`: an unanchored negation did let a nested
+# copy through.  Anchoring keeps the whitelist to the repository's own outputs/.
+/outputs/*
+!/outputs/abl_*.txt
+!/outputs/abl_*.png
+!/outputs/sub_01_*.txt
+!/outputs/sub_01_*.png
+
+# experiments/cifar_07_4d_rgb.py resolves its OUT_DIR relative to itself, so when
+# it is run from inside experiments/ it writes here instead of outputs/.  That
+# script is not tracked yet (its inclusion was never decided), so neither are its
+# artefacts -- ignore them rather than leaving two permanently-untracked files.
+experiments/outputs/
 
 test_outputs/
 
