@@ -39,7 +39,30 @@ jobs:
       run: |
         pip install -e .
 
-    - name: Run smoke test (run_all)
+    # -- The two steps below are the regression guard for FINDINGS.md. --------
+    # They run BEFORE the legacy smoke test so a broken claim fails fast.
+    #
+    # sub_01 --assert enforces the physical thresholds that FINDINGS sections 2,
+    # 3 and 8 rest on (kernel vs an independent PDE solve, exact superposition,
+    # mandatory amplitude calibration, the readout cost ratio).  Without
+    # --assert that suite only PRINTS its numbers, so a rewrite could break a
+    # claim and still exit 0.
+    - name: Substrate verification (enforced thresholds)
+      run: |
+        python experiments/sub_01_diffusion_verify.py --assert
+      timeout-minutes: 10
+
+    # Every ablation calls abl_common.selftest(), which asserts that the forward
+    # path is bit-identical to the production layer and that the two substrates
+    # agree; so this catches harness rot as well as crashes.  --quick is a
+    # PIPELINE smoke test: its numbers are deliberately not the ones in FINDINGS
+    # (reproducing those takes ~6.5 h; see `abl_run_all.py --list`).
+    - name: Ablation smoke test (all seven ablations, tiny settings)
+      run: |
+        python experiments/abl_run_all.py --quick
+      timeout-minutes: 25
+
+    - name: Legacy smoke test (run_all)
       run: |
         python experiments/run_all.py
       timeout-minutes: 20
