@@ -1,1 +1,22 @@
 * text=auto
+
+# Binary artefacts: never diff, never normalise, never merge.  Without these, a
+# PNG would be treated as text and a merge could corrupt it.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.pdf   binary
+*.npz   binary
+*.npy   binary
+*.pkl   binary
+*.pt    binary
+*.pth   binary
+*.zip   binary
+
+# The ablation reports are GENERATED evidence, not hand-written source.  Marking
+# them generated keeps them out of language statistics without hiding their
+# contents from review -- do NOT add `-diff` here: being able to read the diff of a
+# regenerated report is the reason for tracking it at all.
+outputs/abl_*.txt    linguist-generated=true
+outputs/sub_01_*.txt linguist-generated=true

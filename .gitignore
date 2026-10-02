@@ -1,13 +1,34 @@
-# Reference data (not for version control)
+# Local scratch.  Move unwanted-but-not-deletable files here: reference/ is
+# ignored, so nothing in it reaches the repository, and nothing is destroyed.
 reference/
 v2/
 
 # Downloaded datasets (run experiments/download_cifar.py to fetch)
 cifar/
 
-# Experiment outputs
+# Experiment outputs.
+#
+# `outputs/*` rather than `outputs/`: ignoring the DIRECTORY would make git skip
+# it entirely, and no `!` negation inside it could ever take effect.  Ignoring the
+# CONTENTS lets the evidence below be tracked while caches and legacy reports stay
+# out.
+#
+# Tracked on purpose (FINDINGS.md cites these as its evidence; without them a
+# fresh clone has a conclusions page pointing at files that do not exist):
+#   outputs/abl_*.txt    ablation reports  (sections 5, 6, 8, 11)
+#   outputs/abl_*.png    their figures
+#   outputs/sub_01_*     the substrate verification suite (sections 2, 3, 8)
+# Everything else under outputs/ is ignored: outputs/abl_cache/ (137 model
+# caches), outputs/acl_diag/, and the legacy eNN_* reports, which are the live
+# outputs of the older experiment scripts -- experiments/cifar_07_4d_rgb.py READS
+# outputs/e18_digital_physical_report.txt, so those must not be moved or deleted.
+outputs/*
+!outputs/abl_*.txt
+!outputs/abl_*.png
+!outputs/sub_01_*.txt
+!outputs/sub_01_*.png
+
 test_outputs/
-outputs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
