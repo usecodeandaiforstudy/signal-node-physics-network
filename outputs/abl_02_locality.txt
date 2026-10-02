@@ -1,0 +1,82 @@
+==================================================================
+  Ablation B - Particle independence vs normalisation
+  substrate=circuit task=4d arch=M seeds=1 epochs=40 budget=600
+  2026-10-02 13:46:42
+==================================================================
+
+--- Part 0: forward-chain self-test ---
+
+  arch M (balanced): full arm = 444 params -> 600 probes/epoch (1200 forward passes), 1.35 sweeps/epoch
+
+==================================================================
+  M1: ACTIVATION COUPLING  (the literal README claim)
+==================================================================
+  ratio[i,j] = how much particle i's activation responds to particle j's
+  parameters, as a fraction of its response to its own parameters.
+  Non-coupling architectures MUST give exactly 0.00 off-diagonal.
+
+  norm    layer     N block      mean off-diag  max off-diag   verdict
+  ------------------------------------------------------------------------
+  pu      L1       24 geometry       6.313e-02     3.412e-01   COUPLED
+  pu      L1       24 weights        0.000e+00     0.000e+00     LOCAL
+  pu      L2       16 geometry       1.401e-01     1.890e+00   COUPLED
+  pu      L2       16 weights        0.000e+00     0.000e+00     LOCAL
+  pu      L3       12 geometry       2.568e-01     2.822e+00   COUPLED
+  pu      L3       12 weights        0.000e+00     0.000e+00     LOCAL
+  none    L1       24 geometry       0.000e+00     0.000e+00     LOCAL
+  none    L1       24 weights        0.000e+00     0.000e+00     LOCAL
+  none    L2       16 geometry       0.000e+00     0.000e+00     LOCAL
+  none    L2       16 weights        0.000e+00     0.000e+00     LOCAL
+  none    L3       12 geometry       0.000e+00     0.000e+00     LOCAL
+  none    L3       12 weights        0.000e+00     0.000e+00     LOCAL
+  fixed   L1       24 geometry       0.000e+00     0.000e+00     LOCAL
+  fixed   L1       24 weights        0.000e+00     0.000e+00     LOCAL
+  fixed   L2       16 geometry       0.000e+00     0.000e+00     LOCAL
+  fixed   L2       16 weights        0.000e+00     0.000e+00     LOCAL
+  fixed   L3       12 geometry       0.000e+00     0.000e+00     LOCAL
+  fixed   L3       12 weights        0.000e+00     0.000e+00     LOCAL
+
+  Read this table as follows:
+   * off-diagonal == 0 means particle i's activation depends ONLY on its
+     own parameters -> the README independence claim holds literally.
+   * off-diagonal > 0 means the normalisation mixes particles, so a
+     'parallel independent channel' story needs re-qualification.
+   * the weights block never enters z at all, so it is 0 by construction;
+     it is printed as a validity check on the measurement.
+
+==================================================================
+  M2/M3: PARALLEL EQUIVALENCE  (the hardware training claim)
+==================================================================
+  sequential = Gauss-Seidel (probe+update one coordinate at a time)
+  parallel   = Jacobi (probe all from the frozen epoch-start state,
+               then apply every update at once) == K parallel channels
+  Both modes spend exactly 2*|selected| forward passes per epoch.
+
+  norm    update        R2 mean    +-std  gap vs sequential  ||dtheta||/||theta||
+  ------------------------------------------------------------------------------
+  pu      sequential    +0.0191   0.0000            +0.0000                0.0046
+  pu      parallel      +0.0182   0.0000            +0.0009                0.0046
+  none    sequential    +0.3693   0.0000            +0.0000                0.0104
+  none    parallel      +0.3588   0.0000            +0.0105                0.0104
+  fixed   sequential    +0.0236   0.0000            +0.0000                0.0058
+  fixed   parallel      +0.0232   0.0000            +0.0003                0.0058
+
+==================================================================
+  VERDICT
+==================================================================
+  price of locality, norm=pu    : Delta R2 = +0.0009
+  price of locality, norm=none  : Delta R2 = +0.0105
+  price of locality, norm=fixed : Delta R2 = +0.0003
+
+  Prediction NOT confirmed: the PU coupling did not make parallel
+  updates worse than the uncoupled normalisation here. The
+  'independence' narrative is then not the bottleneck -?look at the
+  shared-residual term instead (every particle's gradient needs the
+  same batch residual, which is a global scalar but still global).
+
+  norm=fixed (frozen scale, strictly non-coupling): Delta = +0.0003  <- the configuration to use if you want both
+  bounded activations and a defensible parallel-channel claim.
+
+  Wall time: 151s
+  Plots: F:\singal-node-physics-network\outputs\abl_02_coupling.png
+         F:\singal-node-physics-network\outputs\abl_02_parallel.png

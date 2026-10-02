@@ -1,0 +1,192 @@
+==================================================================
+  Ablation A - Capacity split: geometry vs readout matrix
+  substrate=circuit task=4d archs=['G', 'M', 'W'] arms=['geometry', 'weights', 'hybrid', 'full'] seeds=1 epochs=40 budget=200
+  2026-10-02 13:30:09
+==================================================================
+
+--- Part 0: forward-chain self-test ---
+  both substrates compute the same function from the same parameters,
+  so the numbers below are produced by real physics on either medium
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! SMOKE RUN (--quick): 1 seed, few epochs, small budget.
+  ! These numbers only prove the pipeline runs. They are NOT results.
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+--- Data (4d) ---
+  train=(256, 4) test=(128, 4)  y std=1.247
+
+--- Architecture census (single channel, scalar residual readout) ---
+  G (geometry-dominated ) layers=3 in_dims=[4, 2, 2] out_dims=[2, 2, 1] geom=204 (69%) readout=92 (31%)
+      arm sizes {'geometry': 204, 'weights': 92, 'hybrid': 204, 'full': 296} -> probes/epoch {'geometry': 200, 'weights': 200, 'hybrid': 200, 'full': 200}, sweeps/epoch {'geometry': 0.98, 'weights': 2.17, 'hybrid': 0.98, 'full': 0.68}
+  M (balanced           ) layers=3 in_dims=[4, 4, 4] out_dims=[4, 4, 2] geom=260 (59%) readout=184 (41%)
+      arm sizes {'geometry': 260, 'weights': 184, 'hybrid': 260, 'full': 444} -> probes/epoch {'geometry': 200, 'weights': 200, 'hybrid': 200, 'full': 200}, sweeps/epoch {'geometry': 0.77, 'weights': 1.09, 'hybrid': 0.77, 'full': 0.45}
+  W (matrix-dominated   ) layers=3 in_dims=[4, 16, 8] out_dims=[16, 8, 4] geom=500 (47%) readout=560 (53%)
+      arm sizes {'geometry': 500, 'weights': 560, 'hybrid': 500, 'full': 1060} -> probes/epoch {'geometry': 200, 'weights': 200, 'hybrid': 200, 'full': 200}, sweeps/epoch {'geometry': 0.4, 'weights': 0.36, 'hybrid': 0.4, 'full': 0.19}
+  NOTE: the number of epochs is identical everywhere; the protocol is
+        equal_probes. equal_probes gives equal measurement cost
+        and therefore MORE sweeps to the smaller arm; equal_sweeps gives
+        equal coverage at unequal cost. An arm that wins one and loses
+        the other is more efficient per measurement, not a better
+        representation -- which is why both protocols should be run.
+  [G/geometry seed=0] test R2=+0.0339 probes/ep=200 fwd=16000 calib=0 (10.0s)
+  [G/weights seed=0] test R2=+0.1947 probes/ep=200 fwd=16000 calib=0 (13.5s)
+  [G/hybrid seed=0] test R2=+0.5350 probes/ep=200 fwd=16000 calib=13312 (14.4s)
+  [G/full seed=0] test R2=+0.0851 probes/ep=200 fwd=16000 calib=0 (15.7s)
+  [M/geometry seed=0] test R2=-0.0217 probes/ep=200 fwd=16000 calib=0 (22.7s)
+  [M/weights seed=0] test R2=+0.1325 probes/ep=200 fwd=16000 calib=0 (15.6s)
+  [M/hybrid seed=0] test R2=+0.5727 probes/ep=200 fwd=16000 calib=13312 (22.9s)
+  [M/full seed=0] test R2=+0.0043 probes/ep=200 fwd=16000 calib=0 (15.5s)
+  [W/geometry seed=0] test R2=-0.0153 probes/ep=200 fwd=16000 calib=0 (25.1s)
+  [W/weights seed=0] test R2=-0.0704 probes/ep=200 fwd=16000 calib=0 (19.3s)
+  [W/hybrid seed=0] test R2=+0.4659 probes/ep=200 fwd=16000 calib=13312 (22.5s)
+  [W/full seed=0] test R2=-0.0468 probes/ep=200 fwd=16000 calib=0 (9.9s)
+
+
+==================================================================
+  RESULTS -?test R^2 at equal analog measurement budget
+==================================================================
+  arch  capacity split             arm        params  geom% probes/ep  sweeps   R2 mean   +-std  retained
+  ----------------------------------------------------------------------------------------------------------------
+  G     geometry-dominated         geometry      296    69%       200    0.98   +0.0339  0.0000      0.40
+  G     geometry-dominated         weights       296    69%       200    2.17   +0.1947  0.0000      2.29
+  G     geometry-dominated         hybrid        296    69%       200    0.98   +0.5350  0.0000      6.29
+  G     geometry-dominated         full          296    69%       200    0.68   +0.0851  0.0000      1.00
+  M     balanced                   geometry      444    59%       200    0.77   -0.0217  0.0000       n/a
+  M     balanced                   weights       444    59%       200    1.09   +0.1325  0.0000       n/a
+  M     balanced                   hybrid        444    59%       200    0.77   +0.5727  0.0000       n/a
+  M     balanced                   full          444    59%       200    0.45   +0.0043  0.0000       n/a
+  W     matrix-dominated           geometry     1060    47%       200    0.40   -0.0153  0.0000       n/a
+  W     matrix-dominated           weights      1060    47%       200    0.36   -0.0704  0.0000       n/a
+  W     matrix-dominated           hybrid       1060    47%       200    0.40   +0.4659  0.0000       n/a
+  W     matrix-dominated           full         1060    47%       200    0.19   -0.0468  0.0000       n/a
+  ('retained' = R2_arm / R2_full, shown only when R2_full >= 0.05;
+   otherwise n/a, because a ratio against a non-fitting reference is noise)
+
+  'hybrid' = geometry probed by FD (same budget as the geometry arm)
+             + source strengths CALIBRATED in closed form.
+  W_ij IS the excitation strength of particle j, so the calibration is
+  an offline source-strength setting, not a numerical shortcut.
+  Cost accounting for arch G: the calibration is ONE-TIME
+    physical route : 13312 measurement-equivalents (n_train x sum_k N_k)
+    digital twin   : 0 physical measurements
+    per-epoch FD   : 400 forward passes/epoch x 40 epochs = 16000
+  Compare the one-time cost against the TOTAL FD cost before
+  concluding that calibrating is cheaper -- on this problem it is not;
+  it is cheaper only when the epoch count or the particle count is
+  large.  What it does buy unconditionally is that W is then EXACT.
+
+==================================================================
+  SCALING: test R^2 vs physical measurements consumed
+==================================================================
+  A point estimate at one budget is fragile; the RATE (R^2 bought per
+  measurement) is what a hardware designer needs and is the more
+  publishable form of the result.  One run yields the whole curve.
+
+  Cost model of the x-axis:
+    geometry / weights / full : 2 x budget forward passes per epoch
+    hybrid_once               : same, plus ONE physical calibration
+    hybrid                    : same, calibration assumed
+                                twin-supplied (zero measurement cost)
+                                -- physically refreshing it every
+                                epoch would cost far more than the
+                                FD probing itself and is not a
+                                defensible scheme
+
+  arch  arm                  3000       10000       25000       50000      100000
+  -------------------------------------------------------------------------------
+  G     geometry          -0.3507     +0.0011     +0.0339     +0.0339     +0.0339
+  G     weights           -0.0026     +0.1029     +0.1947     +0.1947     +0.1947
+  G     hybrid            +0.4939     +0.5441     +0.5350     +0.5350     +0.5350
+  G     full              -0.1669     +0.0242     +0.0851     +0.0851     +0.0851
+  M     geometry          -0.1869     -0.0684     -0.0217     -0.0217     -0.0217
+  M     weights           -0.1013     +0.0259     +0.1325     +0.1325     +0.1325
+  M     hybrid            +0.5128     +0.5618     +0.5727     +0.5727     +0.5727
+  M     full              -0.1750     -0.0494     +0.0043     +0.0043     +0.0043
+  W     geometry          -0.1360     -0.0608     -0.0153     -0.0153     -0.0153
+  W     weights           -0.2004     -0.1178     -0.0704     -0.0704     -0.0704
+  W     hybrid            +0.3847     +0.4673     +0.4659     +0.4659     +0.4659
+  W     full              -0.1749     -0.0959     -0.0468     -0.0468     -0.0468
+  ('--' = that run had not yet consumed that many measurements;
+   milestones are test R^2, mean over seeds)
+
+==========================================================================
+  SHARE AXIS: does the outcome vary monotonically with geometry share?
+==========================================================================
+  Sorted by share.  'margin' is the calibrated arm minus the best search
+  arm, at a LOW milestone so the comparison is not saturated.
+
+  arch   share   geom   read  count says  actually   margin@3000  geo kept
+  ------------------------------------------------------------------------------
+  G        69%    204     92     readout   readout       +0.4965      0.17
+  M        59%    260    184     readout   readout       +0.6141     -0.16
+  W        47%    500    560    geometry  geometry       +0.5208        --
+
+   count says = which arm has FEWER parameters
+     actually = which arm ends with the higher R^2
+
+  parameter-count rule: 3/3 architectures
+  (the rule is protocol-dependent where it fails: an arm with fewer
+   parameters completes more sweeps of its own space per probe, which
+   equal_probes rewards and equal_sweeps does not)
+
+  READOUT PARAMS vs TRAINING SAMPLES -- the variable that appears to
+  control the calibration, more so than the geometry share:
+    G     readout    92 / 256 samples =  0.36x   hybrid vs best search: WINS
+    M     readout   184 / 256 samples =  0.72x   hybrid vs best search: WINS
+    W     readout   560 / 256 samples =  2.19x   hybrid vs best search: WINS
+  corr(geometry share, geometry-arm retained R2) = +1.000  over 2 archs
+  corr(geometry share, calibration margin) = -0.169  over 3 archs
+
+  A correlation over 5 points is weak evidence on its own; what it can
+  do is falsify a MONOTONE claim.  Read the ordering, not the number.
+
+==================================================================
+  VERDICT -?Phase 1 (each arm trained from scratch)
+==================================================================
+  G: geometry R2=+0.0339 vs weights R2=+0.1947 -> WEIGHTS carries more skill
+  M: geometry R2=-0.0217 vs weights R2=+0.1325 -> WEIGHTS carries more skill
+  W: geometry R2=-0.0153 vs weights R2=-0.0704 -> GEOMETRY carries more skill
+
+  The winner FLIPS with the architecture. Capacity follows whichever
+  parameter set the architecture allocates more stored quantities to,
+  i.e. parameter SHARE predicts the outcome better than parameter TYPE.
+
+==================================================================
+  PHASE 2 -?attribution from the trained full model
+==================================================================
+  Start from the trained 'full' params, then fine-tune ONE subset
+  with the same probe budget. R^2 retained = capacity carried by
+  the FROZEN half (if freezing it costs nothing, it was redundant).
+
+  arch  fine-tune  frozen      R2 start  R2 after    delta    kept
+  ----------------------------------------------------------------
+  G     geometry   weights      +0.0851   +0.1161  +0.0310   1.364
+  G     weights    geometry     +0.0851   +0.2108  +0.1258   2.478
+
+  M     geometry   weights      +0.0043   +0.0307  +0.0264     nan
+  M     weights    geometry     +0.0043   +0.0920  +0.0876     nan
+
+  W     geometry   weights      -0.0468   -0.0142  +0.0326     nan
+  W     weights    geometry     -0.0468   -0.0139  +0.0329     nan
+
+  arch   freeze geom  freeze wts  mean delta (geom-frozen)  mean delta (wts-frozen)                      verdict
+  --------------------------------------------------------------------------------------------------------
+  G            2.478       1.364                    0.1258                   0.0310        weights carry the fit
+  M              nan         nan                    0.0876                   0.0264        weights carry the fit
+  W              nan         nan                    0.0329                   0.0326        weights carry the fit
+
+  'freeze geom' / 'freeze wts' = R^2 retained by re-fitting the OTHER
+  half (nan when the full model's R^2 was below 0.05, i.e. the ratio
+  is not interpretable -- read the delta columns then).
+  'mean delta' = absolute R^2 gained by re-fitting that half; the
+  larger one is the half that still had room to improve.
+  -> geometry carries the fit in 0/3 architectures, weights in 3/3
+
+  Phase 1 vs Phase 2 disagreeing is itself informative: it separates
+  'which parameters can LEARN the task from scratch' (Phase 1) from
+  'which parameters HOLD the solution once found' (Phase 2).
+
+  Total wall time: 225s
+  Substrate: circuit
+  Cache: F:\singal-node-physics-network\outputs\abl_cache (keyed by task/substrate/arch/arm/seed/epochs/budget; reused by abl_03)

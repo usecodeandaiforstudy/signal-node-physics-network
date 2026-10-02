@@ -1,0 +1,207 @@
+==================================================================
+  Ablation A - Capacity split: geometry vs readout matrix
+  substrate=diffusion task=4d archs=['G', 'M', 'W', 'F', 'F2'] arms=['geometry', 'weights', 'hybrid', 'full'] seeds=2 epochs=40 budget=AUTO (2 sweeps of the largest arm)
+  2026-10-01 19:00:49
+==================================================================
+
+--- Part 0: forward-chain self-test ---
+  both substrates compute the same function from the same parameters,
+  so the numbers below are produced by real physics on either medium
+
+--- Data (4d) ---
+  train=(256, 4) test=(128, 4)  y std=1.247
+
+--- Architecture census (single channel, scalar residual readout) ---
+  G (geometry-dominated ) layers=3 in_dims=[4, 2, 2] out_dims=[2, 2, 1] geom=204 (69%) readout=92 (31%)
+      arm sizes {'geometry': 204, 'weights': 92, 'hybrid': 204, 'full': 296} -> probes/epoch {'geometry': 600, 'weights': 600, 'hybrid': 600, 'full': 600}, sweeps/epoch {'geometry': 2.94, 'weights': 6.52, 'hybrid': 2.94, 'full': 2.03}
+  M (balanced           ) layers=3 in_dims=[4, 4, 4] out_dims=[4, 4, 2] geom=260 (59%) readout=184 (41%)
+      arm sizes {'geometry': 260, 'weights': 184, 'hybrid': 260, 'full': 444} -> probes/epoch {'geometry': 900, 'weights': 900, 'hybrid': 900, 'full': 900}, sweeps/epoch {'geometry': 3.46, 'weights': 4.89, 'hybrid': 3.46, 'full': 2.03}
+  W (matrix-dominated   ) layers=3 in_dims=[4, 16, 8] out_dims=[16, 8, 4] geom=500 (47%) readout=560 (53%)
+      arm sizes {'geometry': 500, 'weights': 560, 'hybrid': 500, 'full': 1060} -> probes/epoch {'geometry': 2100, 'weights': 2100, 'hybrid': 2100, 'full': 2100}, sweeps/epoch {'geometry': 4.2, 'weights': 3.75, 'hybrid': 4.2, 'full': 1.98}
+  F (matrix-free (scalar readout)) layers=3 in_dims=[4, 1, 1] out_dims=[1, 1, 1] geom=176 (77%) readout=52 (23%)
+      arm sizes {'geometry': 176, 'weights': 52, 'hybrid': 176, 'full': 228} -> probes/epoch {'geometry': 500, 'weights': 500, 'hybrid': 500, 'full': 500}, sweeps/epoch {'geometry': 2.84, 'weights': 9.62, 'hybrid': 2.84, 'full': 2.19}
+  F2 (matrix-free, front-loaded) layers=3 in_dims=[4, 1, 1] out_dims=[1, 1, 1] geom=224 (81%) readout=52 (19%)
+      arm sizes {'geometry': 224, 'weights': 52, 'hybrid': 224, 'full': 276} -> probes/epoch {'geometry': 600, 'weights': 600, 'hybrid': 600, 'full': 600}, sweeps/epoch {'geometry': 2.68, 'weights': 11.54, 'hybrid': 2.68, 'full': 2.17}
+  NOTE: the number of epochs is identical everywhere; the protocol is
+        equal_probes. equal_probes gives equal measurement cost
+        and therefore MORE sweeps to the smaller arm; equal_sweeps gives
+        equal coverage at unequal cost. An arm that wins one and loses
+        the other is more efficient per measurement, not a better
+        representation -- which is why both protocols should be run.
+  [G/geometry seed=0] test R2=+0.0722 probes/ep=600 fwd=48000 calib=0 (36.9s)
+  [G/geometry seed=1] test R2=+0.2592 probes/ep=600 fwd=48000 calib=0 (38.4s)
+  [G/weights seed=0] test R2=+0.3294 probes/ep=600 fwd=48000 calib=0 (26.1s)
+  [G/weights seed=1] test R2=+0.4670 probes/ep=600 fwd=48000 calib=0 (25.1s)
+  [G/hybrid seed=0] test R2=+0.5069 probes/ep=600 fwd=48000 calib=13312 (25.6s)
+  [G/hybrid seed=1] test R2=+0.4859 probes/ep=600 fwd=48000 calib=13312 (25.4s)
+  [G/full seed=0] test R2=+0.2612 probes/ep=600 fwd=48000 calib=0 (24.6s)
+  [G/full seed=1] test R2=+0.3160 probes/ep=600 fwd=48000 calib=0 (28.8s)
+  [M/geometry seed=0] test R2=+0.1824 probes/ep=900 fwd=72000 calib=0 (45.8s)
+  [M/geometry seed=1] test R2=+0.2206 probes/ep=900 fwd=72000 calib=0 (47.7s)
+  [M/weights seed=0] test R2=+0.4648 probes/ep=900 fwd=72000 calib=0 (39.2s)
+  [M/weights seed=1] test R2=+0.3816 probes/ep=900 fwd=72000 calib=0 (43.3s)
+  [M/hybrid seed=0] test R2=+0.5349 probes/ep=900 fwd=72000 calib=13312 (42.5s)
+  [M/hybrid seed=1] test R2=+0.5331 probes/ep=900 fwd=72000 calib=13312 (45.1s)
+  [M/full seed=0] test R2=+0.4329 probes/ep=900 fwd=72000 calib=0 (42.5s)
+  [M/full seed=1] test R2=+0.4453 probes/ep=900 fwd=72000 calib=0 (42.7s)
+  [W/geometry seed=0] test R2=+0.2918 probes/ep=2100 fwd=168000 calib=0 (124.6s)
+  [W/geometry seed=1] test R2=+0.4193 probes/ep=2100 fwd=168000 calib=0 (175.2s)
+  [W/weights seed=0] test R2=+0.5013 probes/ep=2100 fwd=168000 calib=0 (173.7s)
+  [W/weights seed=1] test R2=+0.4287 probes/ep=2100 fwd=168000 calib=0 (226.2s)
+  [W/hybrid seed=0] test R2=+0.3852 probes/ep=2100 fwd=168000 calib=13312 (298.7s)
+  [W/hybrid seed=1] test R2=+0.2550 probes/ep=2100 fwd=168000 calib=13312 (299.2s)
+  [W/full seed=0] test R2=+0.4592 probes/ep=2100 fwd=168000 calib=0 (313.7s)
+  [W/full seed=1] test R2=+0.5455 probes/ep=2100 fwd=168000 calib=0 (311.8s)
+  [F/geometry seed=0] test R2=+0.0245 probes/ep=500 fwd=40000 calib=0 (46.0s)
+  [F/geometry seed=1] test R2=+0.2045 probes/ep=500 fwd=40000 calib=0 (49.0s)
+  [F/weights seed=0] test R2=+0.4764 probes/ep=500 fwd=40000 calib=0 (50.7s)
+  [F/weights seed=1] test R2=+0.4340 probes/ep=500 fwd=40000 calib=0 (48.9s)
+  [F/hybrid seed=0] test R2=+0.4956 probes/ep=500 fwd=40000 calib=13312 (50.4s)
+  [F/hybrid seed=1] test R2=+0.5175 probes/ep=500 fwd=40000 calib=13312 (49.2s)
+  [F/full seed=0] test R2=+0.0218 probes/ep=500 fwd=40000 calib=0 (47.1s)
+  [F/full seed=1] test R2=+0.4729 probes/ep=500 fwd=40000 calib=0 (47.3s)
+  [F2/geometry seed=0] test R2=+0.0902 probes/ep=600 fwd=48000 calib=0 (58.3s)
+  [F2/geometry seed=1] test R2=+0.0974 probes/ep=600 fwd=48000 calib=0 (59.9s)
+  [F2/weights seed=0] test R2=+0.3837 probes/ep=600 fwd=48000 calib=0 (57.7s)
+  [F2/weights seed=1] test R2=+0.4509 probes/ep=600 fwd=48000 calib=0 (55.9s)
+  [F2/hybrid seed=0] test R2=+0.5891 probes/ep=600 fwd=48000 calib=13312 (56.8s)
+  [F2/hybrid seed=1] test R2=+0.5943 probes/ep=600 fwd=48000 calib=13312 (54.0s)
+  [F2/full seed=0] test R2=+0.2255 probes/ep=600 fwd=48000 calib=0 (54.6s)
+  [F2/full seed=1] test R2=+0.3495 probes/ep=600 fwd=48000 calib=0 (56.2s)
+
+
+==================================================================
+  RESULTS -?test R^2 at equal analog measurement budget
+==================================================================
+  arch  capacity split             arm        params  geom% probes/ep  sweeps   R2 mean   +-std  retained
+  ----------------------------------------------------------------------------------------------------------------
+  G     geometry-dominated         geometry      296    69%       600    2.94   +0.1657  0.0935      0.57
+  G     geometry-dominated         weights       296    69%       600    6.52   +0.3982  0.0688      1.38
+  G     geometry-dominated         hybrid        296    69%       600    2.94   +0.4964  0.0105      1.72
+  G     geometry-dominated         full          296    69%       600    2.03   +0.2886  0.0274      1.00
+  M     balanced                   geometry      444    59%       900    3.46   +0.2015  0.0191      0.46
+  M     balanced                   weights       444    59%       900    4.89   +0.4232  0.0416      0.96
+  M     balanced                   hybrid        444    59%       900    3.46   +0.5340  0.0009      1.22
+  M     balanced                   full          444    59%       900    2.03   +0.4391  0.0062      1.00
+  W     matrix-dominated           geometry     1060    47%      2100    4.20   +0.3556  0.0638      0.71
+  W     matrix-dominated           weights      1060    47%      2100    3.75   +0.4650  0.0363      0.93
+  W     matrix-dominated           hybrid       1060    47%      2100    4.20   +0.3201  0.0651      0.64
+  W     matrix-dominated           full         1060    47%      2100    1.98   +0.5024  0.0431      1.00
+  F     matrix-free (scalar readout) geometry      228    77%       500    2.84   +0.1145  0.0900      0.46
+  F     matrix-free (scalar readout) weights       228    77%       500    9.62   +0.4552  0.0212      1.84
+  F     matrix-free (scalar readout) hybrid        228    77%       500    2.84   +0.5065  0.0109      2.05
+  F     matrix-free (scalar readout) full          228    77%       500    2.19   +0.2474  0.2256      1.00
+  F2    matrix-free, front-loaded  geometry      276    81%       600    2.68   +0.0938  0.0036      0.33
+  F2    matrix-free, front-loaded  weights       276    81%       600   11.54   +0.4173  0.0336      1.45
+  F2    matrix-free, front-loaded  hybrid        276    81%       600    2.68   +0.5917  0.0026      2.06
+  F2    matrix-free, front-loaded  full          276    81%       600    2.17   +0.2875  0.0620      1.00
+  ('retained' = R2_arm / R2_full, shown only when R2_full >= 0.05;
+   otherwise n/a, because a ratio against a non-fitting reference is noise)
+
+  'hybrid' = geometry probed by FD (same budget as the geometry arm)
+             + source strengths CALIBRATED in closed form.
+  W_ij IS the excitation strength of particle j, so the calibration is
+  an offline source-strength setting, not a numerical shortcut.
+  Cost accounting for arch G: the calibration is ONE-TIME
+    physical route : 13312 measurement-equivalents (n_train x sum_k N_k)
+    digital twin   : 0 physical measurements
+    per-epoch FD   : 1200 forward passes/epoch x 40 epochs = 48000
+  Compare the one-time cost against the TOTAL FD cost before
+  concluding that calibrating is cheaper -- on this problem it is not;
+  it is cheaper only when the epoch count or the particle count is
+  large.  What it does buy unconditionally is that W is then EXACT.
+
+==================================================================
+  SCALING: test R^2 vs physical measurements consumed
+==================================================================
+  A point estimate at one budget is fragile; the RATE (R^2 bought per
+  measurement) is what a hardware designer needs and is the more
+  publishable form of the result.  One run yields the whole curve.
+
+  Cost model of the x-axis:
+    geometry / weights / full : 2 x budget forward passes per epoch
+    hybrid_once               : same, plus ONE physical calibration
+    hybrid                    : same, calibration assumed
+                                twin-supplied (zero measurement cost)
+                                -- physically refreshing it every
+                                epoch would cost far more than the
+                                FD probing itself and is not a
+                                defensible scheme
+
+  arch  arm                  3000       10000       25000       50000      100000
+  -------------------------------------------------------------------------------
+  G     geometry          -0.1493     +0.0124     +0.0707     +0.1657     +0.1657
+  G     weights           +0.0096     +0.1502     +0.2937     +0.3982     +0.3982
+  G     hybrid            +0.4617     +0.5142     +0.4979     +0.4964     +0.4964
+  G     full              -0.0447     +0.0159     +0.1685     +0.2886     +0.2886
+  M     geometry          -0.1430     -0.0169     +0.0450     +0.1222     +0.2015
+  M     weights           -0.0481     +0.1050     +0.2806     +0.3948     +0.4232
+  M     hybrid            +0.4622     +0.4876     +0.4880     +0.5457     +0.5340
+  M     full              -0.1160     +0.0287     +0.1820     +0.3618     +0.4391
+  W     geometry               --     +0.0212     +0.0944     +0.1742     +0.2865
+  W     weights                --     -0.0269     +0.0390     +0.1550     +0.2975
+  W     hybrid                 --     +0.3031     +0.3758     +0.3464     +0.3851
+  W     full                   --     +0.0032     +0.1047     +0.2493     +0.3676
+  F     geometry          -0.2755     -0.0463     +0.0556     +0.1145     +0.1145
+  F     weights           +0.0267     +0.1621     +0.2948     +0.4552     +0.4552
+  F     hybrid            +0.4804     +0.4887     +0.4792     +0.5065     +0.5065
+  F     full              -0.0815     +0.0140     +0.1879     +0.2474     +0.2474
+  F2    geometry          -0.1600     -0.0266     +0.0368     +0.0938     +0.0938
+  F2    weights           +0.0578     +0.2061     +0.3301     +0.4173     +0.4173
+  F2    hybrid            +0.5032     +0.5261     +0.5886     +0.5917     +0.5917
+  F2    full              -0.0939     +0.0369     +0.1396     +0.2875     +0.2875
+  ('--' = that run had not yet consumed that many measurements;
+   milestones are test R^2, mean over seeds)
+
+==========================================================================
+  SHARE AXIS: does the outcome vary monotonically with geometry share?
+==========================================================================
+  Sorted by share.  'margin' is the calibrated arm minus the best search
+  arm, at a LOW milestone so the comparison is not saturated.
+
+  arch   share   geom   read  count says  actually   margin@3000  geo kept
+  ------------------------------------------------------------------------------
+  F2       81%    224     52     readout   readout       +0.4455      0.22
+  F        77%    176     52     readout   readout       +0.4538      0.25
+  G        69%    204     92     readout   readout       +0.4521      0.42
+  M        59%    260    184     readout   readout       +0.5103      0.48
+  W        47%    500    560    geometry   readout          +nan      0.76
+
+   count says = which arm has FEWER parameters
+     actually = which arm ends with the higher R^2
+
+  parameter-count rule: 4/5 architectures
+  (the rule is protocol-dependent where it fails: an arm with fewer
+   parameters completes more sweeps of its own space per probe, which
+   equal_probes rewards and equal_sweeps does not)
+
+  READOUT PARAMS vs TRAINING SAMPLES -- the variable that appears to
+  control the calibration, more so than the geometry share:
+    F2    readout    52 / 256 samples =  0.20x   hybrid vs best search: WINS
+    F     readout    52 / 256 samples =  0.20x   hybrid vs best search: WINS
+    G     readout    92 / 256 samples =  0.36x   hybrid vs best search: WINS
+    M     readout   184 / 256 samples =  0.72x   hybrid vs best search: WINS
+    W     readout   560 / 256 samples =  2.19x   hybrid vs best search: LOSES
+  corr(geometry share, geometry-arm retained R2) = -0.978  over 5 archs
+  corr(geometry share, calibration margin) = -0.891  over 4 archs
+
+  A correlation over 5 points is weak evidence on its own; what it can
+  do is falsify a MONOTONE claim.  Read the ordering, not the number.
+
+==================================================================
+  VERDICT -?Phase 1 (each arm trained from scratch)
+==================================================================
+  G: geometry R2=+0.1657 vs weights R2=+0.3982 -> WEIGHTS carries more skill
+  M: geometry R2=+0.2015 vs weights R2=+0.4232 -> WEIGHTS carries more skill
+  W: geometry R2=+0.3556 vs weights R2=+0.4650 -> WEIGHTS carries more skill
+  F: geometry R2=+0.1145 vs weights R2=+0.4552 -> WEIGHTS carries more skill
+  F2: geometry R2=+0.0938 vs weights R2=+0.4173 -> WEIGHTS carries more skill
+
+  The readout matrix dominates in all 3 architectures: under this
+  budget the geometry is a feature map, not the carrier of capacity.
+
+  corr(geometry share, geometry-arm retained R2) = -0.81 over 5 architectures
+
+  Total wall time: 3345s
+  Substrate: diffusion
+  Cache: F:\singal-node-physics-network\outputs\abl_cache (keyed by task/substrate/arch/arm/seed/epochs/budget; reused by abl_03)

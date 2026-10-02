@@ -1,0 +1,149 @@
+==================================================================
+  Ablation E - Does the calibration survive a wrong twin?
+  arch=F2 substrate=diffusion seeds=1 epochs=15 calib_every=10
+  2026-10-02 13:39:57
+==================================================================
+
+--- Part 0: self-test ---
+  Device non-idealities are OFF everywhere (level=none): the only
+  mismatch in this experiment is between the twin and the device.
+
+  arch F2 (matrix-free, front-loaded), arm sizes {'geometry': 224, 'weights': 52, 'full': 276, 'hybrid': 224}
+  FD budget = 600 probes/epoch = 1200 forward passes
+
+==========================================================================
+  Part 1: what the twin believes vs what the device delivers
+==========================================================================
+  Fixed random geometry, one calibration, same strengths read on both.
+
+   twin width err   R2 twin thinks   R2 device gets       gap
+  ------------------------------------------------------------
+            0.000          +0.4335          +0.4335   +0.0000
+            0.010          +0.4361          +0.4335   +0.0026
+            0.050          +0.4463          +0.4270   +0.0193
+            0.100          +0.4586          +0.4066   +0.0520
+            0.200          +0.4800          +0.3379   +0.1420
+  The twin's own number is what a practitioner with a wrong twin would
+  see and trust; the device column is the truth.  A large gap means the
+  calibration's self-assessment is not evidence that it worked.
+
+  --- twin error: width=0 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5861 fwd=18000 twin_calib=1
+
+  --- twin error: width=0.01 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5858 fwd=18000 twin_calib=1
+
+  --- twin error: width=0.05 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5750 fwd=18000 twin_calib=1
+
+  --- twin error: width=0.1 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5586 fwd=18000 twin_calib=1
+
+  --- twin error: width=0.2 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5138 fwd=18000 twin_calib=1
+
+  --- twin error: position=0 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5861 fwd=18000 twin_calib=1
+
+  --- twin error: position=0.005 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5865 fwd=18000 twin_calib=1
+
+  --- twin error: position=0.02 ---
+    [geometry ] end R2=+0.0193 fwd=18000 twin_calib=0
+    [weights  ] end R2=+0.2292 fwd=18000 twin_calib=0
+    [full     ] end R2=+0.0670 fwd=18000 twin_calib=0
+    [hybrid   ] end R2=+0.5860 fwd=18000 twin_calib=1
+
+  32 cells trained in 171s
+
+==========================================================================
+  Part 2: test R^2 at fixed accumulated measurements
+==========================================================================
+
+  twin error axis: width
+       level arm             10000      25000      50000
+  -------------------------------------------------------
+       0.000 geometry      -0.0451    +0.0193    +0.0193
+       0.000 weights       +0.1328    +0.2292    +0.2292
+       0.000 full          +0.0287    +0.0670    +0.0670
+       0.000 hybrid        +0.5050    +0.5861    +0.5861
+       0.010 geometry      -0.0451    +0.0193    +0.0193
+       0.010 weights       +0.1328    +0.2292    +0.2292
+       0.010 full          +0.0287    +0.0670    +0.0670
+       0.010 hybrid        +0.5042    +0.5858    +0.5858
+       0.050 geometry      -0.0451    +0.0193    +0.0193
+       0.050 weights       +0.1328    +0.2292    +0.2292
+       0.050 full          +0.0287    +0.0670    +0.0670
+       0.050 hybrid        +0.4883    +0.5750    +0.5750
+       0.100 geometry      -0.0451    +0.0193    +0.0193
+       0.100 weights       +0.1328    +0.2292    +0.2292
+       0.100 full          +0.0287    +0.0670    +0.0670
+       0.100 hybrid        +0.4694    +0.5586    +0.5586
+       0.200 geometry      -0.0451    +0.0193    +0.0193
+       0.200 weights       +0.1328    +0.2292    +0.2292
+       0.200 full          +0.0287    +0.0670    +0.0670
+       0.200 hybrid        +0.4437    +0.5138    +0.5138
+
+  twin error axis: position
+       level arm             10000      25000      50000
+  -------------------------------------------------------
+       0.000 geometry      -0.0451    +0.0193    +0.0193
+       0.000 weights       +0.1328    +0.2292    +0.2292
+       0.000 full          +0.0287    +0.0670    +0.0670
+       0.000 hybrid        +0.5050    +0.5861    +0.5861
+       0.005 geometry      -0.0451    +0.0193    +0.0193
+       0.005 weights       +0.1328    +0.2292    +0.2292
+       0.005 full          +0.0287    +0.0670    +0.0670
+       0.005 hybrid        +0.5060    +0.5865    +0.5865
+       0.020 geometry      -0.0451    +0.0193    +0.0193
+       0.020 weights       +0.1328    +0.2292    +0.2292
+       0.020 full          +0.0287    +0.0670    +0.0670
+       0.020 hybrid        +0.5060    +0.5860    +0.5860
+
+==========================================================================
+  CONTROLS
+==========================================================================
+  A. twin error 0 reproducible: width-axis +0.5861 vs position-axis +0.5861 -> PASS
+  B. search arms must be FLAT in twin error (they never read the twin):
+     geometry  spread across the axis = 0.0000   (flat)
+     weights   spread across the axis = 0.0000   (flat)
+     full      spread across the axis = 0.0000   (flat)
+     -> PASS (largest spread 0.0000)
+
+==========================================================================
+  VERDICT: is there a twin-accuracy threshold?
+==========================================================================
+  At 50000 measurements, best search arm vs calibrated arm:
+
+   twin width err  best search   calibrated  calibrated wins?
+  ------------------------------------------------------------
+            0.000      +0.2292      +0.5861               YES
+            0.010      +0.2292      +0.5858               YES
+            0.050      +0.2292      +0.5750               YES
+            0.100      +0.2292      +0.5586               YES
+            0.200      +0.2292      +0.5138               YES
+
+  The calibrated arm wins at EVERY twin-error level tested, including
+  20% width error.  The recommendation of section 6 therefore does not
+  need a twin-accuracy caveat within the tested range.
