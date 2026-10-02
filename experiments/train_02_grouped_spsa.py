@@ -133,7 +133,13 @@ def _build_group_masks(n_particles, dim, n_vars, n_params, K):
 
         mask = np.zeros(n_params, dtype=bool)
         for p in particles:
-            mask[p * D:(p + 1) * D] = True
+            # centers is (D, N), .ravel() is C-order, so particle p's centre
+            # coordinates are at d*N + p -- NOT p*D + d.  The earlier version
+            # used p*D and therefore masked the same dimension of different
+            # particles; results previously reported from this script must be
+            # regenerated.
+            for d in range(D):
+                mask[d * N + p] = True
             mask[D * N + p] = True
             offset_wg = D * N + N
             for k in range(V):

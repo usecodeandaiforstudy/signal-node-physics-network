@@ -144,8 +144,15 @@ def _build_group_indices(n_particles, dim, n_vars, K):
 
         indices = []
         for p in particles:
-            # centers: [p*D, (p+1)*D)
-            indices.extend(range(p * D, (p + 1) * D))
+            # centers is (D, N) and .ravel() is C-order, so dimension d of
+            # particle p sits at index d*N + p -- NOT p*D + d.
+            # Verified: with D=3, N=4, particle 1 occupies [1, 5, 9].
+            # The earlier version of this function used p*D, which grouped the
+            # SAME dimension of DIFFERENT particles together and therefore did
+            # not test particle independence at all.  Any result previously
+            # reported from this script must be regenerated.
+            for d in range(D):
+                indices.append(d * N + p)
             # h: at D*N + p
             indices.append(D * N + p)
             # W_gauss: (V, N) C-order

@@ -122,9 +122,22 @@ class HiMALND:
         spsa_decay_steps: float = 100.0,
         task: str = "regression",
         n_classes: int = 2,
+        residual_mode: str = "proto",
     ):
         if task not in ("regression", "classification"):
             raise ValueError(f"Unknown task: {task}")
+        # How the residual target for layers 2..3 is formed in regression:
+        #   "proto"  -- original y minus the accumulated PROTO-WEIGHTED
+        #               prediction (what the predict path sums, so train and
+        #               predict agree)
+        #   "direct" -- original y minus the accumulated RAW scalar output
+        #               h_m[:, 0] of the previous layers (THEORY.md section 7.3
+        #               reports this as ~5x better, but that comparison has not
+        #               been reproduced in this codebase, so "proto" remains the
+        #               default rather than switching on an unverified claim)
+        if residual_mode not in ("proto", "direct"):
+            raise ValueError(f"Unknown residual_mode: {residual_mode}")
+        self.residual_mode = residual_mode
 
         self.layer_sizes = layer_sizes
         self.output_dims = output_dims
@@ -797,10 +810,17 @@ class HiMALND:
         # Track current input dimension
         cur_dim = self.input_dim
 
-        # Accumulated proto-weighted predictions for residual computation
+        # Accumulated predictions for residual computation
         # Each layer learns: residual = y_original - acc_prev
+        #   residual_mode="proto"  -> acc is the proto-weighted prediction that
+        #                             the predict path also sums (default)
+        #   residual_mode="direct" -> acc is the raw scalar output h[:, 0] of
+        #                             each layer, i.e. the scheme THEORY.md 7.3
+        #                             claims is ~5x better
         acc_proto_A = None  # proto-weighted accumulated prediction on A-zone
         acc_proto_B = None
+        acc_direct_A = None  # raw h[:, 0] accumulation, used by "direct"
+        acc_direct_B = None
         y_orig_A = data["yA"].copy().reshape(-1, 1) if data["yA"].ndim == 1 else data["yA"].copy()
         y_orig_B = data["yB"].copy().reshape(-1, 1) if data["yB"].ndim == 1 else data["yB"].copy()
 
@@ -821,9 +841,13 @@ class HiMALND:
                     cur_yA = y_orig_A.copy()
                     cur_yB = y_orig_B.copy()
                 else:
-                    # Residual target = original y - accumulated proto prediction
-                    cur_yA = y_orig_A - acc_proto_A[:, :y_orig_A.shape[1]]
-                    cur_yB = y_orig_B - acc_proto_B[:, :y_orig_B.shape[1]]
+                    # Residual target = original y - accumulated prediction
+                    if self.residual_mode == "direct":
+                        cur_yA = y_orig_A - acc_direct_A[:, :y_orig_A.shape[1]]
+                        cur_yB = y_orig_B - acc_direct_B[:, :y_orig_B.shape[1]]
+                    else:
+                        cur_yA = y_orig_A - acc_proto_A[:, :y_orig_A.shape[1]]
+                        cur_yB = y_orig_B - acc_proto_B[:, :y_orig_B.shape[1]]
             else:
                 cur_yA = data["yA"].copy().reshape(-1, 1) if data["yA"].ndim == 1 else data["yA"].copy()
                 cur_yB = data["yB"].copy().reshape(-1, 1) if data["yB"].ndim == 1 else data["yB"].copy()
@@ -872,7 +896,7 @@ class HiMALND:
                 self.proto_h_B.append(h_proto_B)
                 self.proto_y_B.append(y_proto_B)
 
-                # ── Update accumulated proto-weighted prediction ──
+                # ── Update accumulated predictions for the next layer's target ──
                 # Use the freshly-stored protos to compute this layer's contribution
                 pred_iA = self._proto_predict(hA, y_proto_A, h_proto_A)
                 pred_iB = self._proto_predict(hB, y_proto_B, h_proto_B)
@@ -882,6 +906,25 @@ class HiMALND:
                 else:
                     acc_proto_A = _zero_pad_sum(acc_proto_A, pred_iA)
                     acc_proto_B = _zero_pad_sum(acc_proto_B, pred_iB)
+
+                # Raw scalar output of this layer, for residual_mode="direct".
+                # The orientation of h is not guaranteed, so the sample axis is
+                # identified against the A-zone sample count.
+                def _first_col(h, n_ref):
+                    h = np.asarray(h, dtype=np.float64)
+                    if h.ndim == 1:
+                        return h.reshape(-1, 1)
+                    if h.shape[0] != n_ref and h.shape[1] == n_ref:
+                        h = h.T
+                    return h[:, :1]
+
+                d_iA = _first_col(hA, y_orig_A.shape[0])
+                d_iB = _first_col(hB, y_orig_B.shape[0])
+                if acc_direct_A is None:
+                    acc_direct_A, acc_direct_B = d_iA, d_iB
+                else:
+                    acc_direct_A = _zero_pad_sum(acc_direct_A, d_iA)
+                    acc_direct_B = _zero_pad_sum(acc_direct_B, d_iB)
 
             # Next layer input = this layer's output (wire-direct)
             cur_XA, cur_XB = hA.copy(), hB.copy()
