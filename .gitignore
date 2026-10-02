@@ -33,6 +33,20 @@ cifar/
 !/outputs/sub_01_*.txt
 !/outputs/sub_01_*.png
 
+# The EXTENSION's evidence set (DESIGN section 9.2).  Without these lines the
+# extension's reports are ignored and its conclusions would cite files that a
+# clone cannot see -- the same defect that was fixed for the base version above.
+!/outputs/ext_*.txt
+!/outputs/ext_*.png
+
+# The extension keeps its OWN model cache.  It must never write into
+# outputs/abl_cache/: that cache is keyed by (task, arch, arm, seed, epochs,
+# budget) and ablation C LOADS from it to reuse ablation A's models, so a
+# colliding key would make abl_03 evaluate an extension model as if it were a
+# base model (DESIGN section 9.1).  Covered by /outputs/* already; written out
+# so nobody "tidies" it away.
+outputs/ext_cache/
+
 # experiments/cifar_07_4d_rgb.py resolves its OUT_DIR relative to itself, so when
 # it is run from inside experiments/ it writes here instead of outputs/.  That
 # script is not tracked yet (its inclusion was never decided), so neither are its
