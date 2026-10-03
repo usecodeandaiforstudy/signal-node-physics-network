@@ -1,0 +1,97 @@
+==================================================================
+  ext_15 - is the loop only valid for a common gain?
+  task=4d nodes=40 seeds=3
+  2026-10-03 14:23:24
+==================================================================
+
+  The measurement is 6 readings per node, as in ext_12, so each
+  correction pass costs 6 x 40 = 240 readings.  Iteration counts in P2 are priced below.
+
+==========================================================================================
+  P1  PER-NODE error:  h_j * (1 + eps_j), independent per node
+==========================================================================================
+
+  The pooled estimator averages INDEPENDENT errors, so it converges to 1 as
+  the node count grows -- it reports 'no error' while every node is wrong.
+
+    eps sd   open loop   pooled gain   per-node inv  pooled says   true mean  w err open  w err fixed
+  --------------------------------------------------------------------------------------------
+      0.05     +0.5685       +0.5688        +0.5818       0.9981      0.9981      0.0397       0.0000
+      0.10     +0.5651       +0.5659        +0.5817       0.9962      0.9961      0.0794       0.0000
+      0.20     +0.5303       +0.5346        +0.5818       0.9923      0.9923      0.1587       0.0001
+      0.30     +0.4936       +0.4994        +0.5818       0.9884      0.9884      0.2381       0.0000
+
+  'pooled says' vs 'true mean': with independent errors the pooled estimator
+  sits at 1.0 regardless of the spread, which is exactly the silent failure
+  -- it looks like 'the actuator is fine'.
+
+==========================================================================================
+  P2  WIDTH-DEPENDENT gain:  h * (1 + eps) * (1 + beta * h)
+==========================================================================================
+
+  A single inverse step assumes the gain does not depend on the command.
+  Here it does, so measure-and-correct is a FIXED-POINT iteration; the
+  question is how many passes it needs.
+
+     beta     pass 0     pass 1     pass 2     pass 3   w err p0   w err p3
+  --------------------------------------------------------------------------
+     0.00    +0.3927    +0.5817    +0.5817    +0.5817     0.2000     0.0001
+     0.25    +0.5320    +0.5862    +0.5812    +0.5818     0.0937     0.0002
+     0.50    +0.5697    +0.5755    +0.5833    +0.5811     0.0244     0.0007
+     1.00    +0.6332    +0.4866    +0.5819    +0.5759     0.2430     0.0087
+
+  'pass k' is the device score after k corrections, and each pass costs its
+  own 240 readings.
+
+  A CONFOUND IN P3, reported rather than smoothed over: the corrected score
+  does NOT fall monotonically with drift, because a drift makes the realized
+  widths LARGER and this node set happens to prefer wider widths -- the same
+  one-sided effect ext_11 measured (+0.6216 at +10% width).  The width ERROR
+  against the plan does grow monotonically, so the correction does go stale;
+  it is the SCORE that cannot register it here.  A drift test that could
+  register it would need widths the plan already prefers, which this plan
+  does not have.
+
+==========================================================================================
+  P3  DRIFT after the measurement: the gain changes before it is used
+==========================================================================================
+
+     drift   open loop   corrected  w err after  still helps?
+  ------------------------------------------------------------
+      0.00     +0.3927     +0.5817       0.0000           yes
+      0.05     +0.3927     +0.5993       0.0625           yes
+      0.10     +0.3927     +0.6208       0.1250           yes
+      0.20     +0.3927     +0.6449       0.2501           yes
+      0.40     +0.3927     +0.6472       0.5000           yes
+
+==========================================================================================
+  VERDICT: how far does the closed loop actually generalise?
+==========================================================================================
+
+  P1 pooled estimator beats the open loop by 0.02 anywhere: NO
+  P1 per-node inverse recovers the error-free score at every spread: YES  (reference +0.5818)
+  P2 the width error converges to below 0.02 at every beta: YES  (worst 0.0087 at beta=1)
+  P3 the correction beats the open loop for a drift up to 0.40
+
+  THE LOOP GENERALISES, BUT NOT WITH ext_12's ESTIMATOR.  The pooled gain
+  fails on per-node error and fails SILENTLY: averaging independent errors
+  returns ~1.0, which reads as 'the actuator is fine' while every node is
+  wrong.  The per-node inverse uses the same measurement without
+  averaging and recovers the model at every spread tested.
+
+  So the corrected procedure -- superseding ext_12's -- is:
+
+      place -> measure each node -> invert PER NODE -> re-command
+      -> (iterate if the gain depends on the command)
+      -> calibrate the strengths
+
+  ext_12's pooled form is a special case of this, valid only when the
+  error really is common; it should be read as such rather than as the
+  general repair.
+
+  P2 beta=0.00: passes +0.3927 -> +0.5817 -> +0.5817 -> +0.5817, width error 0.2000 -> 0.0001
+  P2 beta=0.25: passes +0.5320 -> +0.5862 -> +0.5812 -> +0.5818, width error 0.0937 -> 0.0002
+  P2 beta=0.50: passes +0.5697 -> +0.5755 -> +0.5833 -> +0.5811, width error 0.0244 -> 0.0007
+  P2 beta=1.00: passes +0.6332 -> +0.4866 -> +0.5819 -> +0.5759, width error 0.2430 -> 0.0087
+
+  wall time 0.8s

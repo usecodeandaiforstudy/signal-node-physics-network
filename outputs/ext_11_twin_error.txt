@@ -1,0 +1,126 @@
+==================================================================
+  ext_11 - what does the device deliver when the twin is wrong?
+  task=4d nodes=40 seeds=3
+  2026-10-03 14:23:21
+==================================================================
+
+  The trainer plans ENTIRELY inside the twin: placement, features and the
+  gate's held-out score all use the twin's kernel.  Unlike the base version's
+  calibration -- which can be performed on the device by reading Z through
+  the sensor chain -- the operator trainer has NO device-side signal, so a
+  twin error should be invisible to its gate.  That is the prediction tested
+  here, and it is the one result that could bound the physical claim.
+
+  Three numbers per level: the twin's self-report, the device score with the
+  strengths as planned, and the device score with the strengths RE-SOLVED on
+  the device (the base version's own rule, applied to half B).
+
+    k_true  h recovered/true  sqrt(k_g/k_t)  centre err  consistency
+  ------------------------------------------------------------------
+    0.5250       0.975900073    0.975900073    2.85e-15     7.62e-15
+    0.4750       1.025978352    1.025978352    9.76e-16     1.10e-15
+    0.6000       0.912870929    0.912870929    4.12e-15     3.73e-15
+    0.4000       1.118033989    1.118033989    1.35e-15     1.09e-15
+    0.6500       0.877058019    0.877058019    2.49e-15     5.41e-15
+
+  P0 the sqrt(k_twin/k_true) law holds exactly, centre untouched, consistency still satisfied: PASS
+  That last clause is the uncomfortable one: the operator's own consistency
+  check CANNOT see a wrong k, because a wrong k changes only the conversion
+  from alpha to h, which the check does not test.
+
+==================================================================================
+  P1a  the twin believes the narrow channel (k=0.5) and the device is on the wide one (k=0.3)
+==================================================================================
+
+  k CANNOT drift continuously on this hardware: the coefficient is fixed by
+  the bias network, so the only realizable k error is believing the wrong
+  CHANNEL.  An earlier version of this script swept k continuously, but
+  `features()` supports only the device's two channels (0.5 and 0.3), so
+  every non-zero level silently evaluated the SAME thing -- the tell was
+  seven identical rows.
+
+   device channel  twin report  device planned  device recal  self-deception
+  --------------------------------------------------------------------------
+  k=0.5 (twin is right)      +0.5817         +0.5817       +0.5817         +0.0000
+  k=0.3 (twin is wrong)      +0.5817         +0.5662       +0.6484         +0.0155
+
+==================================================================================
+  P1b  a wrong width: the twin plans h, the device realizes h*(1+eps)
+==================================================================================
+
+  This is the base version's own twin error (it measured 20% width error as
+  the dangerous one, because a width changes the kernel's SHAPE and the
+  linear solve cannot absorb it), asked of an operator-built model.
+
+   width error  twin report  device planned  device recal  self-deception
+  --------------------------------------------------------------------------
+           +0%      +0.5817         +0.5817       +0.5817         -0.0000
+           +5%      +0.5817         +0.6063       +0.5941         -0.0246
+           -5%      +0.5817         +0.5490       +0.5546         +0.0327
+          +10%      +0.5817         +0.6216       +0.6130         -0.0399
+          -10%      +0.5817         +0.5097       +0.5212         +0.0721
+          +20%      +0.5817         +0.6180       +0.6370         -0.0363
+          -20%      +0.5817         +0.4157       +0.3927         +0.1660
+          +30%      +0.5817         +0.5581       +0.6490         +0.0236
+
+  'self-deception' is the twin's report minus what the device delivers: the
+  base version measured this quantity as ANTI-correlated with reality, and
+  the column above is the same thing for an operator-built model.
+
+==================================================================================
+  P2  a placement offset: the trainer plans a centre, the positioner moves it
+==================================================================================
+
+      shift  twin report  device planned  device recal  self-deception
+  ----------------------------------------------------------------------
+    0.0e+00      +0.5817         +0.5817       +0.5817         -0.0000
+    1.0e-03      +0.5817         +0.5816       +0.5816         +0.0001
+    1.0e-02      +0.5817         +0.5804       +0.5807         +0.0013
+    3.0e-02      +0.5817         +0.5776       +0.5786         +0.0041
+    1.0e-01      +0.5817         +0.5644       +0.5651         +0.0173
+
+  NOTE, because it is the one piece of good news here: ext_09 showed
+  identify_placement measures exactly this offset, with a recovered/true ratio
+  of 1.000 at the minimum probe count.  The offset is therefore MEASURABLE on
+  this hardware -- the trainer simply is not asking.
+
+==================================================================================
+  VERDICT: is the operator trainer protected against a wrong twin?
+==================================================================================
+
+  P1a wrong CHANNEL: self-deception +0.0155
+  P1b wrong WIDTH  : device loss as planned -0.1660, after device re-calibration -0.1890
+  P2  placement    : device loss as planned -0.0173, after device re-calibration -0.0166
+  largest self-deception overall: +0.1660
+
+  NOT PROTECTED BY THE TWIN, exactly as predicted: the twin's own report
+  disagrees with what the device delivers, and it disagrees in the
+  FLATTERING direction, because the twin's features are the ones the
+  strengths were fitted to.  The operator trainer's gate cannot see this:
+  placement, features and validation all use the same wrong kernel, so
+  there is nothing in the loop for the error to contradict.
+
+  AND THE GEOMETRY DOES NOT SURVIVE: device re-calibration does not
+  recover the loss, so the twin error has damaged the placement itself.
+  That is the outcome that BOUNDS the physical claim, and it must be
+  reported as such -- with the repair, which exists and is already
+  verified:
+
+    the operator trainer plans its geometry in the twin and, unlike the
+    base version's calibration, has NO device-side reading in the loop.
+    Re-solving strengths where they are used is not enough, because the
+    error is in the BASIS rather than in the weights.  The repair has to
+    happen one level up: MEASURE the realized geometry -- which ext_09
+    showed is exact at the minimum probe count, recovered/true = 1.000 --
+    and re-plan with what the device actually has.  Until that loop is
+    closed, the operator trainer's geometry is conditional on the twin,
+    and no amount of device-side strength calibration fixes it.
+
+  AN ASYMMETRY worth carrying into any hardware budget: the damage is one-
+  sided.  Realized widths NARROWER than planned are what hurt (at -20% the
+  device falls to +0.4157 while the twin still reports +0.5817), whereas
+  wider-than-planned sometimes scores slightly BETTER than exact (+0.6216 at
+  +10%).  A placement tolerance should therefore be specified on the narrow
+  side rather than symetrically.
+
+  wall time 0.7s

@@ -1,0 +1,92 @@
+==================================================================
+  ext_22 - is the upstream defect the candidates or the criterion?
+  nodes=40 seeds=3 draws=64
+  2026-10-03 14:46:32
+==================================================================
+
+  ext_19 measured that on `steps` the rule's proposals win only 42.5% of grow
+  steps against an EQUAL-SIZED random pool (chance ~50%), while on `4d` they win
+  63.3%.  That points at the CRITERION rather than the pool, because both pools
+  were ranked BY THE SAME CRITERION -- if it does not track the outcome, two
+  pools of different quality look identical through it.  This tests that
+  directly instead of assuming it.
+
+  crit      = ||res||^2 - ||res - w_j z_j||^2   (training set, ONE node, before
+              the strengths are re-solved) -- the shipped rule
+  val_after = held-out R^2 after adding the candidate and re-solving EVERY
+              strength -- what actually matters
+
+==========================================================================================
+  P1  does the greedy criterion track what actually happens?
+==========================================================================================
+
+  task       steps   rank agreement   mean regret   regret / spread
+  --------------------------------------------------------------------
+  steps        120           +0.097        0.0415             0.464
+  4d           120           +0.191        0.0513             0.545
+
+  'rank agreement' is the correlation between the criterion's ranking of the
+  candidates and their ranking by the held-out score AFTER re-solving the
+  strengths.  'regret' is the held-out R^2 the criterion's pick leaves on the
+  table versus the best candidate available, and 'regret / spread' expresses it
+  against the spread of held-out scores in the pool.
+
+==========================================================================================
+  P2  and does replacing the criterion change the model?
+==========================================================================================
+
+  task                        arm    test R^2    val R^2       gap
+  ----------------------------------------------------------------
+  steps       criterion (shipped)     +0.1587    +0.2832   +0.1245
+  steps      val_after (re-solve)     -0.1927    +0.8412   +1.0340
+
+  4d          criterion (shipped)     +0.5441    +0.4846   -0.0596
+  4d         val_after (re-solve)     -1.2580    +0.9098   +2.1679
+
+==========================================================================================
+  VERDICT: candidates or criterion?
+==========================================================================================
+
+  rank agreement: steps +0.097  4d +0.191
+  replacing the criterion changes test R^2 by: steps -0.3515  4d -1.8021
+
+  MY HYPOTHESIS IS REFUTED, AND WHAT REPLACES IT IS A BETTER ANSWER.
+  The criterion does NOT track the outcome on EITHER task (+0.191 on
+  the SMOOTH control against +0.097 on the discontinuous one), so this
+  is not a property of discontinuous targets at all -- it is a general
+  weakness of ranking by a one-node, training-set reduction, on both tasks.
+
+  AND THE REGRET SAYS HOW MUCH IT COSTS: the criterion's pick leaves about
+  HALF the pool's spread on the table (0.46 of the spread on
+  `steps`, 0.54 on `4d`).  So there IS a better candidate
+  available at almost every step and the rule does not find it -- which is
+  the mechanism behind ext_19's 'random matches the rule' that does NOT
+  require the pool to be bad.
+
+  BUT REPLACING IT IS CATASTROPHIC, and the way it fails is the finding:
+  the re-solve arm reaches val +0.8412 /
+  +0.9098 while its TEST scores are
+  -0.1927 / -1.2580 -- a val-to-test gap of
+  +1.034 and +2.168.
+  Ranking ~70 candidates per step on a 51-sample split for 40 steps is a
+  great deal of selection on very little data, so it OVERFITS the validation
+  set far worse than the shipped rule underfits the outcome.  This is the
+  risk stated before the run, and it materialised.
+
+  SO THE ANSWER IS NEITHER 'THE CANDIDATES' NOR 'THE CRITERION' -- IT IS A
+  BIAS-VARIANCE TRADE, AND THE SAMPLE COUNT IS WHAT BINDS.  The shipped rule
+  is a LOW-VARIANCE estimator (a one-node training-set reduction) that is
+  biased; the replacement is closer to unbiased and far noisier.  With 51
+  validation samples the biased one wins, and it wins by a wide margin --
+  which makes the shipped choice DEFENSIBLE for a reason this document had
+  never given: not because it is accurate, but because it is stable.
+
+  WHAT THAT MEANS FOR THE UPSTREAM ITEM: it is not fixable by changing the
+  ranking rule at this scale.  The binding constraint is the SAMPLE COUNT,
+  which is a property of the toy setup (256 train / 51 validation) and not
+  of the method.  Testing that would mean raising the sample count and
+  re-running this probe, and until then the honest state is that the defect
+  has been LOCATED rather than repaired -- and located somewhere the
+  previous three experiments did not point at.
+
+  wall time 78.1s

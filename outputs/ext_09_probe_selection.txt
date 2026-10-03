@@ -1,0 +1,135 @@
+==================================================================
+  ext_09 - which points to fit on, and where free choice really exists
+  task=4d seeds=3 grid=4:256:0.0,4:256:0.01,4:128:0.01,4:64:0.01,2:128:0.01
+  2026-10-03 14:23:19
+==================================================================
+
+  THE CONSTRAINT, which changed what this step could be: the residual is
+  known only where the TARGET is known, so refinement cannot read at chosen
+  points -- it can only choose a SUBSET of the training inputs.  The designed
+  star probe set therefore belongs to `identify_placement`, the device-side
+  read-out, which really can read anywhere.  Both are measured below.
+
+  The A/B is a PARAMETER of the trainer (select='leverage'|'all'), not two
+  copies of it, so there is exactly one code path to trust.
+
+==============================================================================
+  P1  SUBSET selection on a CONTROLLED problem (the target IS one node)
+==============================================================================
+  'solved' counts the runs where the operator returned a geometry at all;
+  the errors are over those.  The right answer is known, which the trainer's
+  end-to-end score cannot provide.
+
+    D     n    noise      rule   solved    ctr err    wid err
+  ------------------------------------------------------------
+    4   256    0e+00  leverage    3/3     9.02e-15   4.69e-15
+    4   256    0e+00       all    3/3     3.14e-15   1.52e-15
+
+    D     n    noise      rule   solved    ctr err    wid err
+  ------------------------------------------------------------
+    4   256    1e-02  leverage    3/3     4.78e-01   8.65e-01
+    4   256    1e-02       all    3/3     6.42e-02   2.03e-01
+
+    D     n    noise      rule   solved    ctr err    wid err
+  ------------------------------------------------------------
+    4   128    1e-02  leverage    3/3     2.01e-01   4.18e-01
+    4   128    1e-02       all    3/3     2.05e-01   3.68e-01
+
+    D     n    noise      rule   solved    ctr err    wid err
+  ------------------------------------------------------------
+    4    64    1e-02  leverage    3/3     3.08e-01   2.81e-01
+    4    64    1e-02       all    3/3     2.03e-01   2.11e-01
+
+    D     n    noise      rule   solved    ctr err    wid err
+  ------------------------------------------------------------
+    2   128    1e-02  leverage    2/3     1.00e+00   7.98e-01
+    2   128    1e-02       all    3/3     4.90e-01   4.01e-01
+
+  leverage selects a lower centre error in 1/5 cells
+
+==============================================================================
+  P2  DEVICE-side identification with a FREE choice of probe points
+==============================================================================
+  'ratio' is the recovered shift over the true shift: 1.0 is a calibrated
+  measurement, and a constant would be useless however often it 'detected'.
+
+   probes  true shift   recovered    ratio  detected    ctr err
+  --------------------------------------------------------------
+        6    0.00e+00    3.12e-15      nan    0/20     2.70e-15
+        6    1.00e-03    1.00e-03    1.000   20/20     8.87e-04
+        6    1.00e-02    1.00e-02    1.000   20/20     9.38e-03
+        6    3.00e-02    3.00e-02    1.000   20/20     2.68e-02
+       16    0.00e+00    4.54e-15      nan    0/20     3.96e-15
+       16    1.00e-03    1.00e-03    1.000   20/20     1.09e-03
+       16    1.00e-02    1.00e-02    1.000   20/20     1.09e-02
+       16    3.00e-02    3.00e-02    1.000   20/20     2.93e-02
+       64    0.00e+00    3.21e-15      nan    0/20     3.05e-15
+       64    1.00e-03    1.00e-03    1.000   20/20     9.23e-04
+       64    1.00e-02    1.00e-02    1.000   20/20     8.40e-03
+       64    3.00e-02    3.00e-02    1.000   20/20     3.15e-02
+
+==============================================================================
+  P3  END-TO-END: does the subset rule change the trainer's score?
+==============================================================================
+
+       rule   mean R^2       sd      worst  refine tried   refused    kept
+  ------------------------------------------------------------------------
+   leverage    +0.5817   0.0569    +0.5024            53        47       6
+        all    +0.5817   0.0569    +0.5024            40        39       1
+
+  The refinement counters are not decoration: the first version of this
+  experiment reported IDENTICAL scores for two different selection rules,
+  which is what a step that never fires looks like from the outside.
+
+  max |centres(leverage) - centres(all)| per seed: 2.568e-07, 0.000e+00, 0.000e+00
+  float32 floor on unit-scale coordinates: 4.8e-07 (4 x eps); anything at or below it is rounding
+  -> the refinement does NOT move the model: its accepted changes are
+     rounding, and on most seeds there is no change at all.
+
+     The MECHANISM, which is worth stating because it is a property of
+     the operator rather than a bug: OP-G inverts a response, so refining
+     a node against a residual that this node already explains returns the
+     SAME node -- a fixed point.  GROW + SOLVE place each node to fit the
+     current residual, i.e. already at that fixed point, so REFINE has
+     nothing to move.  It would only bite if a node were misplaced, which
+     is a fault-tolerance use rather than a training one.
+
+     CONSEQUENCE FOR ext_07: its +0.5817 comes from
+     GROW + SOLVE + GATE.  Claiming a trainer that uses 'all the operators'
+     would overstate it; REFINE is implemented and verified but inert here.
+
+==============================================================================
+  VERDICT
+==============================================================================
+
+  P1 controlled, D=4 n=256 noise=0.01: leverage centre err 4.777e-01 vs all 6.423e-02
+  -> leverage is WORSE by 7.4x.  The measurement says the
+     conditioning argument does not pay off at these sizes, and reporting
+     it as a fix would be reporting the opposite of what was measured.
+
+  P2 the recovered placement shift tracks the true one within 1.00-1.00x
+     across probe counts and shift sizes, so placement error is a
+     MEASURABLE quantity on this hardware rather than an unchecked
+     tolerance.  That is what the designed probe set is for.
+
+  P3 end-to-end: leverage +0.5817 vs all +0.5817  (gap -0.0000, tol 0.0657)
+     The two rules produce the SAME model to within float32 rounding, and
+     the decisive fact is the mechanism: OP-G is a FIXED POINT for a node
+     that already explains its residual, which is where GROW + SOLVE put
+     it.  So REFINE is inert, and ext_07's
+     +0.5817 comes from GROW + SOLVE + GATE.  That is a
+     weaker claim than 'a trainer using all the operators', and it is the
+     one the evidence supports.
+
+  wall time 1.1s
+
+==============================================================================
+  ASSERT COVERAGE
+==============================================================================
+  P1: PASS   the controlled recovery returns a geometry
+  P2: PASS   the placement shift is recovered proportionally
+  P3: PASS   the refinement is inert to within float32
+
+  P1 is deliberately NOT asserted on improvement: leverage measured WORSE
+  than taking every informative point, so an assert demanding the opposite
+  would contradict the result this file reports.

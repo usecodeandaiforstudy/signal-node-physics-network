@@ -1,0 +1,90 @@
+==================================================================
+  ext_04 - how many calibration samples does each readout need?
+  arch=F2 k=[8, 4, 3, 2, 1] n_fit=[16, 32, 48, 96, 144, 192] splits=4 freq=0.5
+  2026-10-02 20:38:05
+==================================================================
+
+  Geometry FIXED (ext_02's regime: isolates the readout, runs in seconds).
+  Readout chosen on a validation slice of the calibration set, never on
+  test.  Learned combination only: ext_02 refuted the frozen +-1 code, and a
+  refuted arm would only obscure the curve.
+
+  MEASUREMENTS, on the record before the curve: under the base version's own
+  cost model the calibration costs n_train * sum_k N_k = n_fit * 40 for
+  EVERY form below.  The rank constraint therefore does NOT reduce physical
+  measurements; it reduces PARAMETERS, which buys conditioning.  This script
+  reports both so the two cannot be confused.
+
+==============================================================================
+  Test R^2 vs number of CALIBRATION samples
+==============================================================================
+   n_fit         k=8        k=4        k=3        k=2        k=1
+              params     params     params     params     params
+                 320        192        144         96         48
+  -------------------------------------------------------------
+      16     +0.4091    +0.4262    +0.4255    +0.4101    +0.2742
+      32     +0.5218    +0.5226    +0.5160    +0.4924    +0.2997
+      48     +0.5779    +0.5789    +0.5759    +0.5385    +0.3195
+      96     +0.6247    +0.6248    +0.6235    +0.5943    +0.3352
+     144     +0.6344    +0.6338    +0.6327    +0.6055    +0.3308
+     192     +0.6672    +0.6661    +0.6643    +0.6441    +0.3470
+
+  params/samples at each n_fit, which is the variable the base version
+  measured as causal (0.20x calibrates safely, 2.19x fails):
+   n_fit         k=8        k=4        k=3        k=2        k=1
+  -------------------------------------------------------------
+      16      20.00x     12.00x      9.00x      6.00x      3.00x
+      32      10.00x      6.00x      4.50x      3.00x      1.50x
+      48       6.67x      4.00x      3.00x      2.00x      1.00x
+      96       3.33x      2.00x      1.50x      1.00x      0.50x
+     144       2.22x      1.33x      1.00x      0.67x      0.33x
+     192       1.67x      1.00x      0.75x      0.50x      0.25x
+
+  lambda actually chosen on validation (RELATIVE to mean(diag(Z^T Z))),
+  reported because a fixed absolute lambda is what made this curve
+  non-monotone in the first version of this experiment:
+   n_fit         k=8        k=4        k=3        k=2        k=1
+  -------------------------------------------------------------
+      16     1.0e+00    5.5e-01    5.5e-01    1.0e+00    1.0e-01
+      32     5.5e-01    5.5e-01    5.5e-01    5.5e-01    1.0e-01
+      48     1.0e-01    1.0e-01    1.0e-01    5.5e-02    1.0e-01
+      96     1.0e-01    1.0e-01    1.0e-01    1.0e-01    1.0e-01
+     144     5.1e-02    5.1e-02    5.1e-02    5.1e-02    1.0e-02
+     192     5.5e-03    5.5e-03    5.5e-03    5.5e-04    5.5e-03
+
+==============================================================================
+  VERDICT: sample efficiency of the rank constraint
+==============================================================================
+
+   n_fit   full rank   best k<m  that k      gain  crossover?
+  ----------------------------------------------------------
+      16     +0.4091    +0.4262       4   +0.0171          no
+      32     +0.5218    +0.5226       4   +0.0008          no
+      48     +0.5779    +0.5789       4   +0.0010          no
+      96     +0.6247    +0.6248       4   +0.0001          no
+     144     +0.6344    +0.6338       4   -0.0006          no
+     192     +0.6672    +0.6661       4   -0.0011          no
+
+  NO crossover at the sizes tested: the rank-constrained readout never
+  beats the full-rank one by more than the run-to-run spread.  The saving
+  is then a pure parameter saving -- still real (the hardware stores and
+  tunes fewer coefficients) but it does NOT improve calibration quality,
+  and it must not be reported as if it did.
+
+  Either way: the CALIBRATION MEASUREMENT count is unchanged.  Any claim of
+  a measurement saving from the rank constraint would be wrong under the
+  project's own cost model, and this run is the evidence for saying so.
+
+  DO NOT MISREAD THE RATIO COLUMN.  This sweep reaches 20x readout
+  parameters per calibration sample and the full-rank readout still
+  calibrates (+0.41 at 20x).  That does NOT contradict the base version's
+  measured failure boundary at 2.19x, for two reasons that must travel with
+  these numbers: (1) the geometry here is FIXED, whereas the arm that failed
+  in the base version also SEARCHED its geometry by finite differences, and
+  a badly scaled readout corrupts that search; (2) the ridge strength here is
+  chosen on validation per arm, which is itself the protection the base
+  version had to add after its own first attempt failed.  The transferable
+  statement is the shape of the curve, not the absolute ratio at which it
+  turns over.
+
+  wall time 6.2s

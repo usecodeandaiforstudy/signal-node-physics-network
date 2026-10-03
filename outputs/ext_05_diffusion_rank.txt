@@ -1,0 +1,67 @@
+==================================================================
+  ext_05 - the rank budget on the diffusion substrate
+  arch=F2 k=[8, 4, 3, 2] splits=3 levels=none/low/medium/high freq=0.5
+  2026-10-02 20:40:27
+==================================================================
+
+  Fixed geometry (ext_02's regime), readout fitted in closed form with the
+  ridge chosen on validation per arm, then DEPLOYED through the layer's own
+  physical forward.  Nothing here re-derives the cell: the sensor chain is
+  abl_common._measure_features and the uncalibrated case is the layer's own
+  `calibrate` flag, so this measures the device rather than my algebra.
+
+==============================================================================
+  P1/P2  test R^2 by device level (calibrated deployment)
+==============================================================================
+    level         k=8        k=4        k=3        k=2   gap k=3
+  -------------------------------------------------------------
+     none     +0.6919    +0.6918    +0.6885    +0.6595   -0.0034
+      low     +0.6917    +0.6917    +0.6884    +0.6591   -0.0034
+   medium     +0.6907    +0.6907    +0.6872    +0.6561   -0.0035
+     high     +0.5556    +0.5552    +0.5533    +0.5024   -0.0023
+
+  boundary (smallest k within 0.02 of full rank) per level: none=3  low=3  medium=3  high=3
+
+==============================================================================
+  P3  cost of forgetting the amplitude calibration, per rank
+==============================================================================
+  The base version's number for this is 9.98 uncalibrated against
+  5.92e-08 calibrated in transfer error.  Here it is asked of each rank:
+  an uncalibrated reading is a per-SOURCE rescaling of the features, and a
+  rank-k readout has fewer degrees of freedom to absorb column distortion.
+
+    level      k=8 dR2     k=4 dR2     k=3 dR2     k=2 dR2
+  -------------------------------------------------------
+     none    -219.8510   -219.9198   -219.9404   -220.5239
+      low    -219.8901   -219.9580   -219.9846   -220.5348
+   medium    -219.9145   -219.9727   -220.0374   -220.5522
+     high    -220.7854   -220.5938   -220.6971   -221.5435
+
+  mean damage by rank (more negative = the rank suffers more):
+    k=2: -220.7886
+    k=3: -220.1649
+    k=4: -220.1111
+    k=8: -220.1102
+
+  The damage is the SAME for every rank to within 0.05 R^2 out of a 220 collapse, i.e. 0.02%.
+  So the rank constraint neither helps nor hurts here: forgetting the
+  amplitude calibration destroys the readout whatever its rank, and the
+  ordering between ranks is far too small to carry a claim.  The earlier
+  text in this file called that ordering a 'cost' -- it is not; it is
+  noise on a collapse.  What the table DOES establish is that the base
+  version's mandatory-calibration finding is rank-independent, so the
+  amplitude calibration cannot be traded away for parameters.
+
+==============================================================================
+  VERDICT
+==============================================================================
+
+  circuit-cell boundary (ext_02/ext_03): k=3
+  diffusion-cell boundary by level       : none=3, low=3, medium=3, high=3
+
+  TRANSFERS.  The boundary is k=3 on the diffusion cell
+  at EVERY device level, including the base version's own presets, so it
+  is a property of the architecture and not of one medium or one idealised
+  device.  That is the statement the extension needed and did not have.
+
+  wall time 3.6s

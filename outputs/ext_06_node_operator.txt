@@ -1,0 +1,203 @@
+==================================================================
+  ext_06 - is the closed-form geometry operator correct?
+  channels k=0.5/0.3 dims=[1, 2, 3, 4] probes=[8, 16, 32, 64, 128] trials=5
+  2026-10-03 14:34:16
+==================================================================
+
+  Responses are read from a one-particle PhysicalRBFLayerND through the real
+  hardware chain, so the operator is checked against the DEVICE and not
+  against its own formula.  Recovery is compared with the layer's actual
+  centres and h, not with numbers this test chose.
+
+  threshold for C1: centre relative error < 1e-3 and width relative error
+  < 1e-3, asserted for probe counts >= 16 where RANDOM probes are adequate.
+  Smaller counts are reported but NOT asserted here: they need the designed
+  probe set of C4b, and the two checks cover separate regimes.
+
+==============================================================================
+  C1/C2/C4  exact recovery from device readings
+==============================================================================
+    D     k  probes    ctr err    wid err     consist    log rms   used  refused
+  ------------------------------------------------------------------------------
+    1   0.5       8   1.90e-06   9.34e-07    6.02e-07   7.30e-07      8        0   (random probes: see C4b)
+    1   0.5      16   8.96e-06   5.50e-06    1.62e-05   8.12e-05     16        0
+    1   0.5      32   3.88e-06   2.34e-06    2.08e-06   2.83e-05     32        0
+    1   0.5      64   9.80e-07   4.73e-07    1.91e-07   2.44e-06     64        0
+    1   0.5     128   9.73e-07   2.58e-07    4.54e-07   2.98e-06    128        0
+    1   0.3       8   4.57e-05   4.50e-07    5.84e-07   7.81e-07      8        0   (random probes: see C4b)
+    1   0.3      16   3.56e-06   2.64e-06    2.13e-06   5.66e-05     16        0
+    1   0.3      32   7.70e-07   5.07e-07    3.58e-07   8.51e-06     32        0
+    1   0.3      64   5.19e-07   3.63e-07    1.93e-07   1.53e-06     64        0
+    1   0.3     128   4.65e-07   2.37e-07    1.34e-07   1.29e-06    128        0
+    2   0.5       8   2.10e-06   4.22e-07    5.32e-07   1.26e-06      8        0   (random probes: see C4b)
+    2   0.5      16   2.29e-06   2.68e-07    2.75e-07   1.28e-06     16        0
+    2   0.5      32   6.11e-06   1.33e-06    1.25e-05   5.24e-05     30        0
+    2   0.5      64   3.67e-06   2.10e-06    1.33e-05   4.68e-05     61        0
+    2   0.5     128   8.36e-06   2.85e-06    1.96e-05   8.74e-05    119        0
+    2   0.3       8   2.88e-06   2.06e-06    4.58e-06   1.25e-05      8        0   (random probes: see C4b)
+    2   0.3      16   5.96e-06   1.55e-06    5.17e-07   1.04e-06     16        0
+    2   0.3      32   8.57e-07   2.99e-07    3.41e-07   1.73e-06     32        0
+    2   0.3      64   8.85e-06   3.55e-06    1.35e-05   7.02e-05     60        0
+    2   0.3     128   9.05e-07   3.68e-07    1.18e-07   1.24e-06    128        0
+    3   0.5       8   7.37e-06   2.74e-06    1.17e-05   5.08e-06      8        0   (random probes: see C4b)
+    3   0.5      16   1.23e-05   4.82e-06    2.21e-05   2.54e-05     16        0
+    3   0.5      32   2.80e-06   4.66e-07    2.23e-06   8.08e-06     32        0
+    3   0.5      64   3.96e-06   3.48e-06    2.57e-05   6.92e-05     56        0
+    3   0.5     128   3.22e-06   1.01e-06    2.14e-06   2.17e-05    128        0
+    3   0.3       8   1.31e-04   3.80e-05    3.07e-05   8.46e-07      7        0   (random probes: see C4b)
+    3   0.3      16   2.84e-06   6.69e-07    8.27e-07   4.04e-06     16        0
+    3   0.3      32   3.59e-06   7.52e-07    4.20e-06   6.21e-06     32        0
+    3   0.3      64   1.40e-06   4.17e-07    2.79e-07   1.50e-06     64        0
+    3   0.3     128   4.97e-06   4.55e-06    3.20e-05   5.10e-05    126        0
+    4   0.5       8   9.46e-06   3.64e-06    5.74e-06   1.25e-06      8        0   (random probes: see C4b)
+    4   0.5      16   1.94e-04   2.52e-04    9.57e-03   7.25e-04     14        0
+    4   0.5      32   2.73e-05   1.74e-05    1.32e-04   1.51e-04     31        0
+    4   0.5      64   7.62e-06   8.16e-06    1.21e-04   9.13e-05     57        0
+    4   0.5     128   6.77e-06   3.66e-06    2.28e-05   5.51e-05    128        0
+    4   0.3       8   2.81e-04   1.72e-05    2.09e-03   6.77e-04      8        0   (random probes: see C4b)
+    4   0.3      16   3.86e-05   2.08e-05    1.85e-04   8.85e-05     16        0
+    4   0.3      32   6.41e-06   5.17e-06    4.08e-05   2.73e-05     29        0
+    4   0.3      64   1.23e-06   2.40e-07    7.06e-07   3.33e-06     64        0
+    4   0.3     128   9.69e-07   2.39e-07    1.76e-07   2.83e-06    128        0
+
+  C1 exact recovery (centre and width < 1e-3, n >= 16) : PASS
+  worst genuine-node consistency so far: 9.570e-03 (C2 verdict below, after the controls)
+
+==============================================================================
+  C4b  probe DESIGN: random points are not good enough in D >= 4
+==============================================================================
+  The fit is linear in phi(x) = [-||x||^2, x, -1].  With random probes the
+  quadratic column is nearly collinear with the linear ones over a small
+  sample, which is what produced the single failing cell above (D=4, 16
+  random probes, log residual 3e-3 against the usual 1e-6).  Probing is
+  something a hardware procedure CHOOSES, so the operator ships a designed
+  set: the origin plus axis points at several radii.
+
+    D  probes  random: mean  random: WORST  design: mean  design: WORST
+  ----------------------------------------------------------------------
+    1       3      4.70e-05       1.14e-04      3.37e-05       7.43e-05   <- asserted
+    1       8      1.42e-06       5.41e-06      2.19e-06       5.25e-06   (not asserted)
+    1      16      1.99e-06       8.26e-06      1.69e-06       3.85e-06   (not asserted)
+    1      32      1.97e-06       4.47e-06      2.18e-06       4.68e-06   (not asserted)
+    2       4      6.41e-06       2.53e-05      3.18e-05       5.30e-05   <- asserted
+    2       8      2.73e-06       5.59e-06      3.98e-06       7.91e-06   (not asserted)
+    2      16      4.20e-06       6.29e-06      3.59e-06       8.74e-06   (not asserted)
+    2      32      3.19e-06       9.32e-06      1.71e-06       3.75e-06   (not asserted)
+    3       5      5.69e-05       2.21e-04      1.33e-05       2.07e-05   <- asserted
+    3       8      1.26e-04       5.00e-04      2.70e-05       1.18e-04   (not asserted)
+    3      16      3.67e-06       5.51e-06      3.60e-06       6.29e-06   (not asserted)
+    3      32      1.53e-05       3.55e-05      1.11e-05       4.26e-05   (not asserted)
+    4       6      1.35e-05       3.02e-05      6.96e-06       1.51e-05   <- asserted
+    4       8      5.86e-06       1.24e-05      7.23e-06       1.17e-05   (not asserted)
+    4      16      6.69e-06       2.72e-05      7.18e-06       1.75e-05   (not asserted)
+    4      32      1.46e-05       6.44e-05      6.02e-06       2.49e-05   (not asserted)
+
+  C4b design's worst case bounded below 1e-3 at n = D+2 : PASS
+      random-worst / design-worst by dimension: D=1:1.5x, D=2:0.5x, D=3:10.6x, D=4:2.0x
+  What holds is PREDICTABILITY, not a win on every instance: the design even
+  LOSES to random at one dimension here.  From n = 16 on random is adequate
+  and the design buys little, so a placement procedure should design its
+  probes only when it can afford no more than about D+2 readings -- and when
+  it does, it gets a bound rather than a gamble.
+
+==============================================================================
+  C3  negative controls: the consistency check must be able to FAIL
+==============================================================================
+  A check that never fails is not a check.  Responses that are NOT one node
+  are fed to the operator; each must produce a consistency residual far
+  above the single-node case.
+
+  response                        consistency     log rms      ratio   verdict
+  ----------------------------------------------------------------------------
+  one node (must be small)          1.734e-06   1.921e-04        1.0  baseline
+  sum of two nodes                  2.516e-01   1.331e-01    1.5e+05    CAUGHT
+  pure noise                              inf         nan        inf    CAUGHT
+  PU-normalised pair (see note)     2.933e-05   2.871e-04    1.7e+01     limit
+
+  C2 consistency relation separates node from non-node: PASS
+     worst genuine-node consistency 9.570e-03 (reported, not
+     asserted) vs smallest negative control 2.516e-01
+     -> discrimination margin 2.6e+01x (bar: 10x)
+
+  C3 negative controls all caught             : PASS
+
+  LIMITATION, measured rather than assumed: partition-of-unity normalisation
+  is NOT always detectable.  With the two nodes CO-LOCATED at different
+  widths the normalised profile is a genuine two-scale function and is
+  caught; with the two nodes at random positions one usually dominates the
+  probe region and the result is indistinguishable from that single node
+  (the first version of this control used random positions and came out at
+  the single-node value).  A consistency check on a NORMALISED channel
+  therefore has to be told which regime it is in.  This connects to the base
+  version's own finding that normalisation is what breaks parameter-group
+  independence: the same operation is what makes a node's identity
+  ambiguous here.
+
+==============================================================================
+  C6  identifiability: k and h are NOT separately recoverable
+==============================================================================
+  The kernel is exp(-k ||(x-c)/h||^2), and the operator fits the EXPONENT,
+  i.e. alpha = k / h^2.  It follows that a wrong assumed k leaves alpha, the
+  centre and the consistency relation EXACTLY right and scales the recovered
+  width by sqrt(k_assumed / k_true).  This was found by a negative control
+  that FAILED to fail, which is the useful kind of failure: the check cannot
+  catch a wrong k because there is nothing there to catch.
+
+   true k  assumed k    ctr err  h recovered/true  sqrt(k_a/k_t)     consist
+  --------------------------------------------------------------------------
+      0.5        0.3   6.28e-07          0.774597       0.774597    3.39e-07
+      0.3        0.5   8.03e-07          1.290994       1.290994    2.87e-06
+
+  C6 prediction sqrt(k_a/k_t) confirmed        : PASS
+
+  CONSEQUENCE, and it is a requirement on the hardware rather than a defect:
+  the kernel coefficient k is a HARDWARE CONSTANT that must be KNOWN, not
+  fitted.  The operator recovers a node's geometry only up to that constant;
+  with k known -- which it is, k=0.5 for the narrow channel and k=0.3 for the
+  wide one, both fixed by the bias network -- the width comes out exactly.
+
+==============================================================================
+  C5  recovery error vs relative reading noise
+==============================================================================
+  The physically meaningful robustness curve: a real reading is noisy, and
+  the question is how much noise the closed form tolerates before the
+  recovered geometry is useless.
+
+   rel noise     ctr err     wid err     consist   usable?
+  --------------------------------------------------------
+     0.0e+00    5.32e-06    2.41e-06    1.14e-05       yes
+     1.0e-06    2.79e-06    2.87e-06    2.80e-05       yes
+     1.0e-04    1.94e-05    6.87e-06    6.61e-05       yes
+     1.0e-03    2.24e-04    5.25e-05    1.11e-04       yes
+     1.0e-02    1.22e-03    4.75e-04    2.41e-03       yes
+     3.0e-02    4.09e-03    2.42e-04    3.87e-03       yes
+
+  A centre error below 1e-2 (1% of the node's own scale) is the bar for
+  'usable'.  The curve is what a hardware placement procedure would have to
+  budget against, and it is reported rather than summarised into a pass.
+
+==============================================================================
+  VERDICT
+==============================================================================
+
+  C1: PASS
+  C2: PASS
+  C3: PASS
+  C6: PASS
+
+  The geometry operator is correct: it recovers a node's centre and width
+  in closed form from the device's own readings, on both kernel channels
+  and in 1-4 dimensions; its consistency relation holds for a genuine
+  single node and is violated by a sum of two nodes and by pure noise.
+  Two limits are MEASURED rather than assumed: partition-of-unity
+  normalisation is detectable only when neither node dominates the probe
+  region (so the check must be told which regime it is in), and only the
+  combination alpha = k/h^2 is observable, which is why k must be a known
+  hardware constant.
+
+  A node network can therefore be trained on its GEOMETRY by an operator,
+  not by search.  That is the other half of the closed-form pair, and it
+  is the piece a 'network made of parameters' needs to be trainable with
+  operators built for it instead of generic gradients.
+
+  wall time 0.1s
