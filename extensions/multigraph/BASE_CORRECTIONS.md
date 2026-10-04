@@ -28,8 +28,16 @@ it, reject it, or leave the audit where it is.  Every entry is checkable line by
 
 ## 0. `training/himal_nd.py` cannot be seeded, so its published numbers are single draws
 
-**Status: DEFECT.**  This is the only entry that affects work already published rather
-than how it is described.
+**Status: FIXED and VERIFIED** (extension 12.20).  `seed` is now a parameter of
+`HiMALND`, and `np.random.seed(self.seed)` runs at the top of `train` -- sufficient
+because the class has exactly two randomness sources and both hang off `train`.
+The verification includes the check that actually isolates the fix: seeding,
+**consuming** the global state, and then constructing the trainer must still give
+an identical network, which running twice in a fresh process would not show.
+**And the re-run this entry asked for turned out to be unnecessary** -- the one
+externally-quoted number from this class (`reg_06`'s California Housing `R^2`)
+comes from a script that seeds itself, and the other two are already retracted.
+What was at stake is quantified: seeds 0 and 1 move the `L1` `R^2` by `0.11`.
 
 `HiMALND` takes **no `seed` parameter**, and the file contains **no seeding of any kind**
 (`np.random.seed`, `default_rng`, `RandomState`, `random_state` — none).  `_init_layer`
@@ -42,10 +50,9 @@ That is also the plainest explanation of the base's own note that a short check 
 direct-residual claim "gave the right direction but nowhere near that magnitude": a short
 check is a different draw.
 
-**Suggested change.**  Add `seed` to `__init__`, call `np.random.seed(seed)` at the top of
-`train`, and re-run whichever numbers are quoted externally.  **Until then, any number
-from this trainer should be reported with its draw count, and no two of its arms can be
-compared without seeding matched.**
+> **DONE.**  The change is in `training/himal_nd.py` and `ext_35_seeding.py` verifies it.
+> The re-run was surveyed and found unnecessary (see above); any future number from
+> this class should still carry the seed that produced it, which is now possible.
 
 Evidence: `FINDINGS.md` (extension) 12.17; `extensions/multigraph/ext_32_residual_mode.py`.
 

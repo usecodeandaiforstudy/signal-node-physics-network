@@ -1453,6 +1453,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_32_residual_mode.py` | **section 12.17**: the `residual_mode` claim, controlled |
 | `extensions/multigraph/ext_33_gate_power.py` | **section 12.18**: the gate at its boundary, and the counterexample's shape |
 | `extensions/multigraph/ext_34_deployment_harm.py` | **section 12.19**: the deployment isolated -- no second trajectory |
+| `extensions/multigraph/ext_35_seeding.py` | **section 12.20**: the seeding fix, verified -- including the check that isolates it |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1500,11 +1501,12 @@ python extensions/multigraph/ext_31_substrate_scope.py --assert
 python extensions/multigraph/ext_32_residual_mode.py --seeds 3 --epochs 80 --assert
 python extensions/multigraph/ext_33_gate_power.py --seeds 3 --assert
 python extensions/multigraph/ext_34_deployment_harm.py --seeds 3 --assert
+python extensions/multigraph/ext_35_seeding.py --assert
 ```
 
-All thirty-four exit non-zero when their own published claim fails, and every one of them
+All thirty-five exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -2849,3 +2851,54 @@ not claimed to be.
 **SCOPE.**  Task 4d, the noise levels and slice sizes above, one architecture, the base's
 own `effective_budget`, 40 epochs, 3 seeds.  The wrapper is installed for this run only and
 `abl_common` is left as found.
+
+### 12.20 The unseeded trainer is fixed, and the exposure is smaller than entry 0 estimated (ext_35)
+
+**What was wrong.**  `HiMALND` took **no `seed` parameter and never seeded the global
+RNG**, so two calls with identical arguments produced **different networks** depending on
+what had run before -- and every number published from that class was one draw from an
+unseeded process (12.17).
+
+**THE FIX, and why it is only three lines.**  `seed` is added to `__init__` and
+`np.random.seed(self.seed)` is called at the top of `train`.  That is **sufficient**, not a
+guess: the class has **exactly two randomness sources and both are reached from `train`**:
+
+    `_init_layer`  -- centres, W_gauss, W_act    (3x np.random.uniform)
+    `_spsa_step`   -- the SPSA perturbation      (1x np.random.choice)
+
+**AND IT IS VERIFIED, with the check that actually isolates the fix.**  Running twice in a
+fresh process would pass even WITHOUT the fix, because the prior RNG state happens to match.
+So the decisive test seeds the global RNG, **consumes it**, and then constructs the trainer:
+the network must still be identical.  Measured:
+
+| check | result |
+|---|---|
+| seed 0 twice, same prior state | identical (passes without the fix too) |
+| **seed 0, DIFFERENT prior state** | **identical -- this is the fix** |
+| seed 1 | differs -- so the parameter is load-bearing, not decorative |
+| two runs, identical arguments (ext_35 P1) | **bit-identical, 930 floats, and the depth curve** |
+
+**WHAT WAS AT STAKE, quantified.**  At the published configuration, seeds 0 and 1 give an
+`L1` `R^2` of **`+0.1465` against `+0.2608`** -- **the draw alone spans `0.11`**.  So
+`reg_01`'s `+0.013` was one sample from a distribution wider than the number itself.
+**That is what "not a measurement" means here, and it is now a number rather than a
+caution.**
+
+**AND THE RE-RUN TURNS OUT TO BE UNNECESSARY, which is smaller than entry 0 estimated.**
+Entry 0 said "re-run whichever numbers are quoted externally".  Surveyed:
+
+| quoted number | source | status |
+|---|---|---|
+| California Housing `R^2 = 0.530` | `reg_06` | **the script seeds itself** (`np.random.seed(42)` before constructing the trainer), so it was reproducible all along |
+| `+0.013` and `+0.064` | `reg_01`, `reg_02` | **already retracted** (12.17) |
+| the `nd_0*` results | `nd_0*` | write no report and are quoted in no document |
+
+**So the only externally-quoted number that was genuinely exposed is one whose script
+happened to seed first.**  The defect was real -- the class could not be reproduced on
+request -- but its blast radius on the published numbers is one retracted pair, not a
+sweep.
+
+**SCOPE.**  The verification uses `reg_01`'s configuration at a reduced epoch count for the
+determinism checks (determinism does not need convergence) and one confirmation per mode at
+the published configuration.  The spread across seeds is `ext_32`'s (12.17), not recomputed
+here.
