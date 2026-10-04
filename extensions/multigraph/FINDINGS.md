@@ -1368,6 +1368,17 @@ one of these pointed in the **flattering** direction for the extension.
     `outputs/ext_cache/ext_33` (48 cells preserved, so the re-run cost 2 seconds rather
     than 13 minutes), and recorded because the LESSON is about which check to trust:
     **an exit code is a claim and `git status` is the artefact.**
+51. **A syntax error that left the PREVIOUS run's report on screen, again.**  A patch to
+    `ext_36`'s verdict broke a string literal, so the script failed to compile -- and the
+    console then printed the report from the earlier smoke run, which looked like a
+    result.  **The same trap as defect 49, hit a second time.**  Fixed by deleting the
+    report BEFORE each run, so a failure cannot masquerade as output.
+52. **A verdict that contradicted its own cost table.**  `ext_36`'s first verdict said
+    the node arm wins "at a fraction of the measurements" -- true under the calibration-
+    style charge and FALSE under the search-style one that the same report tabulates two
+    paragraphs above.  Caught by reading the finished report rather than by any assert,
+    and fixed by making the sentence accounting-aware.  **A number can be right while the
+    sentence around it is wrong.**
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1454,6 +1465,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_33_gate_power.py` | **section 12.18**: the gate at its boundary, and the counterexample's shape |
 | `extensions/multigraph/ext_34_deployment_harm.py` | **section 12.19**: the deployment isolated -- no second trajectory |
 | `extensions/multigraph/ext_35_seeding.py` | **section 12.20**: the seeding fix, verified -- including the check that isolates it |
+| `extensions/multigraph/ext_36_trained_inner.py` | **section 12.21**: the trained inner layer, and the cost question it surfaced |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1502,11 +1514,12 @@ python extensions/multigraph/ext_32_residual_mode.py --seeds 3 --epochs 80 --ass
 python extensions/multigraph/ext_33_gate_power.py --seeds 3 --assert
 python extensions/multigraph/ext_34_deployment_harm.py --seeds 3 --assert
 python extensions/multigraph/ext_35_seeding.py --assert
+python extensions/multigraph/ext_36_trained_inner.py --assert
 ```
 
-All thirty-five exit non-zero when their own published claim fails, and every one of them
+All thirty-six exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -2902,3 +2915,73 @@ sweep.
 determinism checks (determinism does not need convergence) and one confirmation per mode at
 the published configuration.  The spread across seeds is `ext_32`'s (12.17), not recomputed
 here.
+
+### 12.21 The trained inner layer: the untested case, tested -- and the cost question it surfaced (ext_36)
+
+**The open item, in this document's own words** (section 11, item 1): the trade is measured
+and the cheap form says keep the linearity, but "**`W` and `b` were drawn, not trained ...
+a TRAINED inner layer is the untested case**".  `ext_18` called its own result a **lower
+bound** for the same reason.  This runs that case.
+
+**THE COST ATTRIBUTION WAS CHECKED BEFORE RUNNING, not assumed.**  The obvious objection is
+that `W` multiplies `Z`, which is *measured*, so `W` might be digital and free.  It is not,
+and `DESIGN.md`'s own table says why: its last column is "readout linear in **strengths**?",
+the nonlinear rows are marked **no**, and in this architecture **a scaling coefficient IS a
+source's excitation strength** (`DESIGN.md` line 82).  So `ext_18`'s charge follows the
+design document's framing, and this script reuses it rather than inventing a friendlier one.
+**[This check caught a false finding on the way: the first reading of `N(H)` suggested the
+charge was misattributed, and `DESIGN.md` refuted that before it was written down.]**
+
+**1 -- TRAINING THE INNER LAYER LOSES.**
+
+| task | `L40` | `N80` drawn | `N80` trained | **training buys** | `L320` | trained - `L320` |
+|---|---|---|---|---|---|---|
+| `4d` | +0.5761 | +0.6056 | +0.5911 | **-0.0145** | +0.7025 | -0.1114 |
+| `steps` | +0.1572 | +0.2232 | +0.1826 | **-0.0406** | +0.3118 | -0.1292 |
+| `hetero` | +0.2215 | +0.1941 | +0.1699 | **-0.0242** | +0.3211 | -0.1512 |
+
+**Average `-0.0264`, and the trained arm beats the node arm on 0 of 3 tasks.**  So the
+expectation behind the open item -- that a trained inner layer would do better -- is
+**wrong on this schedule**: the drawn inner layer was not a handicap that training removes,
+it was the better choice.  **That is a loss, not "a real but insufficient gain", and it is
+reported as one.**
+
+**2 -- SO THE TRADE SURVIVES ON ACCURACY**, which is the one thing section 11 item 1 said
+could overturn it.
+
+**3 -- BUT NOT ON EFFICIENCY, and the two cost accountings are reported side by side
+because they are different things.**
+
+| arm | strengths | (a) calibration-style | (b) search-style | R2 @ (a) | R2 @ (b) |
+|---|---|---|---|---|---|
+| `L40` | 40 | 10 240 | 10 240 | +3.1083 | +3.1083 |
+| `N80` drawn | 3 280 | 839 680 | **20 480** | +0.0406 | **+1.6650** |
+| `N80` trained | 3 280 | 839 680 | 32 800 | +0.0375 | +0.9590 |
+| `L320` | 320 | 81 920 | 81 920 | +0.5434 | +0.5434 |
+
+> **UNDER (b) THE DRAWN ARM WINS PER MEASUREMENT.**  Its `W` is drawn and therefore free --
+> only the outer values are calibrated, 80 against the node arm's 320 -- so its `R^2` per
+> measurement is **three times the node arm's**.  `ext_18` could not see this because it
+> charged every arm the same way.  **So the trade's conclusion is NOT
+> accounting-independent: at a fixed ACCURACY the node arm wins, and under a search-style
+> charge at a fixed BUDGET the drawn nonlinear arm wins.**
+
+**Which accounting the hardware actually pays is a modelling question this script surfaces
+and does not settle** -- it depends on whether the inner matrix is *programmed* (free, like
+a digital weight) or *measured* (charged, like a source strength), and the design document's
+statement that the nonlinear layer's strengths cannot be *calibrated* is an argument that
+they are not measured.  **So "keep the linearity" is a statement about ACCURACY, not about
+efficiency**, and it should be read that way.
+
+**AND A REPRODUCIBILITY BOUND, measured rather than assumed.**  Two runs of this script with
+identical arguments agreed to four decimals but **not bit for bit** (`-0.0265` against
+`-0.0264`; `L320` on `4d` moved `+0.7058 -> +0.7025`).  Every draw is seeded --
+`fit_operator`, `nonlinear_readout` and `trained_inner` all take a seed -- so the difference
+is **float-level nondeterminism in the linear algebra**: the same draw computed slightly
+differently, not a different draw.  **A conclusion that turns on the fourth decimal should
+not be read from this table.**
+
+**SCOPE.**  The node set from the operator trainer at `N = 40`, `H = 80`, 5 block-coordinate
+epochs, 3 seeds, three tasks, toy.  **The training scheme is one choice among several** -- a
+longer schedule or a different parameterisation could buy more, and nothing here bounds
+that.
