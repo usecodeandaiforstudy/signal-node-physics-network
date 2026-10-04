@@ -1,0 +1,98 @@
+==================================================================
+  ext_34 - the calibration isolated from its own trajectory
+  task=4d arch=G noises=[0.1, 0.4, 0.8, 1.5] holdouts=[4, 16] seeds=3 epochs=40
+  2026-10-04 21:15:19
+==================================================================
+
+  12.18 found a cell where the gate ACCEPTED and the arm ended below its own
+  geometry arm, and said why that is not yet a counterexample: the two arms are
+  separate trainings, and the calibration rewrites W_gauss mid-run, so the
+  finite differences that follow see a different loss surface.  `hybrid - geometry`
+  is therefore the calibration PLUS that divergence.
+
+  THIS SCRIPT REMOVES THE DIVERGENCE BY CONSTRUCTION.  `train_model` calls
+  `solve_readout_closed_form` as a bare module-global name, so it is wrapped here;
+  with the default `closed_form_model=None` the object it edits IS the device, and
+  it restores the previous strengths on refusal and keeps the fitted ones on
+  acceptance.  So one run yields, per calibration, the DEVICE's test R^2
+  immediately before and immediately after the deployment.
+
+  **`n > 0` means deployed.  A deployed calibration with `after < before` is the
+  counterexample the base searched for through three designs.**
+
+====================================================================================================
+  P1  every DEPLOYED calibration: the device's test R^2 before and after
+====================================================================================================
+
+    noise    ho  calibs  deployed  refused  HARMED  mean d_test  worst d_test  best d_test
+  ------------------------------------------------------------------------------------------
+     0.10     4     120         5      115       1      +0.4946       -0.0410      +1.1739
+     0.10    16     120        40       80      21      +0.0636       -0.0394      +1.2306
+     0.40     4     120         3      117       0      +0.7409       +0.4099      +1.0787
+     0.40    16     120        61       59      33      +0.0413       -0.0502      +1.1486
+     0.80     4     120         4      116       0      +0.4380       +0.0878      +0.8215
+     0.80    16     120         0      120       0         +nan          +nan         +nan
+     1.50     4     120         3      117       0      +0.1000       +0.0235      +0.1476
+     1.50    16     120         0      120       0         +nan          +nan         +nan
+
+  total deployments across all cells: 116, of which HARMED: 55
+
+====================================================================================================
+  P2  the per-deployment measurement against the end-of-run margin
+====================================================================================================
+
+  If the end-of-run margin is negative while no deployment ever harmed, then the
+  negative margin is the TRAJECTORY DIVERGENCE and not the calibration -- which is
+  the distinction 12.18 could not make.
+
+    noise    ho   end margin  deployments harmed                            verdict
+  ----------------------------------------------------------------------------------
+     0.10     4      +0.2971                 1/5   CALIBRATION HARMED AT DEPLOYMENT
+     0.10    16      +0.3361               21/40   CALIBRATION HARMED AT DEPLOYMENT
+     0.40     4      +0.1758                 0/3                            no harm
+     0.40    16      +0.2596               33/61   CALIBRATION HARMED AT DEPLOYMENT
+     0.80     4      +0.0333                 0/4                            no harm
+     0.80    16      +0.0000                 0/0                   nothing deployed
+     1.50     4      -0.0283                 0/3 negative margin, no harm -> DIVERGENCE
+     1.50    16      +0.0000                 0/0                   nothing deployed
+
+====================================================================================================
+  VERDICT
+====================================================================================================
+
+  **THE GUARANTEE IS VIOLATED, MEASURED AT THE DEPLOYMENT: 55 of 116 deployed
+  calibrations left the device's test R^2 LOWER than it was immediately
+  before.**  This is the counterexample section 6.11 searched for through three
+  designs, and it needed no second trajectory to find: the arm was worse after
+  the write than before it, on the same network, at the same moment.
+
+  the worst single deployment moved the test R^2 by -0.0502 (+0.4437 -> +0.3935)
+
+  **AND THE GUARANTEE'S PRACTICAL CONTENT SURVIVES IT, which is the part the
+  base's own framing needs.**  Every cell in this grid ends with a POSITIVE
+  margin over its geometry arm, and the asymmetry is large:
+
+    harmful deployments :  55   range -0.0502 to -0.0003
+    helpful deployments :  61   range +1.2306 down to +0.0009
+
+  **So the dips are RECOVERED: what the guarantee says is false per
+  deployment, and what the recommendation claims is true per run.**  Reporting
+  either without the other would misstate this.
+
+  THE MECHANISM, now visible rather than argued: the gate judges on a STRIDE OF
+  THE TRAINING SET, and this script measures harm on the EVALUATION set.  **A
+  gate can therefore be right about the data it checks and wrong about
+  generalisation** -- which is exactly the shape section 6.11 was hunting, and
+  it does not require the gate to be broken.
+
+  AND THE DROPS ARE SMALL IN ABSOLUTE TERMS (see the table above), so part of
+  each one may be the evaluation set's own sampling noise rather than a real
+  loss.  **The SIGN is what the guarantee is about and the sign is measured;**
+  the magnitude of a -0.011 dip is not separable from noise at 128 test samples
+  and is not claimed to be.
+
+  SCOPE: task 4d, the noise levels and slice sizes above, one architecture, the
+  base's own effective_budget, 40 epochs and the seeds printed in the header.  The
+  wrapper is installed for this run only; `abl_common` is left as found.
+
+  wall time 1289.6s

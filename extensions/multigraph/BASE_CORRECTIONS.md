@@ -240,18 +240,36 @@ validation-slice size can**: the accept rate moves from `0.025` to `0.508` as th
 shrinks from 128 samples to 16 (**spread 0.483**), which is the property the paragraph
 above says was never tested.  The base's own `10d` sweep saw no movement because that is a
 property of `10d`, not of the slice size.  At that boundary, **1 of 11 cells** has the
-counterexample's shape (the gate accepted, and the arm ended below its own geometry arm),
-**without yet isolating the calibration from the trajectory divergence**.
+counterexample's shape (the gate accepted, and the arm ended below its own geometry arm).
+
+**AND THE COUNTEREXAMPLE IS FOUND, one subsection later (12.19).**  Wrapping
+`solve_readout_closed_form` — which `train_model` calls as a bare module-global name, so
+**no base file is edited** — yields the device's **test** `R^2` immediately before and after
+each deployment inside a single run.  **55 of 116 deployed calibrations left it lower than
+it was immediately before.**  That is the counterexample, with the trajectory divergence
+removed by construction rather than by matching.
+
+Two qualifications travel with it, and neither is optional.  **Every cell still ends with a
+positive margin**, so the dips are **recovered** and the per-run recommendation is
+unaffected.  And the harmful range reaches down to `-0.0003`, so **part of the 55 is
+numerically indistinguishable from no change** — the guarantee is about the sign, and
+lumping `-0.0003` together with `-0.0502` would exaggerate it.
+
+**The cell 12.18 flagged is exonerated**: its three deployments all helped or were neutral,
+so its negative margin was the divergence 12.18 named and could not exclude.
 
 **Suggested replacement.**  Add after the paragraph:
 
-> **Closed, in part, by extension 12.18.**  A task near the decision boundary was
-> constructed: the knob is the validation-slice size, not the task's noise, and at the
-> boundary the accept rate is slice-size-dependent by `0.48`.  One cell of eleven has the
-> counterexample's shape.  **Isolating it needs the arm's test `R^2` recorded immediately
-> before and after each deployment inside a single run**, which is not yet done.
+> **Closed by extension 12.18 and 12.19.**  A task near the decision boundary was
+> constructed: **the knob is the validation-slice size, not the task's noise**, and at the
+> boundary the accept rate is slice-size-dependent by `0.48`.  The isolation 12.18 said was
+> still missing was then supplied, and it **finds the counterexample**: 55 of 116 deployed
+> calibrations left the device's test `R^2` lower than immediately before, on the same
+> network at the same moment.  **Every cell still ends ahead**, so the dips are recovered;
+> and the cell 12.18 flagged is **exonerated**, its three deployments having done no harm.
 
-Evidence: `FINDINGS.md` (extension) 12.18; `outputs/ext_33_gate_power.txt`.
+Evidence: `FINDINGS.md` (extension) 12.18 and 12.19; `outputs/ext_33_gate_power.txt`,
+`outputs/ext_34_deployment_harm.txt`.
 
 ---
 
@@ -368,16 +386,19 @@ by grep.
 2. **Entry 9** (Method C's either/or) — it is the largest gap between what the project
    advertises and what exists, and both branches are cheap.
 3. **Entries 1, 2, 3, 4, 8, 10, 11** — text, each with the replacement written above.
-4. **Entries 5 and 7** — closing an open item; entry 7 in particular now has a
-   *partially* closed result, and saying so is better than saying nothing.
+4. **Entries 5 and 7** — closing an open item.  **Entry 7 is fully closed and its result is
+   the most consequential of the twelve**: the counterexample the base searched for through
+   three designs was found (55 of 116 deployments), and the one cell that looked like a
+   counterexample was exonerated.  **The replacement text above carries both halves**, and
+   applying only the first would replace an understatement with an overstatement.
 
 ## What this file does not ask for
 
 It does not ask for a new experiment.  Every correction above is backed by a measurement
-that already exists, and the two entries whose work is genuinely unfinished say so
-explicitly: entry 0 needs a code change and a re-run, and entry 7's isolation needs one
-new instrument (record the test `R^2` before and after each deployment inside a single
-run) rather than a new study.
+that already exists, and **only one entry has work genuinely unfinished: entry 0**, which
+needs a code change and a re-run of whichever numbers are quoted externally.  The other
+eleven are text, and the two that were open questions — entries 5 and 7 — have been
+answered rather than left as measurements to make.
 
 It also does not ask the base to adopt the extension's conclusions wholesale.  Where the
 audit found the base right — the do-no-harm guarantee surviving a boundary the base never

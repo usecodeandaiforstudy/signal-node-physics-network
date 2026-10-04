@@ -1452,6 +1452,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_31_substrate_scope.py` | **section 12.16**: which substrates are in scope, as a test |
 | `extensions/multigraph/ext_32_residual_mode.py` | **section 12.17**: the `residual_mode` claim, controlled |
 | `extensions/multigraph/ext_33_gate_power.py` | **section 12.18**: the gate at its boundary, and the counterexample's shape |
+| `extensions/multigraph/ext_34_deployment_harm.py` | **section 12.19**: the deployment isolated -- no second trajectory |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1498,11 +1499,12 @@ python extensions/multigraph/ext_30_equal_params.py --assert
 python extensions/multigraph/ext_31_substrate_scope.py --assert
 python extensions/multigraph/ext_32_residual_mode.py --seeds 3 --epochs 80 --assert
 python extensions/multigraph/ext_33_gate_power.py --seeds 3 --assert
+python extensions/multigraph/ext_34_deployment_harm.py --seeds 3 --assert
 ```
 
-All thirty-three exit non-zero when their own published claim fails, and every one of them
+All thirty-four exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached).
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -2768,3 +2770,82 @@ with the counterexample's shape now exists to be isolated.**
 the base's own `effective_budget`, 40 epochs, 3 seeds.  A single boundary is not the
 boundary: a different task could sit elsewhere and behave differently, and nothing here
 bounds that.
+
+### 12.19 The deployment isolated: the counterexample is real, and the cell 12.18 flagged is not one (ext_34)
+
+**What 12.18 left open.**  It found one cell of eleven where the gate accepted and the arm
+ended below its own geometry arm, and said why that was not yet a counterexample: the two
+arms are **separate trainings**, and the calibration rewrites `W_gauss` mid-run, so
+`hybrid < geometry` is the calibration **plus** the trajectory divergence.
+
+**THE INSTRUMENT, and why it needed no base edit.**  `train_model` calls
+`solve_readout_closed_form` as a **bare module-global name** (`abl_common.py:1219`), so it
+is wrapped here.  With the default `closed_form_model=None` the object that function edits
+**IS the device**, and it **restores** the previous strengths on refusal and **keeps** the
+fitted ones on acceptance.  So one run yields, per calibration, the device's **test** `R^2`
+immediately before and after the deployment -- **same network, same moment, no second
+trajectory.**  The divergence is removed by construction rather than by matching.
+
+**AND THE INSTRUMENT VALIDATES ITSELF.**  A refusal must leave the `R^2` **unchanged**,
+because the base's guard restores the strengths.  That invariant is asserted across every
+logged calibration, and it holds -- so the wrapper is reading the model's real state and not
+merely printing plausible numbers.
+
+**P1 -- EVERY DEPLOYMENT, 3 seeds:**
+
+| noise | holdout | calibrations | deployed | refused | **HARMED** | mean change | worst | best |
+|---|---|---|---|---|---|---|---|---|
+| 0.10 | 4 | 120 | 5 | 115 | 1 | +0.4946 | -0.0410 | +1.1739 |
+| 0.10 | 16 | 120 | 40 | 80 | **21** | +0.0636 | -0.0394 | +1.2306 |
+| 0.40 | 4 | 120 | 3 | 117 | 0 | +0.7409 | +0.4099 | +1.0787 |
+| 0.40 | 16 | 120 | 61 | 59 | **33** | +0.0413 | -0.0502 | +1.1486 |
+| 0.80 | 4 | 120 | 4 | 116 | 0 | +0.4380 | +0.0878 | +0.8215 |
+| 0.80 | 16 | 120 | 0 | 120 | 0 | -- | -- | -- |
+| 1.50 | 4 | 120 | 3 | 117 | 0 | +0.1000 | +0.0235 | +0.1476 |
+| 1.50 | 16 | 120 | 0 | 120 | 0 | -- | -- | -- |
+
+> **55 OF 116 DEPLOYED CALIBRATIONS LEFT THE DEVICE'S TEST `R^2` LOWER THAN IT WAS
+> IMMEDIATELY BEFORE.**  That is the counterexample section 6.11 searched for through three
+> designs, and it needed no second trajectory to find -- the arm was worse after the write
+> than before it, on the same network, at the same moment.
+
+**P2 -- AND THE CELL 12.18 FLAGGED IS EXONERATED.**
+
+| noise | holdout | end-of-run margin | deployments harmed | reading |
+|---|---|---|---|---|
+| 0.10 | 4 | +0.2971 | 1/5 | harmed at deployment, run still positive |
+| 0.10 | 16 | +0.3361 | 21/40 | same |
+| 0.40 | 16 | +0.2596 | 33/61 | same |
+| **1.50** | **4** | **-0.0283** | **0/3** | **negative margin, NO harm -- the DIVERGENCE** |
+
+> **THE ONE CELL WHOSE NEGATIVE MARGIN 12.18 COULD NOT EXPLAIN HAD THREE DEPLOYMENTS AND
+> NONE OF THEM HARMED.**  So that margin is **not** the calibration: it is exactly the
+> trajectory divergence 12.18 named and could not exclude.  **The counterexample exists, and
+> the cell that looked like one is not one.**
+
+**THE MECHANISM, now visible rather than argued.**  The gate judges on a **stride of the
+training set**; harm here is measured on the **evaluation set**.  **A gate can therefore be
+right about the data it checks and wrong about generalisation** -- which is the shape 6.11
+was hunting, and it does **not** require the gate to be broken.
+
+**AND THE GUARANTEE'S PRACTICAL CONTENT SURVIVES, which the base's framing needs.**  Every
+cell in this grid ends with a **positive** margin over its geometry arm, and the asymmetry
+is large:
+
+    harmful deployments :  55   range -0.0502 to -0.0003
+    helpful deployments :  61   range +1.2306 down to +0.0009
+
+**So the dips are recovered.**  What the guarantee *says* is false per deployment; what the
+*recommendation* claims is true per run.  **Reporting either without the other would
+misstate it.**
+
+**AND THE COUNT MUST NOT CARRY MORE THAN IT CAN.**  The harmful range reaches down to
+**`-0.0003`**, so a substantial part of those 55 are numerically indistinguishable from no
+change at all.  **The guarantee is about the sign and there are 55 negative signs; but
+lumping `-0.0003` together with `-0.0502` would exaggerate it.**  The magnitude of a small
+dip is not separable from the evaluation set's own sampling noise at 128 samples, and is
+not claimed to be.
+
+**SCOPE.**  Task 4d, the noise levels and slice sizes above, one architecture, the base's
+own `effective_budget`, 40 epochs, 3 seeds.  The wrapper is installed for this run only and
+`abl_common` is left as found.
