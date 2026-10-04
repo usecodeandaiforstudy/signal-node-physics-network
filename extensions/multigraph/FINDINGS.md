@@ -1379,6 +1379,19 @@ one of these pointed in the **flattering** direction for the extension.
     paragraphs above.  Caught by reading the finished report rather than by any assert,
     and fixed by making the sentence accounting-aware.  **A number can be right while the
     sentence around it is wrong.**
+53. **An absolute tolerance below what the linear algebra can hold.**  `ext_37`'
+    s assert demanded the rank-`k` gap be `< 1e-12` at `m = 2`.  It is not zero: it is
+    `~1e-5`, because at `k` at or above the effective rank the model class CONTAINS the
+    full-rank fit but **alternating least squares is local and does not reach it**.  The
+    fix was not a looser number but a MEASUREMENT: sweeping the iteration count showed
+    the gap shrinking 13x, which attributes it to the optimiser and justifies the bar.
+    **The same mistake as defect 12's 1e-6 gain tolerance, in a new place.**
+54. **Three self-inflicted patch failures in one experiment.**  A patch script that
+    repeated a line and so ran NOTHING (its own `py_compile` passed because the target
+    was untouched); a PowerShell here-string terminated early by an embedded `'@'` in
+    the inserted Python; and an inserted block so convoluted -- walrus operators and
+    three repeated `fit_operator` calls -- that it was replaced with a named helper
+    instead.  **None reached a report, and all three cost a run.**
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1466,6 +1479,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_34_deployment_harm.py` | **section 12.19**: the deployment isolated -- no second trajectory |
 | `extensions/multigraph/ext_35_seeding.py` | **section 12.20**: the seeding fix, verified -- including the check that isolates it |
 | `extensions/multigraph/ext_36_trained_inner.py` | **section 12.21**: the trained inner layer, and the cost question it surfaced |
+| `extensions/multigraph/ext_37_m_real.py` | **section 12.22**: a genuine `m > 1` setting -- the item names the wrong task |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1515,11 +1529,12 @@ python extensions/multigraph/ext_33_gate_power.py --seeds 3 --assert
 python extensions/multigraph/ext_34_deployment_harm.py --seeds 3 --assert
 python extensions/multigraph/ext_35_seeding.py --assert
 python extensions/multigraph/ext_36_trained_inner.py --assert
+python extensions/multigraph/ext_37_m_real.py --assert
 ```
 
-All thirty-six exit non-zero when their own published claim fails, and every one of them
+All thirty-seven exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -2985,3 +3000,70 @@ not be read from this table.**
 epochs, 3 seeds, three tasks, toy.  **The training scheme is one choice among several** -- a
 longer schedule or a different parameterisation could buy more, and nothing here bounds
 that.
+
+### 12.22 A genuine `m > 1` setting: the item names the wrong task, and the right one is out of reach (ext_37)
+
+**The open item, in this document's own words** (section 11, item 4):
+
+> "**A genuine `m > 1` setting for half A.**  Everything there rests on a synthetic
+>  multi-output target, and `m = 1` makes half A a no-op.  **The repository has a 4D
+>  classification task**, and classification is where `m` channels are real."
+
+**THE ARITHMETIC, WHICH WAS CHECKED BEFORE THE TASK WAS TRUSTED.**  Half A's readout is
+`W = C . W_g` with `C` of shape `m x k`, so `rank(W) <= min(m, k)`: **the constraint bites
+only when `k < min(m, rank(W))`.**  Evaluated on the two tasks the repository has:
+
+| task | classes | `m` | `rank(W)` | effective rank | `k=1` | `k=2` | `k=3` |
+|---|---|---|---|---|---|---|---|
+| `moons` (base, 2-class) | 2 | 2 | **1** | **1** | -1.6e-05 | -1.6e-05 | -1.6e-05 |
+| 4d moons (`nd_01`, 2-class) | 2 | 2 | **1** | **1** | -8.6e-08 | -8.8e-09 | -8.8e-09 |
+
+> **THE ITEM NAMES THE WRONG TASK, AND THE VACUITY IS STRONGER THAN EXPECTED.**  `nd_01`'s
+> 4D classification task is **2-class**, so `m = 2` -- and the measured `rank(W)` is
+> **1**, not 2, because the one-hot target is centred so its two channels are
+> complementary.  **So even `k = 1` is already full rank there**, and the task item 4
+> proposes would have produced a **vacuous test of half A, in the same way `train_01` was
+> vacuous.**
+
+**AND THE RESIDUAL GAP IS THE OPTIMISER'S, NOT THE CONSTRAINT'S.**  The gaps are not
+floating-point zero -- they are `~1e-5` -- and at `k` at or above the effective rank the
+rank-k model class **contains** the full-rank fit, so the only open question was whether
+alternating least squares reaches it.  **The iteration sweep answers that:**
+
+| task | gap at 60 iterations | gap at 400 iterations | shrinks |
+|---|---|---|---|
+| `moons` | -1.64e-05 | **-1.21e-06** | **yes, 13x** |
+| 4d moons | -8.78e-09 | -7.94e-09 | yes |
+
+**Three orders of magnitude below any effect half A is about, and shrinking with the
+optimiser's budget rather than with `k`.**
+
+**THE REPOSITORY DOES HAVE A GENUINE `m = 5` SETTING -- AND IT IS OUT OF REACH.**  Its own
+cached CIFAR-10 batches are present in the working tree (gitignored, no download), and its
+own CIFAR scripts use `N_CLASSES = 5`.  Run through half A's machinery at 40 nodes:
+
+| `k` | parameters | `R^2` | gap vs full | clears the floor |
+|---|---|---|---|---|
+| 1 | 45 | -0.0000 | -0.0000 | **NO** |
+| 2 | 90 | -0.0000 | -0.0000 | **NO** |
+| 3 | 135 | -0.0000 | -0.0000 | **NO** |
+| 4 | 180 | -0.0000 | -0.0000 | **NO** |
+| 5 | 225 | -0.0000 | -0.0000 | **NO** |
+
+**So that is not a weak measurement of the rank gap; it is NO measurement of it.**  12.16's
+sibling result applies: `ext_20` closed the dimension axis as out of reach at this scale,
+and a flat 64-dimensional feature map at 40 nodes reproduces that on the repository's own
+image task.  Reaching it needs the repository's **own** CIFAR pipeline -- the `build_3d`
+point cloud fed to its four-layer 3-D network -- **which is not what half A is built on**.
+
+**SO ITEM 4 IS NOT SATISFIABLE AS STATED, and both halves are now measured**: the
+repository's 2-class tasks are **vacuous**, and its 5-class one is **out of reach** from
+this machinery.  **And one thing this settles about the synthetic target**: `ext_02`'s
+`m = 8` was not a convenience -- it is what makes the constraint bite at `k = 3`.  **A
+synthetic target with a real `m` is the CORRECT instrument for a question about rank**, and
+the item's framing, that the synthetic target is the weakness, inverts that.
+
+**SCOPE.**  The repository's own tasks and its own cached data, 3 seeds on the CIFAR part
+and 1 on the algebraic part, 40 nodes, toy.  The CIFAR feature construction is a stated
+choice (the `build_3d` cloud reduced to one vector per image) and it is the reason that part
+fails; the repository's own pipeline is not reproduced here.
