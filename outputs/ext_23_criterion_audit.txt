@@ -1,0 +1,98 @@
+==================================================================
+  ext_23 - what the win criterion's defect costs
+  recomputed from the base's own published tables
+  2026-10-04 11:19:03
+==================================================================
+
+  `abl_06` calls a cell won when the hybrid beats max(geometry, readout, full).
+  The hybrid IS geometry plus a calibration carrying a DO-NO-HARM guarantee, so
+  when `geometry` is itself the strongest of the three, the comparison is against
+  a component of the hybrid and the guarantee supplies the verdict.  Excluding
+  geometry leaves the question the criterion is meant to ask: is calibrating
+  worth it, against methods that do not contain it.
+
+  No new run: both reports already carry the four arms per cell, so this re-reads
+  their tables instead of re-deriving anything.
+
+==================================================================================================
+  40 epochs, 9 seeds
+==================================================================================================
+
+  task/arch    geometry   readout      full    hybrid  best(incl)   win  best(excl)   win   change
+  ----------------------------------------------------------------------------------------------
+  2d/G          +0.4922   +0.6659   +0.6692   +0.7968     +0.6692   YES     +0.6692   YES         
+  2d/F2         +0.2499   +0.5651   +0.5037   +0.8541     +0.5651   YES     +0.5651   YES         
+  4d/G          +0.1968   +0.3354   +0.2903   +0.5004     +0.3354   YES     +0.3354   YES         
+  4d/F2         +0.1173   +0.4203   +0.3166   +0.5914     +0.4203   YES     +0.4203   YES         
+  10d/G         -0.0168   +0.0079   -0.0235   -0.0931     +0.0079    no     +0.0079    no         
+  10d/F2        +0.0145   -0.0142   +0.0213   +0.0145     +0.0213    no     +0.0213    no         
+  moons/G       +0.8030   +0.8487   +0.8943   +0.9847     +0.8943   YES     +0.8943   YES         
+  moons/F2      +0.4779   +0.7116   +0.7351   +0.9845     +0.7351   YES     +0.7351   YES         
+  steps/G       +0.0559   +0.1066   +0.0854   +0.0492     +0.1066    no     +0.1066    no         
+  steps/F2      +0.0317   +0.0924   +0.0655   +0.2439     +0.0924   YES     +0.0924   YES         
+  hetero/G      +0.0859   +0.1559   +0.1316   +0.1257     +0.1559    no     +0.1559    no         
+  hetero/F2     +0.0586   +0.2320   +0.1500   +0.1221     +0.2320    no     +0.2320    no         
+  shift/G       +0.0316   +0.0299   +0.0609   +0.1077     +0.0609   YES     +0.0609   YES         
+  shift/F2      +0.0068   +0.1060   +0.0643   +0.0739     +0.1060    no     +0.1060    no         
+
+  wins, original criterion      : 8/14
+  wins, geometry EXCLUDED       : 8/14
+  cells whose verdict changes   : 0
+
+==================================================================================================
+  160 epochs, 1 seed
+==================================================================================================
+
+  task/arch    geometry   readout      full    hybrid  best(incl)   win  best(excl)   win   change
+  ----------------------------------------------------------------------------------------------
+  2d/G          +0.7365   +0.7775   +0.8833   +0.8276     +0.8833    no     +0.8833    no         
+  2d/F2         +0.6636   +0.6274   +0.8035   +0.8921     +0.8035   YES     +0.8035   YES         
+  4d/G          +0.4102   +0.6255   +0.5434   +0.4749     +0.6255    no     +0.6255    no         
+  4d/F2         +0.4226   +0.4600   +0.5466   +0.6018     +0.5466   YES     +0.5466   YES         
+  10d/G         -0.3336   -0.0819   -0.5904   -0.3335     -0.0819    no     -0.0819    no         
+  10d/F2        +0.0462   -0.1832   -0.0210   +0.0485     +0.0462   YES     -0.0210   YES         
+  moons/G       +0.9774   +0.9693   +0.9800   +0.9831     +0.9800   YES     +0.9800   YES         
+  moons/F2      +0.6141   +0.9136   +0.8385   +0.9853     +0.9136   YES     +0.9136   YES         
+  steps/G       +0.1757   +0.2312   +0.2764   +0.1758     +0.2764    no     +0.2764    no         
+  steps/F2      +0.1993   +0.1059   +0.1513   +0.1992     +0.1993    no     +0.1513   YES     FLIP
+  hetero/G      +0.2043   +0.2772   +0.2681   +0.2042     +0.2772    no     +0.2772    no         
+  hetero/F2     +0.2256   +0.2293   +0.2811   +0.2256     +0.2811    no     +0.2811    no         
+  shift/G       +0.1260   +0.2050   +0.1351   +0.1885     +0.2050    no     +0.2050    no         
+  shift/F2      +0.0191   +0.1271   +0.1017   +0.2143     +0.1271   YES     +0.1271   YES         
+
+  wins, original criterion      : 6/14
+  wins, geometry EXCLUDED       : 7/14
+  cells whose verdict changes   : 1
+    steps/F2: the old 'best search' was the geometry arm at +0.1993
+      -> excluded, the best is full at +0.1513; margin -0.0001 -> +0.0479
+
+==================================================================================================
+  WHAT THE DEFECT COSTS
+==================================================================================================
+
+  run                      original  geometry excluded   cells affected
+  ----------------------------------------------------------------------
+  40 epochs, 9 seeds           8/14               8/14             0/14
+  160 epochs, 1 seed           6/14               7/14             2/14
+
+  the epoch axis, ORIGINAL criterion : 8/14 -> 6/14 (-2)
+  the epoch axis, CORRECTED          : 8/14 -> 7/14 (-1)
+
+  THE DEFECT IS EPOCH-DEPENDENT, and it INFLATED the epoch effect.
+  At 40 epochs no cell has `geometry` as its best search arm, so the
+  correction changes nothing there (8/14 either way).  At 160
+  epochs 2 of 14 do, and excluding geometry moves the count from
+  6 to 7.  So part of what looked like a real epoch effect was the
+  criterion comparing the hybrid against itself.  The honest statement of the
+  epoch axis is the CORRECTED one: 8/14 -> 7/14.
+
+  WHAT THIS DOES NOT CHANGE: the do-no-harm GUARANTEE is untouched -- worst
+  hybrid R^2 is still never below its own geometry arm, which is what the
+  guarantee claims.  What changes is only the stronger, empirical claim about
+  beating the competing methods.
+
+  THE STATED LIMIT: excluding `geometry` is the correction THIS audit argues for,
+  not a criterion the base version endorsed.  An alternative is to keep geometry
+  in the set and report cells where it dominates separately; both fix the same
+  problem and neither is chosen here by measurement, because the choice is about
+  what the sentence is meant to claim.

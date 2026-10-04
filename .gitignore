@@ -39,6 +39,21 @@ cifar/
 !/outputs/ext_*.txt
 !/outputs/ext_*.png
 
+# Four STALE ablation-A figures, ignored BY NAME rather than by widening the rule
+# above.  No script in the repository emits a `_smoke` or a non-`_shareaxis` plot
+# name any more, and a repository-wide search finds these four cited in no
+# document -- so they are orphans of an earlier version of
+# experiments/abl_01_capacity_split.py.  The figures FINDINGS.md actually cites
+# (abl_01_scaling_diffusion_shareaxis_plot.png and
+# abl_01_capacity_split_diffusion_shareaxis_plot.png) are tracked and must stay
+# so: a clone that cannot see them has a conclusions page pointing at files that
+# do not exist, which is the defect the whitelist above exists to prevent.
+# These patterns come AFTER the `!` negations on purpose -- a later pattern wins.
+/outputs/abl_01_capacity_split_plot.png
+/outputs/abl_01_scaling_plot.png
+/outputs/abl_01_capacity_split_diffusion_smoke_plot.png
+/outputs/abl_01_scaling_diffusion_smoke_plot.png
+
 # The extension keeps its OWN model cache.  It must never write into
 # outputs/abl_cache/: that cache is keyed by (task, arch, arm, seed, epochs,
 # budget) and ablation C LOADS from it to reuse ablation A's models, so a

@@ -1,0 +1,126 @@
+==================================================================
+  ext_27 - why is the intermediate particle count the worst?
+  task=4d seed=0 budget=600 epochs=40
+  2026-10-04 12:43:40
+==================================================================
+
+  The pattern, from 12.10 and 12.11, at a FIXED budget of 600:
+    single-layer : N=52 +0.4060,  N=104 -0.5759,  N=208 -0.0240
+    base shape   : N=52 +0.4644,  N=104 -0.1069,  N=208 -0.0508
+  The intermediate size is worst in BOTH, and 104/256 = 0.41x sits INSIDE the
+  base's own 0.20x-safe to 2.19x-failing band.  So the base's controlling quantity
+  does not predict it.
+
+  Cells are RE-RUN here rather than read from cache: the diagnostics live in
+  train_model's history, and `cond` and `calib_reject_gap` were never cached.
+
+========================================================================================================
+  P1  diagnostics per family and N (hybrid arm, lam=1e-3)
+========================================================================================================
+
+  family        arch      N  final test R2     @3000   cond mean    cond max  calibs  accepted  accept%   mean gap
+  --------------------------------------------------------------------------------------------------------------------
+  single-layer  S52      52        +0.5884   +0.4665    8.68e+03    9.18e+03      40         1     2.5%    -0.0252
+  single-layer  S104    104        -0.3625   -0.5424       9e+03    1.01e+04      40         1     2.5%    -0.1715
+  single-layer  S208    208        +0.0850   -0.0233    1.41e+04    1.65e+04      40         0     0.0%    -2.3974
+
+  base shape    T52      52        +0.5891   +0.4676     7.5e+03    1.24e+04      40         1     2.5%    -0.0510
+  base shape    T104    104        +0.0351   -0.0916    9.98e+03     1.3e+04      40         1     2.5%    -0.1598
+  base shape    T208    208        +0.1047   -0.0587    1.88e+04    2.49e+04      40         0     0.0%    -0.9233
+
+========================================================================================================
+  P2  can a different ridge scale rescue the intermediate size?
+========================================================================================================
+
+  If the collapse is a mis-scaled ridge, some lam fixes it.  If none does, the
+  mechanism is not the ridge scale -- and that is the decisive part.
+
+  family            lam       N=52      N=104      N=208
+  --------------------------------------------------------------
+  single-layer     auto    +0.5819    +0.6243    +0.6788
+  single-layer    0.001    +0.5884    -0.3625    +0.0850
+  single-layer     0.01    +0.6005    +0.3206    -0.7800
+  single-layer      0.1    +0.6193    +0.6243    +0.4355
+  single-layer      1.0    +0.5039    +0.6124    +0.6788
+
+  base shape       auto    +0.5818    +0.6386    +0.5062
+  base shape      0.001    +0.5891    +0.0351    +0.1047
+  base shape       0.01    +0.6012    +0.4344    -0.0874
+  base shape        0.1    +0.5784    +0.6386    +0.5062
+  base shape        1.0    +0.5310    +0.6328    +0.6027
+
+========================================================================================================
+  P3  the LOW-BUDGET MARGIN at each lambda -- the quantity 12.10/12.11 used
+========================================================================================================
+
+  P2 showed the frontier R^2 is rescued.  This asks the question those sections
+  actually asked: hybrid minus best search AT 3000 MEASUREMENTS.  The search arms
+  do not use `closed_form_lam`, so their low-budget values are the ones already
+  measured in ext_25/ext_26 and are held fixed here.
+
+  family            lam    margin N=52   margin N=104   margin N=208
+  --------------------------------------------------------------------------
+  single-layer     auto        +0.3953        +0.5079        +0.6000
+  single-layer    0.001        +0.4060        -0.5759        -0.0240
+  single-layer     0.01        +0.4409        +0.1763        -0.0240
+  single-layer      0.1        +0.4846        +0.5079        +0.3558
+  single-layer      1.0        +0.3526        +0.4974        +0.6000
+
+  base shape       auto        +0.4496        +0.5401        +0.4957
+  base shape      0.001        +0.4644        -0.1069        -0.0508
+  base shape       0.01        +0.4915        +0.3271        -0.2420
+  base shape        0.1        +0.4993        +0.5401        +0.4957
+  base shape        1.0        +0.3925        +0.5236        +0.5947
+
+========================================================================================================
+  VERDICT: is the non-monotonicity the gate, the ridge scale, or neither?
+========================================================================================================
+
+  single-layer:
+    final R^2 by N:      52 +0.5884, 104 -0.3625, 208 +0.0850
+    accepted calibs:     52 1/40, 104 1/40, 208 0/40
+    mean cond:           52 8.68e+03, 104 9e+03, 208 1.41e+04
+    shape of the failure: V   (V = intermediate size worst)
+    shape of cond mean : -
+    shape of accepted  : -
+    shape of accept%   : -
+    shape of mean gap  : -
+
+  base shape:
+    final R^2 by N:      52 +0.5891, 104 +0.0351, 208 +0.1047
+    accepted calibs:     52 1/40, 104 1/40, 208 0/40
+    mean cond:           52 7.5e+03, 104 9.98e+03, 208 1.88e+04
+    shape of the failure: V   (V = intermediate size worst)
+    shape of cond mean : -
+    shape of accepted  : -
+    shape of accept%   : -
+    shape of mean gap  : -
+
+  single-layer: RESCUED by lam=auto, lam=0.01, lam=0.1, lam=1.0
+  base shape: RESCUED by lam=auto, lam=0.01, lam=0.1, lam=1.0
+
+  THE RIDGE SCALE IS THE MECHANISM: a lambda the base does not use removes the
+  dip in BOTH families, and the base's own 1e-3 is the only value on this grid
+  that produces it.  So the non-monotonicity is a mis-scaled ridge and it is
+  FIXABLE rather than intrinsic -- and the base already carries the fix, since
+  `closed_form_lam="auto"` chooses the scale on held-out data.
+
+  BUT THE RESCUE IS DEMONSTRATED FOR A DIFFERENT QUANTITY THAN THE ONE 12.10
+  AND 12.11 MEASURED, and that gap is stated rather than glossed:
+
+    P2 reports the HYBRID's R^2 at the common FRONTIER, because that is what
+    the last curve point is.  12.10 and 12.11 reported the LOW-BUDGET MARGIN at
+    3000 measurements, hybrid minus best search.  The search arms do not use
+    `closed_form_lam` at all, so their R^2 is unchanged by this sweep -- but the
+    @3000 MARGIN AT lam=auto is NOT measured here.
+
+  **So this script establishes that the frontier collapse is a ridge-scale
+  artefact and NOT that the low-budget advantage survives at lam=auto.**  The
+  second needs the same @3000 comparison recomputed at auto, and it is the
+  obvious next run rather than a conclusion of this one.
+
+  SCOPE: one task, one seed, budget 600, 40 epochs, and the lambda grid is coarse
+  (five values, one of which is 'auto').  A finer grid could still find a
+  rescue, so 'no lambda tested' is exactly what the sentence says.
+
+  wall time 614.5s
