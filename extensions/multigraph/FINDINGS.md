@@ -1343,6 +1343,31 @@ one of these pointed in the **flattering** direction for the extension.
     checking the intermediate values against the published ones rather than the verdict
     count, and fixed by adopting the base's own aggregation, after which the `lam=1e-3`
     column reproduces the published cell VALUES exactly (P0, 56/56).
+48. **A controlled comparison whose two arms were not initialised the same.**  `ext_32`'
+    s first version ran `proto` and then `direct` without reseeding, and `HiMALND` --
+    which has no seed parameter and never seeds the global RNG -- gave them DIFFERENT
+    initialisations.  **The tell was in the table: layer 1 is trained identically under
+    both modes, so its `R^2` should have matched, and it differed by `+0.117`.**  Fixed
+    by seeding before each arm and by turning that agreement into an ASSERT, so the
+    confound can no longer pass silently.  The lesson is that the base trainer's own
+    irreproducibility is a hazard for anyone comparing two of its arms.
+49. **A dict with mixed key types, sorted after the training was done.**  `ext_33`'s P3
+    built a grid whose keys were floats from P1 and tuples from P2, and `sorted()` on it
+    raised `TypeError` **after 35 minutes of training**, losing all of it and leaving the
+    previous run's report in place -- so the printed table was STALE and looked fine.
+    Fixed by iterating an explicit list, and by adding the cache that `abl_06`'s own
+    comment already prescribes ("any interruption threw the whole sweep away -- which
+    happened twice").
+50. **`git check-ignore` said "ignored" and `git status` said otherwise.**  `ext_33`'
+    s cache was first written to `extensions/multigraph/ext_33_cache/`, which is NOT
+    ignored -- and the location also broke the repository's own documented convention
+    (`.gitignore` line 63 ignores `outputs/ext_cache/` and says "The extension keeps
+    its OWN model cache").  **I reported "already ignored" on the strength of
+    `git check-ignore`'s exit code; the decisive test -- does `git status` show a file
+    inside it? -- returned `??`, i.e. the opposite.**  Fixed by moving the cache to
+    `outputs/ext_cache/ext_33` (48 cells preserved, so the re-run cost 2 seconds rather
+    than 13 minutes), and recorded because the LESSON is about which check to trust:
+    **an exit code is a claim and `git status` is the artefact.**
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1425,6 +1450,9 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_29_reservoir.py` | **section 12.14**: the reservoir variant -- the constraint is selection |
 | `extensions/multigraph/ext_30_equal_params.py` | **section 12.15**: the equal-parameter comparison, constructed |
 | `extensions/multigraph/ext_31_substrate_scope.py` | **section 12.16**: which substrates are in scope, as a test |
+| `extensions/multigraph/ext_32_residual_mode.py` | **section 12.17**: the `residual_mode` claim, controlled |
+| `extensions/multigraph/ext_33_gate_power.py` | **section 12.18**: the gate at its boundary, and the counterexample's shape |
+| [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
 | `extensions/multigraph/trainer.py` | `features` gained `substrate` and `measured` (ext_17); `node_amplitude`; `n_random` (ext_14); `restarts=M` (ext_19) |
@@ -1468,11 +1496,13 @@ python extensions/multigraph/ext_28_headline_ridge.py --seeds 9 --assert
 python extensions/multigraph/ext_29_reservoir.py --assert
 python extensions/multigraph/ext_30_equal_params.py --assert
 python extensions/multigraph/ext_31_substrate_scope.py --assert
+python extensions/multigraph/ext_32_residual_mode.py --seeds 3 --epochs 80 --assert
+python extensions/multigraph/ext_33_gate_power.py --seeds 3 --assert
 ```
 
-All thirty-one exit non-zero when their own published claim fails, and every one of them
+All thirty-three exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold and ext_31 under a second.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached).
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -1573,6 +1603,12 @@ trail is the point of this document:
 ---
 
 ## 12. An audit of the BASE version's headline, from inside the extension
+
+> **The actionable form of this section is [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md).**
+> Section 12 is the evidence; that file is the work list -- for each claim below that the
+> audit corrects, its exact line in the base, the text as it stands, the replacement, and
+> which subsection here backs it.  **No base file has been edited**, by that audit or by
+> this document; applying the list is a decision for the repository's owner.
 
 **Why this is here and not in `FINDINGS.md`.**  This extension does not modify the base
 version -- that rule has held for all 22 experiments -- and the base version's
@@ -2566,3 +2602,169 @@ substrate was reported as "inversion not defined" -- loud, and caught at once; t
 one **dropped the `k/h^4` factor** and returned `c = -0.1225` against a true `0.7` --
 silent, and caught only by comparing against the known answer.  **The second is the same
 failure mode this experiment is about.**
+
+### 12.17 The "5x better" direct-residual claim: refuted under control, and the mechanism is a target mismatch (ext_32)
+
+**The claim.**  `THEORY.md` 7.3 reports that forming the layer-2/3 residual target from
+each layer's **raw scalar output** is **~5x better** than from the proto-weighted
+prediction, and says that finding "changes the design principle".  `README.md` carries it
+as `+0.064 (direct residual) vs +0.013 (Proto)` on a 2D nonlinear regression, so the metric
+is the **depth gain** and `0.064/0.013 = 4.9`.  The base's own status says the comparison
+**has not been reproduced** -- "a short check gave the right direction but nowhere near
+that magnitude" -- which is why `residual_mode` still defaults to `"proto"`.
+
+**WHY THE PUBLISHED PAIR COULD NOT SETTLE IT.**  The two numbers come from **two
+programs**, and the differences are not one:
+
+| | `reg_01` (the `+0.013`) | `reg_02` (the `+0.064`) |
+|---|---|---|
+| kernel | **Cauchy, anisotropic h, multi-scale k** | **pure Gaussian** |
+| architecture | `HiMALND`, dual A/B network | **separate single net, no A/B split** |
+| trainer | **`HiMALND` with TWO METHODS REPLACED AT RUNTIME** (`train_one_layer`, `_forward_layer`) | its own hand-written loop |
+| particles | 20/15/10, 80 epochs | its own `CONFIGS` |
+
+`reg_01` monkey-patches the training loop and the forward before training, so it is **not
+running the shipped trainer**; `reg_02` **does not import `HiMALND` at all**.  At least four
+things change between the two numbers and the 5x is attributed to one.
+
+**AND THE TRAINER ITSELF IS UNSEEDED** -- found while debugging this script's own first
+run.  `HiMALND` has **no `seed` parameter and no seeding anywhere**; `_init_layer` draws its
+centres and `W_gauss` from the global `np.random.uniform`, so two calls with identical
+arguments produce different networks depending on what ran before.  **The published pair is
+one unseeded draw each**, which is also the plainest explanation of the base's own note
+that a short check agreed only in direction.
+
+**THE CONTROLLED TEST.**  Shipped `HiMALND`, nothing monkey-patched, `reg_01`'s own
+configuration, both arms started from the same RNG state, 3 seeds, 80 epochs, and
+`residual_mode` as the **only** difference:
+
+| mode | R2 (L1) | R2 (L1+L2) | R2 (L1+L2+L3) | **depth gain** | sd |
+|---|---|---|---|---|---|
+| `proto` | **+0.3071** | +0.3096 | +0.3140 | **+0.0069** | 0.0045 |
+| `direct` | **+0.3071** | +0.2884 | +0.2787 | **-0.0284** | 0.0152 |
+
+**THE BUILT-IN CONTROL.**  `residual_mode` branches only for layers 2+, so **layer 1 is
+trained identically under both modes and its `R^2` must agree seed by seed**: `+0.3071`
+against `+0.3071`, **identical**.  That check is now an assert, because the first version of
+this script lacked the seeding and reported an **L1 gap of `+0.117`** between arms that
+should have been the same -- the signature of the confound, and it was visible in the table
+before it was understood.
+
+> **THE CLAIM IS REFUTED, WITH THE SIGN REVERSED.**  `direct`'s depth gain is **negative**
+> (`-0.0284`), against the published `+0.064`; the ratio is `-4.12x` against the claimed
+> `4.9x`.  The `proto` side is small and positive (`+0.0069` here, `+0.0138` in the
+> unseeded run, published `+0.013`) -- consistent, and not exact, which is what an unseeded
+> trainer predicts.
+
+**AND THE CURVE GIVES THE MECHANISM, which matters more than the refutation.**  Under
+`direct`, layers 2 and 3 make the prediction **WORSE** (`+0.3071 -> +0.2884 -> +0.2787`),
+while under `proto` they make it slightly better.  The reason is in the trainer's own
+comment at `training/himal_nd.py:889`: the per-layer prototypes "map `h_i` to the residual
+target", and **"At predict time these are summed -> recovers original y"**.
+
+> **`direct` trains layers 2-3 against the residual of the RAW output, while the inference
+> path sums the PROTO predictions -- so the deeper layers are fitted to a residual that the
+> inference never reconstructs.**  It is not a better residual target; it is a **MISMATCHED**
+> one, and depth therefore hurts.
+
+**SO THE DEFAULT IS JUSTIFIED BETTER THAN THE BASE JUSTIFIES IT.**  The shipped comment
+keeps `"proto"` because the 5x "has not been reproduced ... rather than switching on an
+unverified claim".  After this it is not merely unverified: **the alternative is measured to
+be actively harmful at the configuration the claim was made about.**
+
+**TWO STRUCTURAL FINDINGS ALONGSIDE IT, both about the base's inference.**  `reg_01`'s own
+source comment where it builds the depth curve reads "wire-direct accumulation **broken in
+old path**", referring to `HiMALND.predict`, which walks the layers wire-direct and returns
+the LAST layer's output with **no accumulation** -- while the training design assumes the
+protos are summed.  And under `reg_01`'s own `output_dims=(4,3,2)` that path returns
+**two columns against a scalar target**, so it **cannot be scored at all**: the published
+depth numbers were necessarily computed through the hand-written proto sum.  **Which of the
+two inference paths is correct is a separate question about the base's design, and it is
+not settled here.**
+
+**SCOPE.**  One task, one architecture, one epoch count, 3 seeds, and the published pair's
+own configuration on the proto side.  A different kernel family or topology could behave
+differently -- **what is refuted is that the residual mode ALONE produces a 5x.**
+
+### 12.18 The do-no-harm gate at its own boundary: the counterexample's SHAPE, and why it is not yet one (ext_33)
+
+**The open item, in the base's own words** (section 6.11):
+
+> "The strongest missing evidence against the whole rule would be a cell where the gate
+> **accepts** and the arm still loses ... the third attempt **did not answer its own
+> question** (a first-order failure is detectable at any slice size, so it does not probe
+> the gate's statistical power -- **that needs a task sitting near the decision boundary,
+> which was not constructed**)."
+
+**That task is constructed here**, and it is the last item on the base's list that is real
+science rather than a documentation choice.
+
+**THE GATE, EXACTLY.**  `val[::guard_holdout]` is a **stride**, not a random subset; the
+strengths are fitted on the complement and kept only if they **strictly** beat the in-place
+ones on that stride.  A strict inequality on a finite sample is what luck can carry at a
+boundary, and `guard_holdout` is a direct knob on how many samples decide it
+(`2/4/8/16` -> `128/64/32/16` of 256).
+
+**P1 -- AND THE NOISE AXIS CANNOT CONSTRUCT THE BOUNDARY.**
+
+| noise | accepted/total | rate | hybrid | geometry | margin |
+|---|---|---|---|---|---|
+| 0.10 | 5/120 | 0.042 | +0.5009 | +0.2038 | +0.2971 |
+| 0.40 | 3/120 | 0.025 | +0.3523 | +0.1765 | +0.1758 |
+| 0.80 | 4/120 | 0.033 | +0.1524 | +0.1191 | +0.0333 |
+| **1.50** | **3/120** | 0.025 | +0.0177 | +0.0460 | **-0.0283** |
+| 3.00 | 0/120 | **0.000** | -0.0019 | -0.0019 | +0.0000 |
+
+Raising the noise drives the accept rate to **0/120**, not toward 0.5 -- so noise is a
+**first-order** axis, exactly like `10d`, and the base's complaint applies to it too.
+
+**P2 -- BUT THE SLICE SIZE CAN, and that is the property section 6.11 said was untested.**
+
+| noise | 128 | 64 | 32 | **16** |
+|---|---|---|---|---|
+| 0.10 | 0.033 | 0.042 | 0.092 | **0.333** |
+| 0.40 | 0.042 | 0.025 | 0.133 | **0.508** |
+
+**The accept rate moves from 0.025 to 0.508 as the validation slice shrinks (spread
+0.483).**  The base swept slice size on `10d` and saw "40/40 rejected at every slice size",
+concluding that failure was first-order -- **but that is a property of `10d`, not of the
+slice size.**  On a task where the calibration genuinely helps, **the smaller the slice,
+the more readily the gate accepts.**
+
+**P3 -- THE COUNTEREXAMPLE'S SHAPE EXISTS, IN 1 OF 11 CELLS.**
+
+| noise | holdout | accepted | hybrid | geometry | margin | verdict |
+|---|---|---|---|---|---|---|
+| 0.10 | 2/4/8/16 | 4/5/11/40 | ... | ... | +0.21..+0.34 | accepted, no harm |
+| 0.40 | 2/4/8/16 | 5/3/16/61 | ... | ... | +0.18..+0.26 | accepted, no harm |
+| 0.80 | 4 | 4 | +0.1524 | +0.1191 | +0.0333 | accepted, no harm |
+| **1.50** | **4** | **3** | **+0.0177** | **+0.0460** | **-0.0283** | **ACCEPTED AND LOST** |
+| 3.00 | 4 | 0 | -- | -- | +0.0000 | refused |
+
+> **A CELL WHERE THE GATE ACCEPTED AND THE ARM ENDED BELOW ITS OWN NO-CALIBRATION
+> BASELINE.**  That is the shape section 6.11 searched for through three designs and never
+> found, at a boundary the base never built.
+
+**AND IT IS NOT YET A COUNTEREXAMPLE TO THE GUARANTEE, which is the part that matters.**
+`arm="hybrid"` and `arm="geometry"` are **separate trainings**: matched on data, seed and
+initialisation, but the calibration **rewrites `W_gauss` mid-run**, so the finite
+differences that follow see a different loss surface.  **So `hybrid < geometry` is the
+calibration's effect PLUS that divergence**, and one cell cannot separate them -- the same
+conflation the base flagged in its own 6.11 caveat.  This design narrows it (matched seeds,
+1 cell of 11) **without closing it**.
+
+> **WHAT WOULD CLOSE IT, stated precisely because it is small:** record the arm's TEST `R^2`
+> immediately **before and after each deployment, inside one run**.  Same network, same
+> moment, no second trajectory -- so the calibration is isolated from the divergence.  That
+> needs no base file edited: `solve_readout_closed_form` can be wrapped from outside.
+
+**AND THE HONEST POSITION OF THIS RESULT.**  The base tried three counterexamples and all
+failed; this found a cell, and the cell comes with the isolation still missing.  **So the
+guarantee is neither confirmed nor refuted here -- what is new is that its boundary has been
+located, that the gate's decision there is slice-size-dependent by 0.48, and that a cell
+with the counterexample's shape now exists to be isolated.**
+
+**SCOPE.**  One task with a swept noise level, one architecture, the diffusion substrate,
+the base's own `effective_budget`, 40 epochs, 3 seeds.  A single boundary is not the
+boundary: a different task could sit elsewhere and behave differently, and nothing here
+bounds that.

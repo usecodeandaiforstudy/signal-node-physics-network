@@ -1,0 +1,96 @@
+==================================================================
+  ext_32 - the '5x better' direct-residual claim, controlled
+  layer_sizes=(20, 15, 10) output_dims=(4, 3, 2) epochs=80 seeds=3 modes=['proto', 'direct']
+  2026-10-04 18:46:31
+==================================================================
+
+  THE CLAIM: forming the layer-2/3 residual target from each layer's RAW scalar
+  output is ~5x better than from the proto-weighted prediction.  README carries
+  it as '+0.064 (direct residual) vs +0.013 (Proto)' on a 2D nonlinear
+  regression -- so the metric is the DEPTH GAIN, and 0.064/0.013 = 4.9.
+
+  AND THE BASE SAYS IT HAS NOT BEEN REPRODUCED: 'a short check gave the right
+  direction but nowhere near that magnitude', which is why the shipped default
+  is still 'proto'.
+
+  WHY THE ORIGINAL NUMBERS COULD NOT SETTLE IT -- they come from TWO PROGRAMS:
+
+    reg_01_proto_baseline.py  (+0.013)  |  reg_02_direct_residual.py  (+0.064)
+    ------------------------------------ | ------------------------------------
+    residual mode: proto-weighted       |  direct
+    kernel: Cauchy, anisotropic h,      |  pure Gaussian
+            multi-scale k                |
+    HiMALND, dual A/B network           |  SEPARATE single net, no A/B split
+    trainer MONKEY-PATCHED:             |  its own hand-written loop; does not
+      train_one_layer replaced          |  import HiMALND at all
+      _forward_layer replaced           |
+
+  **At least four things change between the two numbers, and the 5x is attributed
+  to one of them.**  reg_01 does not run the shipped trainer; reg_02 does not run
+  it either, or anything derived from it.
+
+  THIS SCRIPT: the SHIPPED HiMALND, nothing monkey-patched, reg_01's own
+  configuration, and residual_mode as the ONLY difference between the two arms.
+
+====================================================================================================
+  P1  the depth curve under each mode, mean over seeds
+====================================================================================================
+
+  mode       R2 (L1 only)   R2 (L1+L2)  R2 (L1+L2+L3)   DEPTH GAIN  HiMALND.predict
+  ----------------------------------------------------------------------------------
+  proto           +0.3071      +0.3096        +0.3140      +0.0069             +nan
+  direct          +0.3071      +0.2884        +0.2787      -0.0284             +nan
+
+  CONTROL: layer 1 is trained identically under both modes, so its R^2 must
+  match seed by seed.  proto +0.3071 vs direct +0.3071, identical: YES
+
+  depth gain: proto +0.0069 (sd 0.0045), direct -0.0284 (sd 0.0152)
+  direct - proto = -0.0353
+  the claim's published pair was proto +0.013 / direct +0.064, a ratio of 4.9
+  this run's ratio: -4.12x
+
+====================================================================================================
+  P2  the two inference paths DISAGREE, and the base already knew
+====================================================================================================
+
+  reg_01's own source comment where it builds the depth curve reads:
+      'Proto-weighted vs direct-h (L1 only -- wire-direct accumulation broken
+       in old path)'
+  'the old path' is `HiMALND.predict`, which walks the layers wire-direct and
+  returns the LAST layer's output with NO accumulation -- while the training
+  design assumes the protos are summed (training/himal_nd.py:889: 'At predict
+  time these are summed -> recovers original y').
+
+  mode        proto-summed (the claim)    HiMALND.predict        gap
+  --------------------------------------------------------------------
+  proto                        +0.3140       NOT SCORABLE         --
+  direct                       +0.2787       NOT SCORABLE         --
+
+  HiMALND.predict returned shape (120, 2) vs y (120,) -- NOT SCORABLE
+
+  **AND THAT IS WORSE THAN A DISAGREEMENT.**  Under reg_01's OWN published
+  configuration -- output_dims ending at 2 -- the shipped inference path emits
+  two columns against a scalar target, so it cannot be scored at all.  So the
+  published depth numbers were necessarily computed through the hand-written
+  proto sum, and the trainer's own `predict` was never a candidate.
+
+  **So there are TWO live inference paths in the shipped trainer and they return
+  different things.**  This script reports both and claims neither; which one is
+  correct is a question about the base version's design, and it is a separate one
+  from the 5x.
+
+====================================================================================================
+  VERDICT: does the 5x reproduce under control?
+====================================================================================================
+
+  NOT CONFIRMED: with everything else held fixed, the direct residual does not
+  produce the larger depth gain.  **That is a controlled refutation of the
+  claim as stated**, and it means the published pair measured the difference
+  between two programs rather than between two residual schemes.
+
+  THE HONEST LIMIT: this is one task, one architecture, one epoch count and the
+  seed count above.  The published pair used a different kernel family and a
+  different network topology, so a 5x could still exist THERE -- what is
+  refuted is that the residual mode ALONE produces it.
+
+  wall time 3027.3s

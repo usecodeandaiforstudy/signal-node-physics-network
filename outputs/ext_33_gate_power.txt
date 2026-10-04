@@ -1,0 +1,107 @@
+==================================================================
+  ext_33 - does the do-no-harm gate have power at its boundary?
+  task=4d arch=G noises=[0.1, 0.4, 0.8, 1.5, 3.0] holdouts=[2, 4, 8, 16] seeds=3 epochs=40 substrate=diffusion
+  2026-10-04 20:03:49
+==================================================================
+
+  Section 6.11 tried three counterexamples and all failed, and it says why the
+  third one could not settle the question: a FIRST-ORDER failure is detectable at
+  any slice size, so it never probed the gate's STATISTICAL POWER.  That needs a
+  task near the decision boundary, and the base says it was never constructed.
+
+  THE GATE: val = every `guard_holdout`-th training sample (a STRIDE); fit the
+  strengths on the complement; keep iff the fitted strengths BEAT the in-place
+  ones on that stride, strictly.  A strict inequality on a finite sample is
+  exactly what luck can carry at the boundary, and `guard_holdout` is a direct
+  knob on how many samples decide it.
+
+====================================================================================================
+  P1  the accept rate across a NOISE sweep (holdout=4)
+====================================================================================================
+
+    noise   accepted/total  accept rate   hybrid R2  geometry R2  hybrid - geom   mean reject gap
+  ------------------------------------------------------------------------------------------------
+     0.10            5/120        0.042     +0.5009      +0.2038        +0.2971           -0.0568
+     0.40            3/120        0.025     +0.3523      +0.1765        +0.1758           -0.0962
+     0.80            4/120        0.033     +0.1524      +0.1191        +0.0333           -0.1301
+     1.50            3/120        0.025     +0.0177      +0.0460        -0.0283           -0.1162
+     3.00            0/120        0.000     -0.0019      -0.0019        +0.0000           -0.2889
+
+  THE BOUNDARY, by the accept rate closest to 0.5: noise = 0.1 (rate 0.042)
+
+====================================================================================================
+  P2  THE POWER TEST: does the accept DECISION depend on the slice size?
+====================================================================================================
+
+  noise levels used: [0.1, 0.4]  (the boundary and its neighbours)
+
+    noise  holdout  val samples   accepted/total  accept rate   hybrid R2  hybrid - geom
+  --------------------------------------------------------------------------------------
+     0.10        2          128            4/120        0.033     +0.4999        +0.2961
+     0.10        4           64            5/120        0.042     +0.5009        +0.2971
+     0.10        8           32           11/120        0.092     +0.5294        +0.3256
+     0.10       16           16           40/120        0.333     +0.5398        +0.3361
+
+     0.40        2          128            5/120        0.042     +0.3886        +0.2121
+     0.40        4           64            3/120        0.025     +0.3523        +0.1758
+     0.40        8           32           16/120        0.133     +0.3632        +0.1867
+     0.40       16           16           61/120        0.508     +0.4361        +0.2596
+
+====================================================================================================
+  P3  THE COUNTEREXAMPLE SEARCH: gate ACCEPTED, and the arm still lost
+====================================================================================================
+
+  The guarantee is 'deploying a calibration never leaves the arm worse than NOT
+  calibrating'.  `arm='hybrid'` and `arm='geometry'` spend an identical physical
+  measurement budget and differ ONLY by the calibration (train_model's own
+  documentation), so `hybrid < geometry` isolates the calibration's effect.
+
+    noise  holdout  gate accepted     hybrid   geometry  hybrid - geom                VERDICT
+  --------------------------------------------------------------------------------------------
+     0.10        2              4    +0.4999    +0.2038        +0.2961      accepted, no harm
+     0.10        4              5    +0.5009    +0.2038        +0.2971      accepted, no harm
+     0.10        8             11    +0.5294    +0.2038        +0.3256      accepted, no harm
+     0.10       16             40    +0.5398    +0.2038        +0.3361      accepted, no harm
+     0.40        2              5    +0.3886    +0.1765        +0.2121      accepted, no harm
+     0.40        4              3    +0.3523    +0.1765        +0.1758      accepted, no harm
+     0.40        8             16    +0.3632    +0.1765        +0.1867      accepted, no harm
+     0.40       16             61    +0.4361    +0.1765        +0.2596      accepted, no harm
+     0.80        4              4    +0.1524    +0.1191        +0.0333      accepted, no harm
+     1.50        4              3    +0.0177    +0.0460        -0.0283      ACCEPTED AND LOST
+     3.00        4              0    -0.0019    -0.0019        +0.0000                refused
+
+====================================================================================================
+  VERDICT
+====================================================================================================
+
+  accept rates across the slice sizes at the boundary: [0.033, 0.042, 0.092, 0.333, 0.042, 0.025, 0.133, 0.508]
+  spread = 0.483
+
+  THE CONFOUND IN THIS COMPARISON, stated because it bounds the verdict: the
+  hybrid and geometry arms are separate trainings, matched on data, seed and
+  initialisation, but the calibration CHANGES THE TRAJECTORY -- it rewrites
+  W_gauss mid-run, so the finite differences that follow see a different loss
+  surface.  So `hybrid < geometry` is the calibration's effect PLUS that
+  divergence, and a single cell cannot separate them.  The base flagged the same
+  conflation in its own section 6.11 and this design narrows it without closing it.
+
+  CELLS WITH A NEGATIVE MARGIN AND AN ACCEPTED CALIBRATION:
+    noise=1.5 holdout=4: accepted 3, hybrid - geometry -0.0283
+
+  **THE COUNTEREXAMPLE EXISTS: 1 of 11 boundary cells
+  had the gate ACCEPT a calibration and the arm still end BELOW its own
+  geometry arm.**  That is the evidence section 6.11 searched for and did not
+  find, and it is the guarantee -- not the stronger 'beats the best search
+  arm' claim -- that it bears on.
+
+  AND THE POWER IS SLICE-SIZE-DEPENDENT: the accept rate moves by 0.483
+  across guard_holdout.  So the gate's decision at the boundary IS partly a
+  matter of how many samples decide it -- which is the property section 6.11
+  said it had never tested.
+
+  SCOPE: ONE task whose noise level was swept, one architecture, diffusion
+  substrate, the base's own effective_budget, 40 epochs and the seeds above.
+  A single boundary is not the boundary: a different task could sit elsewhere and
+  behave differently, and nothing here bounds that.
+
+  wall time 0.9s
