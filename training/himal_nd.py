@@ -123,6 +123,7 @@ class HiMALND:
         task: str = "regression",
         n_classes: int = 2,
         residual_mode: str = "proto",
+        seed: int = 0,
     ):
         if task not in ("regression", "classification"):
             raise ValueError(f"Unknown task: {task}")
@@ -131,13 +132,28 @@ class HiMALND:
         #               prediction (what the predict path sums, so train and
         #               predict agree)
         #   "direct" -- original y minus the accumulated RAW scalar output
-        #               h_m[:, 0] of the previous layers (THEORY.md section 7.3
-        #               reports this as ~5x better, but that comparison has not
-        #               been reproduced in this codebase, so "proto" remains the
-        #               default rather than switching on an unverified claim)
+        #               h_m[:, 0] of the previous layers.  THEORY.md 3.2 and 7.3
+        #               reported this as ~5x better with the sign in its favour;
+        #               re-measured under control (extension FINDINGS.md 12.17)
+        #               the sign REVERSES -- direct's depth gain is -0.0284 against
+        #               proto's +0.0069 -- because "direct" fits layers 2-3 to the
+        #               residual of the RAW output while the inference path sums
+        #               the PROTO predictions, so the deeper layers are trained
+        #               against a residual the inference never reconstructs.
+        #               "proto" is therefore the default because the alternative is
+        #               MEASURED HARMFUL, not merely unverified.
         if residual_mode not in ("proto", "direct"):
             raise ValueError(f"Unknown residual_mode: {residual_mode}")
         self.residual_mode = residual_mode
+
+        # Reproducibility.  EVERY random draw this trainer makes -- the layer
+        # initialisation in `_init_layer` and the SPSA perturbation in
+        # `_spsa_step` -- comes from the GLOBAL `np.random` state, and `train`
+        # seeds it once at entry.  Before this, two calls with identical
+        # arguments produced DIFFERENT networks depending on what had run
+        # before, so every number published from this class was a single draw
+        # from an unseeded process (extension FINDINGS.md 12.17).
+        self.seed = int(seed)
 
         self.layer_sizes = layer_sizes
         self.output_dims = output_dims
@@ -787,6 +803,12 @@ class HiMALND:
 
         Returns layers_A, layers_B, data_split.
         """
+        # ONE seed covers every random draw below: the layer initialisation
+        # (`_init_layer`) and the SPSA perturbation (`_spsa_step`) are the only
+        # two sources, and both are reached from here.  Two calls with identical
+        # arguments and the same `seed` now give identical networks.
+        np.random.seed(self.seed)
+
         data = self.split_data(X, y, method=split_method)
         self._split_value = float(data["split_value"])
         self._split_method = split_method
