@@ -43,7 +43,7 @@ Key achievements:
 
 ## Features
 
-- 🧠 **Physically Deployable**: Every operation (distance, Gaussian kernel, MVM, gradient estimation) has a corresponding analog circuit; fully analog inference with zero digital dependency
+- 🧠 **Physically Deployable**: Every operation (distance, Gaussian kernel, MVM, gradient estimation) has a corresponding analog circuit; fully analog inference with zero digital dependency *(the **gradient estimation** half of this is dead code and is no longer offered as a feature — see [THEORY.md](THEORY.md) Method C and [FINDINGS.md](FINDINGS.md) §11 item 8; inference itself does not need it)*
 - 🔬 **Digital-Physical Equivalence**: The physical simulator is mathematically exactly equivalent to the PyTorch model, supporting direct weight export
 - 🖼️ **Breaking the High-Dimensional Barrier**: 3D structured encoding enables RBF to process 1024-dimensional images, with 2,884 parameters outperforming a larger MLP on the same task
 - ⚡ **Backpropagation-Free Training**: SPSA (0 ADC) / per-parameter FD (1 ADC) / analog gradient chain (O(1) latency) *(the gradient chain is defined but never called — see the status box)*

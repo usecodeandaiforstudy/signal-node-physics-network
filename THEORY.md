@@ -661,7 +661,7 @@ Hardware implementation: the differential amplifier inputs are L⁺ and L⁻, ou
 
 $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf{e}_j) - L(\theta - \epsilon \mathbf{e}_j)}{2\epsilon}$$
 
-**Grouped parallelism** (Experiments train_01 / train_02): Partition parameters into K groups. train_01 (grouped FD) proves parameter group independence, meaning K parallel hardware circuits can train independently; train_02 (grouped SPSA) measures equivalent speedup of >20× while maintaining accuracy:
+**Grouped parallelism** (Experiments train_01 / train_02): Partition parameters into K groups. **train_01 (grouped FD) does NOT prove parameter group independence and should be treated as SUPERSEDED** — its grouping is by consecutive particle blocks, so the flattened parameter visit order is identical for every `K` and the results are bit-identical *by construction*, testing the loop nesting rather than independence (extension `FINDINGS.md` 12.8; the independence claim is measured in `FINDINGS.md` §7). train_02 (grouped SPSA) measures equivalent speedup of >20× while maintaining accuracy, and its regeneration **does** support that:
 
 > **Correction.** The index convention in both scripts was wrong: they grouped
 > dimension `d` of several different particles rather than all dimensions of one
@@ -675,7 +675,7 @@ $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf
 
 | Experiment | Method | Core Finding |
 |-----------|--------|--------------|
-| train_01 (formerly E13) | Grouped per-parameter FD | Parameter group independence proven, K× parallel feasible |
+| train_01 (formerly E13) | Grouped per-parameter FD | ~~Parameter group independence proven, K× parallel feasible~~ **SUPERSEDED: the grouping preserves the parameter visit order, so every K is bit-identical by construction — it tests the loop nesting, not independence. The independence claim is measured in FINDINGS.md section 7 (extension 12.8).** |
 | train_02 (formerly E14) | Grouped SPSA | Measured >20× equivalent speedup |
 
 ### Method C: Analog Gradient Chain — O(1) Latency
@@ -697,21 +697,29 @@ $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf
 | Latency | O(1), independent of parameter count |
 | Hardware complexity | Highest |
 
-> **Implementation status.** This method is **not implemented**. The functions
+> **Implementation status — the either/or below has now been DECIDED, and the decision is
+> REMOVAL from the feature list.**  This method is **not implemented**.  The functions
 > that would realise it — `analog_gradient_mac`, `analog_center_gradient`,
 > `analog_width_gradient`, `analog_weight_gradient` in
-> `physical_simulator/components.py` — are defined and re-exported, but there is
-> **no call site anywhere in the repository**, and no experiment trains with
-> them. The same applies to the receiver-ADC path (`analog_adc`,
-> `analog_loss_readout`), so the "1 ADC" tier is nominal as well. Either implement
-> and measure this method, or remove it from the feature list; see
-> [FINDINGS.md](FINDINGS.md) §9.
+> `physical_simulator/components.py` — are defined and re-exported, and they do call
+> **each other** (`analog_gradient_mac` from `analog_weight_gradient`), but **neither
+> enclosing function is called anywhere outside `components.py` and `__init__.py`**, and
+> no experiment trains with them.  The accurate statement is therefore an
+> **internally-connected island with no entry point**, not "no call site anywhere" — the
+> conclusion is the same, but the earlier wording would make a reader who checked it
+> literally think this note was stale.
+>
+> The same applies to the receiver-ADC path (`analog_adc`, `analog_loss_readout`), so the
+> "1 ADC" tier is nominal as well.  **Method C is therefore not part of what this project
+> offers**, and the feature lists in `README.md` now say so; see
+> [FINDINGS.md](FINDINGS.md) §9 and §11 item 8.  Implementing it remains possible and is a
+> project rather than a paragraph.
 >
 > Note also that with the training rule found in [FINDINGS.md](FINDINGS.md) §6 the
 > gradient chain would only ever be needed for the **geometry** — the source
 > strengths should be calibrated in closed form instead of differentiated.
 
-**This is the only scheme that simultaneously obtains exact gradients during forward propagation** — physically implementing the chain rule of backpropagation. *(Claim only; not implemented — see the note above.)*
+**This would be the only scheme that simultaneously obtains exact gradients during forward propagation** — physically implementing the chain rule of backpropagation. *(NOT IMPLEMENTED and not offered — see the note above.)*
 
 ### Method D: Digital Twin (PyTorch autograd) — Rapid Prototyping
 

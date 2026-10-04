@@ -1169,6 +1169,17 @@ Errors fixed in the pre-existing code during the same pass:
   Their previously reported numbers must be regenerated.  Note that within the
   same function the `h` and `W` terms already used the correct `N` stride, so the
   two conventions were mixed in one index list.
+  **Both were regenerated (extension 12.8), and the two came out differently.**
+  `train_02`'s numbers genuinely vary with `K` and it **passes** — grouped SPSA
+  matches or beats exact per-parameter FD at the same forward budget, and at `K=2`
+  it converges 21x sooner.  **`train_01`'s regeneration is vacuous and it should be
+  marked SUPERSEDED rather than re-run again**: its grouping is by consecutive
+  particle blocks, so the flattened parameter visit order is identical for every
+  `K` and the results are bit-identical **by construction**.  Its PASS verdict
+  therefore tests the loop nesting rather than particle independence — and the
+  extension adds a **second, independent reason** why it cannot, one that survives
+  the index-convention fix above.  The independence claim is measured in section 7
+  and the front-page line about `train_01` should point there instead.
 * `training/himal_nd.py` kept the *proto* residual accumulation while THEORY §7.3
   claims the *direct* residual is ~5x better, and THEORY said that finding
   "changes the design principle".  A `residual_mode="direct"` option now exists
@@ -1212,13 +1223,32 @@ as holding at that scale until scaled up.
 
 ## 11. Open items
 
+> **This index was still incomplete, which is the defect its own rebuild was meant to
+> fix.**  Three genuinely-open items were being stated elsewhere in this document and
+> were absent here, so a reader choosing the next experiment from this list would not
+> have seen them.  They are now items 8-10 below.
+>
+> **And the list is no longer the only place the work is tracked.**  An extension audit
+> (see `extensions/multigraph/BASE_CORRECTIONS.md`) holds a line-by-line work list for
+> this document, including three claims it retracts outright — item 2's "not
+> constructible" below, THEORY 7.3's "5x", and 6.11's "survived three counterexamples".
+
 1. ~~Scaling law of the measurement budget.~~  **Done** — sections 6.1 and 6.8.  The
    rate result is the primary evidence, the share axis is now sampled at all five
    architectures, and section 6.8 identifies the quantity that actually controls
    the calibration (readout parameters vs training samples) as distinct from the
-   quantity that controls the geometry arm (geometry share).  Still to do: check
-   whether the hybrid advantage at 3 000 measurements holds for a larger particle
-   budget.
+   quantity that controls the geometry arm (geometry share).  **The tail below is
+   Settled (extension 12.9-12.13), and the answer is conditional on one constant.**
+   At the default `closed_form_lam=1e-3` the low-budget margin goes from `+0.41` at
+   52 particles to `-0.02` at 208, in two independent families, with the budget held
+   fixed.  At `lam="auto"` it is **positive at every size and rises to `+0.60`**.
+   **`1e-3` is the only value on a five-point grid that collapses it.**  The question
+   as originally phrased could not be asked, because the comparison window itself
+   scales with the architecture — `effective_budget` derives the per-epoch budget
+   from the network size, so raising the particle count moves the window past the
+   3 000-measurement grid point.  Evidence: extension `FINDINGS.md` 12.9-12.13,
+   `outputs/ext_25_budget_matched.txt`, `outputs/ext_26_base_family.txt`,
+   `outputs/ext_27_nonmonotone.txt`.
 2. **Equal-parameter-count comparison.**  **CONSTRUCTIBLE, contrary to what this item
    said.**  A layer with input dim `D`, output width `V` and `N` particles stores `(D+1)*N`
    geometry numbers and `V*N` readout numbers, so its geometry share is `(D+1)/(D+1+V)` —
@@ -1243,9 +1273,17 @@ as holding at that scale until scaled up.
    is finite-time: it closes to zero and inverts by 160 epochs at budget 1 200.
    Endpoint comparisons must state their epoch count, and section 5 is now labelled
    accordingly.
-5. **Reservoir variant.**  On an excitable medium the only trainable part is the
-   readout, which is section 6's recommendation taken to its limit — but it
-   requires giving up movable centres and per-particle widths.
+5. **Reservoir variant.**  **Tested** (extension 12.14).  A frozen geometry with a single
+   closed-form solve beats the geometry arm, at zero probe cost, in most cells (9 of 14)
+   — so "only the readout is trainable" is not by itself disqualifying, and the movable
+   centres are not earning their keep because a frozen geometry is too weak.  What it
+   loses to is search PLUS solve (13 of 14), and the reason is **model selection**: a
+   reservoir's one knob is redrawing the geometry, and the redraw has to be picked, which
+   on a quarter-of-training slice is **worse than not picking in about half the cells**
+   (doubling the slice helps, `+0.0204` mean).  **The gap is a selector, not movable
+   centres** — and the same selector failure appears in the operator suite
+   (`ext_21`/`ext_22`).  Evidence: extension `FINDINGS.md` 12.14,
+   `outputs/ext_29_reservoir.txt`.
 6. ~~Regularising the calibration.~~  **Done — sections 6.6-6.7.**  A relative
    ridge plus a *symmetric* out-of-sample gate cut the worst-case hybrid R^2 from
    -0.8262 to -0.0355 while preserving every decisive win; the calibration now wins
@@ -1253,14 +1291,50 @@ as holding at that scale until scaled up.
    0-4 of 80, so a cheaper schedule (calibrate every k epochs, or only when the
    geometry has moved enough) would cut cost with no loss; (b) the gate validates
    in-distribution, and although the `shift` task showed the advantage transfers,
-   a task where the gate *accepts* and the arm still loses has still not been
-   found — that remains the strongest missing counterexample; (c) the five losing
+   **the counterexample to the *stronger* claim exists and is recorded in section 6.7**:
+   `hetero`/G, where one calibration was accepted, improved the arm, and the arm still
+   lost to `full` (1 accepted of 120 cells).  **It is not a counterexample to the
+   guarantee**, which is about not calibrating rather than about other arms.  On the
+   guarantee itself, an extension audit located the gate's **decision boundary** — where
+   the accept rate is slice-size-dependent by `0.48` — and then isolated the calibration
+   from its own trajectory: **55 of 116 deployed calibrations left the arm worse than
+   immediately before the write** (extensions 12.18, 12.19; see the retraction at the end
+   of 6.11).  (c) the five losing
    cells are now uninformative about the mechanism, because the gate disables the
    calibration there.  Sections 6.9 and 6.11 close (a) and report three failed
-   attempts at (b).
-7. **Task sweep coverage.**  Seven tasks, two architectures, 2 seeds.  The decisive
-   cells are the nine that are won; the five losses all reduce to the geometry arm,
-   so they bound the risk but do not discriminate between the mechanisms.
+   attempts at (b) — and a fourth that succeeded.
+7. **Task sweep coverage.**  **Restated, because the counts here were stale and this item
+   contradicted item 3 above.**  It is **3 seeds**, not 2, and at 9 seeds the headline is
+   **8 of 14**, not nine.  What is genuinely still narrow is not the coverage but the
+   reading: **the five losses all reduce to the geometry arm, so they bound the risk
+   without discriminating between the mechanisms.**  That is a limitation of the evidence,
+   not a gap in it, and item 3 already covers the seeds.
+8. **Method C — the analog gradient chain.  STILL OPEN, and it is the largest gap between
+   what this project advertises and what exists.**  `THEORY.md` Method C (lines 647-654)
+   says the method is "not implemented", that its functions have "no call site anywhere in
+   the repository", and instructs: **"Either implement and measure this method, or remove
+   it from the feature list."**  **Neither branch has been taken.**  An extension audit
+   verified the reachability with one precision worth recording: the functions do call
+   **each other** (`analog_gradient_mac` from `analog_weight_gradient`, `analog_adc` from
+   `analog_loss_readout`), but **neither enclosing function is called outside
+   `components.py` and `__init__.py`** — so the accurate statement is *an internally
+   connected island with no entry point*, not *no call site anywhere*.  A reader checking
+   the wording literally would wrongly conclude the note was stale.
+9. ~~The "5x better" direct residual.~~  **RETRACTED — see the note in section 9 and
+   THEORY 3.2/7.3.**  It had been stated here only in section 9 and never in this index,
+   which is the gap this preamble now names.  Re-measured under control the sign reverses
+   (direct `-0.0284` against proto `+0.0069`), so `residual_mode="proto"` is the default
+   because the alternative is **measured harmful**.
+10. ~~A task near the do-no-harm gate's decision boundary.~~  **Done — extension 12.18 and
+   12.19; see the retraction at the end of 6.11.**  Section 6.11 said the third
+   counterexample attempt "did not answer its own question" because that task "was not
+   constructed".  It is now constructed — the knob is the **validation-slice size**, not
+   the task's noise — and the isolation it needed found **55 of 116 deployed calibrations
+   leaving the arm worse** than immediately before the write.
+
+**And one item that is a defect rather than a question, now fixed:** `training/himal_nd.py`
+took no `seed` and never seeded the global RNG, so every number published from it was one
+draw from an unseeded process.  It now takes a `seed` and seeds once at the top of `train`.
 
 ---
 

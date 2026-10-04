@@ -617,11 +617,11 @@ $$\hat{g} = \frac{L(\theta + \epsilon\boldsymbol{\Delta}) - L(\theta - \epsilon\
 
 $$\frac{\partial L}{\partial \theta_j} \approx \frac{L(\theta + \epsilon \mathbf{e}_j) - L(\theta - \epsilon \mathbf{e}_j)}{2\epsilon}$$
 
-**分组并行**（实验 train_01 / train_02）：将参数分为 K 组。train_01（分组 FD）证明了参数组间独立，K 路硬件可并行训练；train_02（分组 SPSA）实测在保持精度的同时等效加速可达 20× 以上：
+**分组并行**（实验 train_01 / train_02）：将参数分为 K 组。**train_01（分组 FD）并不证明参数组间独立，应视为已被取代**——它按连续粒子块分组，因此每个 `K` 下参数的展平访问顺序完全相同，结果**按构造**逐位相同，检验的是循环嵌套而不是独立性（扩展 `FINDINGS.md` 12.8；独立性主张在 `FINDINGS.md` §7 中被测量）。train_02（分组 SPSA）实测在保持精度的同时等效加速可达 20× 以上，而它的重新生成**确实**支持这一点：
 
 | 实验 | 方法 | 核心结论 |
 |------|------|---------|
-| train_01（原 E13） | 分组逐参数 FD | 参数组间独立，等效支持 K× 并行 |
+| train_01（原 E13） | 分组逐参数 FD | ~~参数组间独立，等效支持 K× 并行~~ **已被取代：分组保持了参数的访问顺序，因此每个 K 都按构造逐位相同——它检验的是循环嵌套而不是独立性。独立性主张在 FINDINGS.md §7 中被测量（扩展 12.8）。** |
 | train_02（原 E14） | 分组 SPSA | 实测 >20× 等效加速
 
 ### 方法 C：模拟梯度链 — O(1) 延迟
