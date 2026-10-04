@@ -188,11 +188,26 @@ $$\delta_\ell = y - \text{softmax}\left(-\frac{\|h - \text{proto}\|}{T}\right) \
 
 $$\delta_\ell = y - h_{[:,0]}$$
 
+> **RETRACTED (this section's conclusion is reversed).**  The depth-gain comparison below
+> was measured through **two different programs**, not one trainer with one switch:
+> `reg_01` monkey-patches two of `HiMALND`'s methods at runtime and uses a different kernel
+> family, and `reg_02` does not import `HiMALND` at all.  Re-measured **under control** —
+> the shipped trainer, matched initialisation, and `residual_mode` as the only difference —
+> the direct arm's depth gain is **negative** (`-0.0284`, sd `0.0152`) against proto's
+> `+0.0069`, a ratio of **`-4.12x`** against the `4.9x` claimed below.  **The sign is
+> reversed, so the analysis that follows rests on a measurement that does not hold.**
+>
+> **And the mechanism is a target mismatch, not information fidelity**: `direct` fits
+> layers 2-3 to the residual of the **raw** output while the inference path sums the
+> **proto** predictions, so the deeper layers are trained against a residual the inference
+> never reconstructs.  Evidence: `FINDINGS.md` (extension) 12.17,
+> `outputs/ext_32_residual_mode.txt`.
+
 | Property | Proto Residual | Direct Residual |
 |----------|---------------|-----------------|
 | Mechanism | Soft clustering + weighted averaging | Exact per-sample error |
 | High-frequency residual info | Smoothed away (soft clustering loses fine-grained differences) | Fully preserved |
-| Depth gain | +0.013 (minimal) | **+0.064 (5× improvement)** |
+| Depth gain | +0.013 (minimal) | ~~**+0.064 (5× improvement)**~~ **RETRACTED: measured `-0.0284` against proto's `+0.0069` under control** |
 | Convergence behavior | Diminishing returns with depth | L2/L3 can learn any residual pattern |
 
 **Mathematical analysis of why Proto Residual fails**:
@@ -206,6 +221,16 @@ Here {y_k^proto} are the prototype label values. Due to the smoothing property o
 **Why Direct Residual works**:
 
 Direct residual $y - h_{[:,0]}$ preserves the complete per-sample error information. $h_{[:,0]}$ is a continuous-valued function that can directly fit targets to arbitrary precision, so the residual contains all information that Layer 1 failed to capture from the original problem. Layer 2 and Layer 3 particles can specifically cover regions where Layer 1 has large errors, forming complementary particle distributions, yielding a depth gain of +0.064 (5× that of Proto residual).
+
+> **This paragraph's conclusion is retracted with the table above.**  The information-
+> fidelity argument predicts that depth should HELP the direct arm; under control, depth
+> **hurts** it (`+0.3071 -> +0.2884 -> +0.2787` across L1, L1+L2, L1+L2+L3), while the
+> proto arm improves slightly.  The reason is in the trainer's own comment at
+> `training/himal_nd.py:889`: the per-layer prototypes map to the residual target and
+> **"At predict time these are summed -> recovers original y"** — so a residual formed from
+> the raw output is one the inference never reconstructs.  **The argument above is about
+> what the residual CONTAINS; the measurement is about what the inference RECONSTRUCTS, and
+> they come apart exactly here.**
 
 ### 3.3 Mathematical Formulation of Full Network Forward Pass
 
@@ -380,11 +405,23 @@ Key conclusion: The RBF particle network achieves 39.3% best accuracy on CIFAR-1
 
 | Experiment | Residual Type | Depth Gain | Notes |
 |------------|--------------|------------|-------|
-| reg_02 | Direct residual | **+0.064** | h[:,0] as prediction per layer, exact per-sample error |
+| reg_02 | Direct residual | ~~**+0.064**~~ **RETRACTED: `-0.0284` under control** | h[:,0] as prediction per layer, exact per-sample error |
 | reg_01 | Proto residual | +0.013 | softmax temperature-weighted interpolation, high-frequency info smoothed |
 | reg_06 | California Housing (Proto residual) | R²=0.530 | Proto residual baseline |
 
-The depth gain comparison is definitive: **direct residual's information fidelity far exceeds proto residual**, with its 5× improvement coming from complete preservation of per-sample error information. This finding changes the design principle of residual learning — the residual signal must precisely reflect per-sample error; any form of smoothing or clustering severely damages the benefits of deep networks.
+**The depth gain comparison is NOT definitive, and this paragraph's conclusion is
+retracted.**  It read: *"direct residual's information fidelity far exceeds proto residual,
+with its 5× improvement coming from complete preservation of per-sample error information.
+This finding changes the design principle of residual learning..."*  **The 5× does not
+survive a controlled measurement; it reverses.**  With the shipped trainer, matched
+initialisation, and `residual_mode` as the only difference, the direct arm's depth gain is
+**`-0.0284`** against proto's **`+0.0069`** — depth **hurts** the direct arm
+(`+0.3071 -> +0.2884 -> +0.2787`), and the reason is that the raw output is not what the
+inference path sums (see section 3.2's retraction above and the note at
+`training/himal_nd.py:889`).  **What the original pair measured was the difference between
+two programs — `reg_01` monkey-patches `HiMALND` and changes the kernel family, `reg_02`
+does not import it — so at least four things varied and the 5× was attributed to one.**
+Evidence: `FINDINGS.md` (extension) 12.17, `outputs/ext_32_residual_mode.txt`.
 
 ### 7.4 Experiment Logical Flow
 
@@ -400,17 +437,33 @@ cifar_01 (First success 37.3%)
 
 reg_04 (Simplest FD verification R²=0.94)
   └──→ reg_01 (Three-channel architecture + proto residual, depth gain +0.013)
-          └──→ reg_02 (Direct residual, depth gain 5x +0.064)
+          └──→ reg_02 (Direct residual, depth gain 5x +0.064 -- RETRACTED, see 7.3)
                   └──→ reg_06 (Real-world data baseline R²=0.530)
 ```
 
-> **Note on the direct-residual claim.** `reg_02` is a standalone script; the
-> production trainer `training/himal_nd.py` kept using the **proto** residual
-> accumulation, so the "+0.064 vs +0.013" comparison was never adopted in the
-> main path. A `residual_mode="direct"` option now exists in `HiMALND` so the
-> comparison can be re-measured; the default remains `"proto"` because the 5×
-> claim has not been reproduced in this codebase (a short check gave the right
-> *direction* but nowhere near that magnitude).
+> **Note on the direct-residual claim — RE-MEASURED AND REFUTED.** `reg_02` is a
+> standalone script; the production trainer `training/himal_nd.py` kept using the
+> **proto** residual accumulation, so the "+0.064 vs +0.013" comparison was never
+> adopted in the main path. A `residual_mode="direct"` option now exists in `HiMALND`,
+> and the comparison has now been made **under control**: the shipped trainer, matched
+> initialisation, and `residual_mode` as the only difference between the arms. **The
+> direct arm's depth gain is NEGATIVE** (`-0.0284`, sd `0.0152`) against proto's
+> `+0.0069` — a ratio of `-4.12x` against the `4.9x` claimed above. **The conclusion in
+> this section is therefore retracted, with its sign reversed.**
+>
+> **Why the original pair could not settle it:** the two numbers come from **two
+> different programs**. `reg_01` monkey-patches two of `HiMALND`'s methods at runtime and
+> uses a different kernel family, and `reg_02` does not import `HiMALND` at all — so at
+> least four things change between them and the 5x was attributed to one.
+>
+> **The mechanism, which matters more than the refutation:** `direct` fits layers 2-3 to
+> the residual of the **raw** output while the inference path sums the **proto**
+> predictions (see the note at `training/himal_nd.py:889`, "At predict time these are
+> summed → recovers original y"). **The deeper layers are therefore trained against a
+> residual the inference never reconstructs** — a **mismatched** target, not a better one.
+> **So the `"proto"` default is right, and for a stronger reason than the note in the
+> code gives: the alternative is not merely unverified, it is measured to be harmful.**
+> Evidence: extension `FINDINGS.md` 12.17, `outputs/ext_32_residual_mode.txt`.
 
 ***
 

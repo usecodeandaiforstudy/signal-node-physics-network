@@ -215,7 +215,7 @@ If you have already downloaded CIFAR-10, you can simply place the extracted data
 |------------|------|--------|-----|-----|-----|
 | CIFAR-10 5-class | 32×32 grayscale | Accuracy | **39.3%** (2884p) *(test-set model selection — [FINDINGS.md](FINDINGS.md) §9.4)* | 34.0% (4295p) / 38.7% (33644p) | 61.3% (2632p) |
 | Digital-Physical Consistency | Various dims & particle counts | Max Error | **7.80×10⁻⁷** *(float32 + PU epsilon, not physical fidelity — §9.2)* | — | — |
-| Regression Depth | 2D nonlinear function | R² Gain | +0.064 (direct residual) vs +0.013 (Proto) *(not reproduced; `residual_mode="direct"` now exists in `training/himal_nd.py` so it can be re-measured)* | — | — |
+| Regression Depth | 2D nonlinear function | R² Gain | +0.064 (direct residual) vs +0.013 (Proto) **— RETRACTED: re-measured under control, direct's depth gain is `-0.0284` against proto's `+0.0069`, so the sign reverses. The original pair came from two different programs, `reg_01` (which monkey-patches `HiMALND` and changes the kernel family) and `reg_02` (which does not import it). See [FINDINGS.md](FINDINGS.md) §12.17 in the extension.** | — | — |
 | Regression Real Data | California Housing | R² | 0.530 | 0.551 | — |
 | Noise Robustness | 4 circuit noise levels | Accuracy Drop | 0.010 *(measured on the training set — §6.2 supersedes)* | — | — |
 | Parameter Efficiency | 4D synthetic classification | Accuracy/Params | 0.81 / 595p | 0.88 / 17410p (29×) | — |

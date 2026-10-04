@@ -302,6 +302,13 @@ they are the same fit reached at different speeds.
 > not about beating every arm -- in one losing cell the gate did accept a
 > calibration, the arm did improve, and it still lost (section 6.7).  Read 6.5-6.7
 > before applying this anywhere.
+>
+> **RETRACTED as stated, and the distinction matters.**  The guarantee holds **per
+> run** and not **per deployment**: measuring the arm's test `R^2` immediately before
+> and after each write showed **55 of 116 deployed calibrations left the arm worse**
+> (extension 12.19).  The end-of-run claim above survives -- every cell still ends
+> ahead, so the dips are recovered -- but "the arm can only ever improve" is false at
+> the moment of the write.  Evidence: extension `FINDINGS.md` 12.18 and 12.19.
 
 If the strengths are set by closed-form calibration instead of being searched,
 and every per-epoch physical measurement goes into the geometry, the same
@@ -682,6 +689,8 @@ task the project is built on improves.  The cost is margin, not correctness: `2d
 gives up 0.05-0.06 and `steps`/F2 gives up most of its (small) win.  In the six
 cells where the guard rejects everything, the calibrated arm is *exactly* the
 geometry arm — the guard never leaves the arm worse than not calibrating.
+**(Per deployment this is now measured to be false: see the retraction at the end of
+6.11. It holds per run, not per write.)**
 
 **Residual limitations of the fit-validate-refit gate (stated, not hidden).**  The
 exit criterion "score > score of the strengths in place" compared an honest
@@ -773,6 +782,10 @@ calibration out of 120, the arm improved from +0.0884 to +0.1228, and still lost
 6.11 was looking for -- and it falsifies "**the calibrated arm beats the best search
 arm**", which was only ever an empirical 9/14, not the guarantee.  The guarantee
 itself (never worse than not calibrating) is untouched, because +0.1228 > +0.0884.
+**THAT LAST SENTENCE IS NOW RETRACTED**: the guarantee is false *per deployment* — 55 of
+116 deployed calibrations left the arm worse than immediately before the write (extension
+12.19).  This cell's own reading is unaffected: its calibration **helped**, which is why it
+is not the counterexample.  See the retraction at the end of 6.11.
 
 **The `speedup` column of the ablation-F report must not be quoted.**  It is
 computed as "did the calibrated curve ever reach the best search arm's final value",
@@ -881,7 +894,7 @@ Consequences, which are corrections rather than additions:
    and then flattening: the *geometry* is still improving at large measurement
    counts, so a calibrated readout fitted to an early geometry stops being optimal.
 
-### 6.11 Three attempts to break the "never worse" guarantee, all of which failed
+### 6.11 Three attempts to break the "never worse" guarantee, all of which failed -- and a fourth that SUCCEEDED (see the retraction at the end of this section)
 
 The gate guarantees that deploying a calibration never leaves the arm worse than
 not calibrating.  The strongest missing evidence against the whole rule would be a
@@ -904,6 +917,26 @@ is detectable at any slice size, so it does not probe the gate's statistical pow
 and the script's "harm?" column in that part conflates *losing to another arm* with
 *being worse than not calibrating*; since zero calibrations were accepted there, the
 arm was exactly the geometry arm and the guarantee held.
+
+> **RETRACTED.  The guarantee as stated is false per deployment, and section 6.11's
+> conclusion above is superseded.**  The missing task was constructed (a task near the
+> decision boundary: the knob is the **validation-slice size**, not the task's noise, and
+> the accept rate moves `0.025 -> 0.508` across it), and the arm's **test** `R^2` was then
+> measured **immediately before and after each deployment inside a single run** — so the
+> harm is the calibration's and not a second trajectory's.  **55 of 116 deployed
+> calibrations left the arm worse than it was immediately before the write.**  The
+> mechanism needs no broken gate: the gate judges on a **stride of the training set**,
+> while harm is measured on the **evaluation set**, so it can be right about the data it
+> checks and wrong about generalisation.
+>
+> **Two qualifications travel with the retraction, and neither is optional.**  Every cell
+> in that grid still ends with a **positive** margin over its geometry arm, so the dips are
+> **recovered** and the recommendation this section supports — calibrate, and spend the
+> measurements on the geometry — is **unaffected**.  And the harmful range reaches down to
+> `-0.0003`, so part of the 55 is numerically indistinguishable from no change: **the
+> guarantee is about the sign, and lumping `-0.0003` together with `-0.0502` would
+> exaggerate the retraction.**  Evidence: extension `FINDINGS.md` 12.18 and 12.19,
+> `outputs/ext_34_deployment_harm.txt`.
 
 ---
 
@@ -1142,6 +1175,16 @@ Errors fixed in the pre-existing code during the same pass:
   and both modes are smoke-tested; the default stays `"proto"` because the 5x
   claim has not been reproduced here (a short check agreed in *direction* only).
   THEORY §7.3 and §10 now state this rather than contradicting the code.
+  **Superseded by a controlled re-measurement: the claim is not merely
+  unreproduced, it is REFUTED with its sign reversed.**  With the shipped
+  trainer, matched initialisation and `residual_mode` as the only difference, the
+  direct arm's depth gain is `-0.0284` against proto's `+0.0069` (ratio `-4.12x`),
+  and the mechanism is a **target mismatch** -- `direct` fits layers 2-3 to the
+  residual of the RAW output while the inference path sums the PROTO predictions.
+  **So the `"proto"` default is right for a stronger reason than this entry
+  gives: the alternative is measured to be harmful, not merely unverified.**
+  THEORY §3.2 and §7.3, and both README tables, now carry the retraction.
+  Evidence: extension `FINDINGS.md` 12.17, `outputs/ext_32_residual_mode.txt`.
 * The four front-page documents (`README.md`, `README_CN.md`, `THEORY.md`,
   `THEORY_CN.md`) carried the retracted claims with no warning.  Each now opens
   with a status box that enumerates the retractions and points here, and the
@@ -1176,9 +1219,19 @@ as holding at that scale until scaled up.
    quantity that controls the geometry arm (geometry share).  Still to do: check
    whether the hybrid advantage at 3 000 measurements holds for a larger particle
    budget.
-2. **Equal-parameter-count comparison.**  Not constructible in this family
-   (geometry costs `D+1` per particle against `1` for a scalar readout), so the
-   parameter-count rule of section 5 can only be tested by varying the ratio.
+2. **Equal-parameter-count comparison.**  **CONSTRUCTIBLE, contrary to what this item
+   said.**  A layer with input dim `D`, output width `V` and `N` particles stores `(D+1)*N`
+   geometry numbers and `V*N` readout numbers, so its geometry share is `(D+1)/(D+1+V)` —
+   **`V` is a knob on the share**, which is the same knob the box in section 5 already uses
+   when it notes that enabling the second channel moves F2 from an 81% share to 68%.
+   Holding the total fixed is then an integer problem, solved exactly with two layers
+   (`T = (D+1+V)*N1 + 3*N2`), and five points were built at **the same total of 312**
+   across a share sweep of **83% to 26%**.  **What that bought:** at a constant total the
+   search arms move by up to `0.319` across the axis while the calibrated arm moves by
+   `0.091`, and the calibration's margin **grows as the allocation worsens** — so **the
+   calibration is a substitute for a good allocation**, and the parameter-count rule of
+   section 5 holds for the calibrated arm rather than for the search arms.  Evidence:
+   extension `FINDINGS.md` 12.15, `outputs/ext_30_equal_params.txt`.
 3. **Statistical strength.**  **Done.**  abl_01 is 3 seeds, abl_03 is 3 seeds on
    both substrates, and abl_04, abl_05 and abl_06 (7 tasks x 2 architectures = 14
    cells) are all 3 seeds.  The seed upgrade was not cosmetic: it **retracted two
