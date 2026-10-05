@@ -1,6 +1,6 @@
 # Physical-Domain RBF Particle Neural Network
 
-[![CI](https://github.com/usecodeandaiforstudy/singal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/singal-node-physics-network/actions/workflows/ci.yml)
+[![CI](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
 
@@ -31,7 +31,9 @@
 
 ## Introduction
 
-> A novel neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.
+> A neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.
+>
+> *(This line used to read "a **novel** neural network architecture". **The architecture is a physical realisation of an established idea, and saying so is the point** — see [Relation to prior work](#relation-to-prior-work) below. What is narrower and possibly new here is the substrate precondition and the geometry operator's residual, not the layer.)*
 
 This project explores the feasibility of executing the complete pipeline from training to inference of neural networks within physical systems. The core design is "activate first, then combine": particles first produce a Gaussian response to the input, then linearly superimpose — nonlinearity arises from the spatial distance between particles and inputs, rather than from a fixed activation function. The network supports classification, regression, and high-dimensional image processing, offering multiple training methods including SPSA, finite differences, and digital twins. All forward operations have corresponding analog circuit implementations, and digital-to-physical export achieves extremely high precision.
 
@@ -49,6 +51,39 @@ Key achievements:
 - ⚡ **Backpropagation-Free Training**: SPSA (0 ADC) / per-parameter FD (1 ADC) / analog gradient chain (O(1) latency) *(the gradient chain is defined but never called — see the status box)*
 - 🔀 **Inherently Highly Parallel**: Parameter groups are independent; K parameter groups = K hardware channels trainable in parallel, with no mutual dependency *(holds without normalisation; false under PU — [FINDINGS.md](FINDINGS.md) §7)*
 - 🛡️ **Physically Noise-Robust**: Accuracy drops by only 0.01 across four levels of circuit noise, adapting to real hardware non-idealities *(that measurement was taken on the training set; see [FINDINGS.md](FINDINGS.md) §6.2 for the device-robustness result that replaced it)*
+
+## Relation to prior work
+
+**The layer this project builds on is not new, and saying so first is the point.** A hidden layer
+whose parameters are not trained, followed by a linear read-out solved in closed form, is
+established: **Extreme Learning Machines** (Huang et al. 2006), **random features** (Rahimi &
+Recht 2008) and **reservoir computing** (Jaeger 2001) all do exactly that, and **RBF networks**
+themselves date to Broomhead & Lowe 1988. **Analog in-memory computing** is a large field, and
+training *in* a physical substrate is established as well (see e.g. Wright et al., *Deep physical
+neural networks*, Nature 2022). This project's own `FINDINGS.md` §11 item 5 also **tested** the
+reservoir variant directly.
+
+**So the honest claim is four things, all narrower than "a novel architecture":**
+
+1. **A CHECKABLE PRECONDITION for which substrates the method applies to.** [`FINDINGS.md`](FINDINGS.md)
+   §12.16 turns "any physical system" into a *test*: the node's response must be such that
+   `log z(x)` is **linear in some fixed finite basis** of the input, because that is what lets the
+   geometry operator solve for the centre and the width. A Gaussian passes (its exponent is a
+   degree-2 polynomial), any polynomial exponent passes at its own degree, and a Laplace or Yukawa
+   source **does not** — with the residual showing it rather than an argument.
+2. **A GEOMETRY OPERATOR WITH A CONSISTENCY RESIDUAL.** Centre and width are recovered in closed
+   form from field readings, and `log_rms` reports whether a response is a *genuine single node* at
+   all. **A search-based trainer cannot report that**, which makes this a hardware diagnostic and
+   not only a training trick.
+3. **A COST UNIT OF MEASUREMENTS.** Comparisons are run in *read-out calibrations* rather than
+   epochs or seconds. That is what makes "the closed-form arm spends **zero** forward evaluations"
+   a measurement rather than a slogan.
+4. **A NEGATIVE-RESULTS RECORD.** Six claims on this page are retracted in the status box above;
+   the deep architecture is measured to be **beaten by a zero-forward baseline** on every task this
+   repository can build; and 58 defects are listed with what each one cost.
+
+**What this project does NOT claim:** a new paradigm, state-of-the-art accuracy, or that a
+closed-form read-out is its own idea.
 
 ## Architecture Overview
 
