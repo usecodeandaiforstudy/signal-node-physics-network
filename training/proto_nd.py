@@ -63,6 +63,7 @@ class ProtoGuidedTrainerND:
         init_range: Tuple[float, float] = (-3.0, 3.0),
         temperature: float = 0.1,
         proto_reg_weight: float = 0.1,
+        seed: int = 0,
     ):
         self.layer_sizes = layer_sizes
         self.output_dims = output_dims
@@ -71,6 +72,14 @@ class ProtoGuidedTrainerND:
         self.init_range = init_range
         self.temperature = temperature
         self.proto_reg_weight = proto_reg_weight
+        # ONE seed covers every random draw in this class.  There are exactly three,
+        # all `np.random.uniform` in `_init_layer`, and they go through the GLOBAL
+        # numpy RNG -- so without this, two constructions with identical arguments
+        # gave DIFFERENT networks and every number published from this trainer was a
+        # single draw from an unseeded process.  This is the same defect that was
+        # found and fixed in `himal_nd.py` (extension FINDINGS.md 12.17); it was
+        # scoped to that module at the time and is fixed here for the same reason.
+        self.seed = int(seed)
 
     # ── Layer initialization ──
 
@@ -289,6 +298,9 @@ class ProtoGuidedTrainerND:
         Wire-direct: each layer's fused output IS the next layer's input.
         No projection needed.
         """
+        # ONE seed covers every random draw below: the layer initialisation in
+        # `_init_layer`.  Same arguments and same `seed` now give identical networks.
+        np.random.seed(self.seed)
         layers = []
         all_protos = []
         cur_in = X.copy()
