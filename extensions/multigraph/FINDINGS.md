@@ -1506,6 +1506,8 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_40_drift_rate.py` | **section 12.25**: item 6 -- the drift rate, and the channel it names |
 | `extensions/multigraph/ext_41_authoritative.py` | **section 12.26**: item 7 -- the blocker is not the hook |
 | `extensions/multigraph/ext_42_selector_samples.py` | **section 12.27**: item 2 -- the lever the diagnostic named |
+| `extensions/multigraph/ext_43_calibration_in_deep.py` | **section 12.28**: the closed-form calibration inside the deep trainer |
+| `extensions/multigraph/ext_44_regression_defect.py` | **section 12.29**: the regression prediction dropped the accumulation, and the fix |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1561,11 +1563,13 @@ python extensions/multigraph/ext_39_nonlinear_free.py --assert
 python extensions/multigraph/ext_40_drift_rate.py --assert
 python extensions/multigraph/ext_41_authoritative.py --assert
 python extensions/multigraph/ext_42_selector_samples.py --assert
+python extensions/multigraph/ext_43_calibration_in_deep.py --assert
+python extensions/multigraph/ext_44_regression_defect.py --assert
 ```
 
-All forty-two exit non-zero when their own published claim fails, and every one of them
+All forty-four exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43 and ext_44 seconds each.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3607,3 +3611,121 @@ quietly.
 selector** -- it re-solves every strength for every candidate and is itself an overfitting
 risk at small `n_sel`, which is exactly why it cannot be shipped.  Repository tasks, 40
 nodes, 3 seeds, toy.
+
+### 12.28 The closed-form calibration inside the deep trainer (ext_43)
+
+**The worklist item.**  The project's largest single claim is that the source strengths
+should be CALIBRATED in closed form rather than searched -- section 6 puts it at 15-30x fewer
+measurements -- and neither deep path uses it: `training/himal_nd.py` runs per-parameter FD /
+SPSA on EVERY parameter, and the CIFAR line runs autograd.  **So on the project's own deepest
+demonstration the strengths were still searched.**
+
+**SCOPE, CHECKED BEFORE ACTING.**  `HiMALND`'s regression path is `out = (hA + hB)/2` with
+`h = z W^T`, i.e. LINEAR in the strengths, and `train`'s docstring says it is STAGEWISE
+RESIDUAL -- the structure `solve_readout_closed_form` is built on.  Its classification path is
+nearest-prototype voting and is not linear, which is the case `DESIGN.md`'s table already
+marks "no".  **So the calibration applies to regression and not to classification.**
+
+**AND A SIMPLIFICATION FOUND ON THE WAY.**  `_forward_layer` returns `out_g + out_a`, i.e.
+`z (W_gauss + W_act)^T`.  **The two channels are DEGENERATE -- only their sum matters** -- so
+the solve targets the sum and the other channel is zeroed.  Solving one and leaving the other
+would add the old weights back on the next forward and silently undo the solve.
+
+**THE INTERVENTION was a wrapper on `_spsa_step`** -- the base's loop runs unmodified and the
+readout is replaced by the closed-form ridge solution of the layer's own residual target after
+each update.  No base edit.  **The comparison is CONSERVATIVE**: the calibration arm still
+spends the search's forward passes on those weights before overwriting them.
+
+**THE FIRST RUN REFUSED TO CONCLUDE, and that was the control working.**
+
+| seed | SEARCH (shipped) | CALIB (wrapped) | readout `R^2` during training |
+|---|---|---|---|
+| 0 | +0.0054 | -0.0008 | **0.3440** |
+| 1 | -0.0486 | -0.0322 | **0.3826** |
+| 2 | -0.0592 | -0.0280 | **0.3700** |
+
+**The search arm averaged `-0.0341`, below the project's own 0.05 floor, so the script refused
+to compare** -- an earlier configuration of it (`output_dims=(1,1,1)`, `eps=1e-4`, a 4-D task)
+had produced "calibration better on 3 of 3, mean +0.1292", **which was a contest between two
+failures and is withdrawn.**
+
+**AND THE DIAGNOSIS WAS THE DELIVERABLE: the per-layer solve fits its own residual target to
+`R^2 ~ 0.34-0.38` while the end-to-end is `~0`.  So the readout was not the bottleneck.**
+
+**THE SECOND RUN, AFTER 12.29's FIX, IS THE FIRST REAL COMPARISON ON THIS PATH.**
+
+| seed | SEARCH | CALIB | difference |
+|---|---|---|---|
+| 0 | +0.2195 | +0.2552 | +0.0357 |
+| 1 | +0.2473 | +0.2457 | -0.0016 |
+| 2 | +0.2204 | **-0.0265** | **-0.2469** |
+
+**The control passes (`+0.2291 > 0.05`) and the answer is NEGATIVE: the calibration does not
+help (1 of 3 seeds, mean `-0.0710`), and on seed 2 it materially hurts.**  So the readout is
+not the deep path's bottleneck and **the search is earning its forwards on the GEOMETRY.**
+
+**AND THE COST SIDE IS NOT REACHED** -- the arm that pays `n_train * N` measurements does not
+even win on accuracy here.
+
+**THE HONEST LIMIT.**  The calibration is applied AFTER the SPSA step, so a true "calibrate, do
+not search" arm would remove those coordinates from the parameter vector -- a change to
+`get_params_vector`, a base method -- and that is NOT done.  **The measurement bounds the gain
+from below rather than measuring it.**
+
+---
+
+### 12.29 `himal_nd`'s regression prediction dropped the accumulation (ext_44), and it is FIXED
+
+**How it was found.**  12.28 could not compare because the deep regression path scored below
+the floor.  Its per-layer readout solved to `~0.37`, so the failure was downstream -- and the
+code says where.
+
+    training:  pred_i = _proto_predict(h_i, y_proto_i, h_proto_i)
+               acc    = acc + pred_i                 # running sum, layer by layer
+               # "At predict time these are summed -> recovers original y"
+               # layers 2/3 are trained on `y - acc`, so each layer emits a RESIDUAL
+
+    predict:   return (h_last_A + h_last_B) / 2      # the last layer's RAW OUTPUT
+
+**`predict` returned a residual, not the target -- and its own docstring says the opposite**
+("Regression: proto-weighted prediction with residual accumulation.  output =
+`(acc_A + acc_B) / 2`").  **Code and docstring disagreed.**
+
+**THE MEASUREMENT: one trained model, two prediction paths.**
+
+| seed | pre-fix `predict` | accumulated | difference | zone A | zone B |
+|---|---|---|---|---|---|
+| 0 | +0.0054 | **+0.2195** | +0.2140 | +0.0109 | -0.0095 |
+| 1 | -0.0486 | **+0.2473** | +0.2959 | -0.0237 | -0.0877 |
+| 2 | -0.0592 | **+0.2204** | +0.2796 | -0.1075 | -0.0197 |
+| **mean** | **-0.0341** | **+0.2291** | **+0.2632** | | |
+
+> **A DEFECT, NOT A PROPERTY OF THE ARCHITECTURE.**  The same models score `+0.2632` better
+> through the path `train` was built around -- **the network learned and the answer was read
+> out wrongly** -- and **the per-zone columns rule out the alternative explanation**, since
+> the A/B median split scores near zero in BOTH zones under the old return, not just on
+> average.
+
+**WHY IT SURVIVED.**  `himal_nd`'s regression path is exercised by exactly two scripts:
+`nd_09_spsa_benchmark.py`, a SPEED benchmark reporting loss curves, and
+`reg_01_proto_baseline.py`, which 12.17 RETRACTED.  **No published number depends on that
+path** -- which is why the defect lived -- **and it would have corrupted the first serious use
+of it.**
+
+**THE FIX**, applied to `training/himal_nd.py` at the repository owner's instruction: a new
+`_proto_accumulate` helper runs one network's cascade and sums each layer's proto-weighted
+contribution from the prototypes `train` already stores; the regression branch of `predict`
+now returns that sum; and the old return is kept as an explicit FALLBACK for a model restored
+without its prototypes, with a comment saying so rather than silently returning a residual.
+The classification path is untouched.
+
+**VERIFIED THREE WAYS.**  The fixed `predict` reproduces the independent replay to `5e-06`
+(float32 precision) on all three seeds; 12.28's re-run then passes its control; and `ext_44`
+itself now compares the FIXED path against an IN-LINE RECONSTRUCTION of the pre-fix behaviour
+-- kept precisely so that fixing the defect does not erase the evidence for it, **which makes
+that script a REGRESSION TEST: if the old return is ever reintroduced, the two columns diverge
+again.**
+
+**AND IT LEAVES TWO CLAIMS THAT BOTH STAND**, which is why 12.28's two runs are reported
+separately: a calibration cannot repair a broken prediction path, AND on the repaired path it
+is not the thing that helps.
