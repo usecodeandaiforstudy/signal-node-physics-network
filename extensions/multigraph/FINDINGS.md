@@ -1510,6 +1510,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_44_regression_defect.py` | **section 12.29**: the regression prediction dropped the accumulation, and the fix |
 | `extensions/multigraph/ext_45_deep_benchmark.py` | **section 12.30**: the deep regression path, benchmarked -- and beaten by the null |
 | `extensions/multigraph/ext_46_classification_benchmark.py` | **section 12.31**: HiMALND's classification mode -- beaten by the null too |
+| `extensions/multigraph/ext_47_cifar_baseline.py` | **section 12.32**: the CIFAR line against the project's own standard -- unresolved |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1569,11 +1570,12 @@ python extensions/multigraph/ext_43_calibration_in_deep.py --assert
 python extensions/multigraph/ext_44_regression_defect.py --assert
 python extensions/multigraph/ext_45_deep_benchmark.py --assert
 python extensions/multigraph/ext_46_classification_benchmark.py --assert
+python extensions/multigraph/ext_47_cifar_baseline.py --assert
 ```
 
-All forty-six exit non-zero when their own published claim fails, and every one of them
+All forty-seven exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3844,3 +3846,62 @@ tasks where least squares is misspecified.
 **THE LIMITS.**  Toy scale, two 2-class tasks, and a deep arm shipping with hyper-parameters
 inherited from a pipeline test and never tuned.  **And the CIFAR line is untouched and
 unmeasured here**, which is the largest caveat this section carries.
+
+### 12.32 The CIFAR line against the project's own standard: UNRESOLVED (ext_47)
+
+**Why this was the last unmeasured thing.**  12.30 and 12.31 benchmarked `HiMALND`'s
+regression and classification modes and found BOTH beaten by a zero-forward null.  **The CIFAR
+line is a DIFFERENT architecture** -- `RBFLayerND` trained by autograd and exported to a
+physical layer -- so the project's most impressive demonstration had never been compared
+against the project's own standard.
+
+**AND ITS NUMBER WAS ALREADY IN THE REPOSITORY.**  `cifar_02` writes
+`outputs/e21_regularized_report.txt`, which reports a DIGITAL TEST ACCURACY of **39.3%** on 5
+classes, a train accuracy of 53.6% -- an **18.3% train-test gap** -- and a collapse to 21.3%
+at the `high` physical-noise preset.  **So the reference point needed reading, not a 600-epoch
+torch run**, and the file is untracked, which is why no measurement had ever cited it.
+
+**THE BASELINE, AND THE ADAPTATION THE TASK FORCES.**  On CIFAR the layer's input is a POINT
+CLOUD (`build_3d` turns each image into `(x, y, intensity)` points), and a closed-form solve
+needs a vector -- so the standard becomes `z_j(image) = mean over the image's pixels of
+exp(-k ||p - c_j||^2 / h_j^2)`, then a ridge to the 5-class one-hot.  Random geometry is
+reported as the **MEAN over draws and not only the best**, because a cherry-picked null is not
+a null; k-means is included as a standard closed-form geometry.
+
+| arm | test accuracy |
+|---|---|
+| random null, mean of 5 draws | 0.3582 |
+| random, best draw | 0.3756 |
+| k-means centres | 0.3422 |
+| **the repository's own deep pipeline (reported)** | **0.3930** |
+| chance | 0.2000 |
+
+**AND THE VERDICT IS THAT THIS DOES NOT RESOLVE THE TWO ARMS.**  The ranking above would read
+as "depth wins", and **an earlier draft of it did** -- "the depth is doing work the single-layer
+closed form cannot".  **That is the error this section exists to avoid:** the null's own
+**seed-to-seed spread is 0.1507** (0.3027 to 0.4400), against a margin of `+0.0348` between the
+deep number and the null's mean.  **The spread is eight times the margin**, so three seeds
+cannot separate these arms, and **CIFAR neither confirms nor refutes the pattern the other four
+combinations found.**
+
+**AND THE SCALE EXPLAINS WHY.**  Chance on 5 classes is `0.2000` and every arm sits between
+`0.303` and `0.393` -- a few points above chance.  **Nothing is learning much on this task at
+this scale**, so there is little for a comparison to separate.  **The deep pipeline's own
+report says the same from the other side**: an 18.3% train-test gap, and a collapse to 21.3%
+under physical noise, which is essentially chance.
+
+**WHAT WOULD RESOLVE IT, so that this is actionable rather than a shrug:** far more than three
+seeds on the closed-form side -- **the deep number is a single reported run and cannot be
+re-seeded at all**, which is itself a defect in how that line records its results -- and a
+scale at which the arms are not all within a few points of chance.
+
+**AND ONE BUG OF MY OWN, of exactly the class 12.29 was about.**  The feature function's
+docstring said "mean over the image's pixels" and its code averaged the wrong axis, which the
+assignment rejected on the first run.  **The docstring was right and the code was not** -- the
+same shape as the defect in `HiMALND.predict` -- and it is recorded because that shape has now
+appeared twice in this document.
+
+**THE LIMITS.**  The encoding runs at `IMG_SIZE=16` rather than the repository's 32, for cost;
+the cloud aggregation is an adaptation this task forces; the baseline is single-layer against
+the repository's four; and **the deep number is READ FROM A REPORT rather than re-run**, so it
+carries that report's provenance and not a re-measurement.
