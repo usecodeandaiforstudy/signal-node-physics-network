@@ -1309,17 +1309,27 @@ as holding at that scale until scaled up.
    reading: **the five losses all reduce to the geometry arm, so they bound the risk
    without discriminating between the mechanisms.**  That is a limitation of the evidence,
    not a gap in it, and item 3 already covers the seeds.
-8. **Method C — the analog gradient chain.  STILL OPEN, and it is the largest gap between
-   what this project advertises and what exists.**  `THEORY.md` Method C (lines 647-654)
-   says the method is "not implemented", that its functions have "no call site anywhere in
-   the repository", and instructs: **"Either implement and measure this method, or remove
-   it from the feature list."**  **Neither branch has been taken.**  An extension audit
-   verified the reachability with one precision worth recording: the functions do call
-   **each other** (`analog_gradient_mac` from `analog_weight_gradient`, `analog_adc` from
-   `analog_loss_readout`), but **neither enclosing function is called outside
-   `components.py` and `__init__.py`** — so the accurate statement is *an internally
-   connected island with no entry point*, not *no call site anywhere*.  A reader checking
-   the wording literally would wrongly conclude the note was stale.
+8. **Method C — the analog gradient chain.  STILL OPEN AS A METHOD, and it is the largest gap
+   between what this project advertises and what exists — but the ENTRY IS NOW ACCURATE,
+   which it was not when this item was written.**  `THEORY.md` Method C says the method is
+   "not implemented" and instructs: **"Either implement and measure this method, or remove it
+   from the feature list."**
+   **THE REMOVAL BRANCH HAS BEEN TAKEN.**  Method C is no longer offered as a feature: the
+   `THEORY.md` note now states that the decision is REMOVAL, and the README feature bullets in
+   both languages carry an inline correction saying the gradient-estimation half is dead code.
+   **The IMPLEMENT branch has not been taken, and this item is open for that reason alone** —
+   implementing it remains a project rather than a paragraph.
+   **AND THE REACHABILITY IS NOW MEASURED RATHER THAN DESCRIBED.**  This item used to say the
+   functions call each other but "neither enclosing function is called outside `components.py`
+   and `__init__.py`", i.e. an internally-connected island with no entry point.  That is right
+   about the island and **wrong about one member**: the chain is **eight functions**, of which
+   **five have zero call sites anywhere** (`analog_loss_readout`, `analog_capacitor_integrator`,
+   `analog_center_gradient`, `analog_width_gradient`, `analog_weight_gradient`) and **three are
+   called only from inside it** (`analog_gilbert_multiplier` five times, `analog_gradient_mac`
+   once, `analog_adc` twice) — **but `analog_gilbert_multiplier` is ALSO used by the live
+   `gilbert_square`, so deleting the region wholesale would break the live chain.**  The
+   declaration now lives in `physical_simulator/components.py` itself rather than only in
+   `THEORY.md`, because the code is where a reader of the code looks.
 9. ~~The "5x better" direct residual.~~  **RETRACTED — see the note in section 9 and
    THEORY 3.2/7.3.**  It had been stated here only in section 9 and never in this index,
    which is the gap this preamble now names.  Re-measured under control the sign reverses
