@@ -1413,6 +1413,13 @@ one of these pointed in the **flattering** direction for the extension.
     FIRST patch had already succeeded and the run went ahead** -- so the report was
     regenerated with half the intended change.  The fix is to stop patching through a
     shell heredoc for anything containing escapes, and use exact-text editing instead.
+58. **A result that could not be reproduced because the DEVICE draws from the global RNG.**
+    `ext_48` seeded its own generator and was still not reproducible: two runs differed in six
+    lines, all on the device path.  `features()` builds a real device layer and the device
+    draws from `np.random`, which the script never seeded.  **Cost: none once found -- but the
+    audit it prompted measured that 24 of the 25 extension scripts calling `features()` have
+    the same gap**, so any of their reports re-runs differently in the 5th to 7th digit, and
+    `log_rms`'s healthy band sits AT that magnitude.
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1511,6 +1518,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_45_deep_benchmark.py` | **section 12.30**: the deep regression path, benchmarked -- and beaten by the null |
 | `extensions/multigraph/ext_46_classification_benchmark.py` | **section 12.31**: HiMALND's classification mode -- beaten by the null too |
 | `extensions/multigraph/ext_47_cifar_baseline.py` | **section 12.32**: the CIFAR line against the project's own standard -- unresolved |
+| `extensions/multigraph/ext_48_lookup_table.py` | **section 12.33**: the lookup table -- the precondition it relaxes, and the defect class it exposed |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1571,11 +1579,12 @@ python extensions/multigraph/ext_44_regression_defect.py --assert
 python extensions/multigraph/ext_45_deep_benchmark.py --assert
 python extensions/multigraph/ext_46_classification_benchmark.py --assert
 python extensions/multigraph/ext_47_cifar_baseline.py --assert
+python extensions/multigraph/ext_48_lookup_table.py --assert
 ```
 
-All forty-seven exit non-zero when their own published claim fails, and every one of them
+All forty-eight exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3951,3 +3960,59 @@ appeared twice in this document.
 the cloud aggregation is an adaptation this task forces; the baseline is single-layer against
 the repository's four; and **the deep number is READ FROM A REPORT rather than re-run**, so it
 carries that report's provenance and not a re-measurement.
+
+### 12.33 The lookup table, and what it actually buys (ext_48)
+
+**THE PRECONDITION IT RELAXES, AND IT IS NOT 12.16's.**  12.16 requires `log z(x)` to be LINEAR
+in a fixed FINITE basis of `x`.  A table requires something DIFFERENT and WIDER: the source must
+be a **FIXED function of ONE SCALAR**,
+
+    z = T(u),   u = ||(x - c)/h||^2
+
+because then a single 1-D table serves every particle and every width.  The table's entries are
+what a calibration would MEASURE from the device, which is why this belongs in the device and
+not in the trainer -- where `features()`' docstring forbids it outright.
+
+**AND WHAT IT DOES NOT ADMIT, SAID BEFORE ANY RESULT.**  Yukawa's `exp(-r)/r` is NOT of that
+form: its SHAPE depends on `h`, so one table of `u` cannot carry it and `h` would have to index
+a family of tables.  **The claim is "any kernel that is a FIXED function of `u`" -- wider than
+"any polynomial exponent", narrower than "any kernel".**
+
+| what was measured | result |
+|---|---|
+| **P1 the error law** | the measured max error is **at most `(du)^2/8`** and approaches it from below as M grows (ratio `0.445` at M=8 to `0.987` at M=512).  **Below 1 at small M because the sample points do not sit at the worst-case midpoint of an interval** -- so it is an UPPER BOUND, which is the useful direction: a table size can be CHOSEN rather than tuned. |
+| **P2 does the suite detect a table?** | **YES, 3 of 3, with NO code change.**  `node_from_response` already returns `log_rms`, the consistency residual: exact `3.9e-15`, M=512 `2.5e-05`, M=64 `1.6e-03`, M=16 `2.8e-02`. |
+| **P3 tier 1 -- table in the FORWARD only** | at M=256 the end-to-end R^2 differs from exact by **`+7.5e-05`**, and one node's geometry is recovered with a centre error of **`2.4e-05`**.  The operators are untouched and still work. |
+| **P4 the payoff** | `T(u) = exp(-sqrt(u))` is the LAPLACE kernel `exp(-||x-c||/h)`, whose `log z` is a CONE -- not polynomial in `x` at any degree, so 12.16 excludes it.  **The closed-form operator's own residual says so**: Gaussian `3.1e-06` against Laplace **`7.1e-02`**.  **The table computes that source**, so what it changes is which sources the FORWARD can realise -- **and it does not pretend the closed-form operator now covers them.** |
+
+**WHY IT IS NOT ABOUT SPEED.**  A table plus interpolation measured about 2x SLOWER than
+vectorised `exp` (gather-bound), so had this been a performance claim it would have failed.
+**The project's cost unit is MEASUREMENTS, not seconds**, so the slowdown cannot change any
+published conclusion.  **What the table buys is REACH.**
+
+**AND A DEFECT CLASS FOUND WHILE CHECKING THIS SCRIPT'S OWN REPRODUCIBILITY.**  `ext_48` was
+written with a seeded generator for its own data, and **was still not reproducible**: two runs
+differed in six lines, all of them on the DEVICE path.  **The cause is that `features()` builds
+a real device layer and the device draws from the GLOBAL `np.random`, which the script never
+seeded.**  An audit then measured the extent: **24 of the 25 extension scripts that call
+`features()` do not seed the global RNG.**
+
+**The magnitude bounds the damage, and it was measured rather than assumed**: the movements are
+`2.8e-07 <-> 5.3e-07` in a centre error, `2.0e-06 <-> 3.0e-06` in `log_rms`, and `+7.52e-05 <->
++7.59e-05` in an R^2 delta -- **the 5th to 7th digit, while the reports quote four decimals.**
+**So no published conclusion changes.  But a re-run does not reproduce a report byte for byte,
+and anyone diffing two runs will see differences.**  And one place makes it matter: the HEALTHY
+BAND of `log_rms` is `~1e-6`, so the test that decides "is this response a genuine single node"
+sits AT the magnitude of the non-determinism.  **That is the same situation as 12.32's
+unresolved `sub_01` reproducibility**, and it is now on the record as the likely shared cause
+rather than a separate mystery.
+
+**THE LIMITS.**  The table is a 1-D approximation, so its error enters the FORWARD and not the
+operators; a source whose `log z` is non-polynomial still needs a different recovery than the
+closed-form one -- **the table makes it computable, not solvable**; and Yukawa is out, for the
+reason stated first.
+
+**TWO INTERFACE ERRORS OF MINE, BOTH CAUGHT BY READING THE CALLEE FIRST.**  `node_from_response`
+takes `k` FIRST and positionally, and it recovers ONE node, so `z` is a 1-D response of length n
+-- not the `(n, N)` matrix.  The first version got both wrong; the operator refused with
+"X has 40 rows but z has 800", **which is the operator behaving correctly.**
