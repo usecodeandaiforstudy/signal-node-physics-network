@@ -47,6 +47,7 @@ def L(s): print(s, flush=True); report.append(s)
 N_CLASSES = 5; IMG_SIZE = 32
 N_TRAIN = 100; N_TEST = 30
 EPOCHS = 600; LR = 0.005
+SEED = 0                      # model init, data split, and sampling
 TEMPERATURE = 0.06; PROTO_REG = 0.02
 EVAL_EVERY = 25; EARLY_STOP_PATIENCE = 14
 
@@ -200,6 +201,14 @@ L(f"\n--- RBF (E21) ---")
 L(f"  Params: {rbf_params} | Peak train={rbf_train}% | Peak test={rbf_test}% (from E21)")
 
 # MLP
+# ONE SEED COVERS THE MODEL INITIALISATIONS.  The DATA SPLIT was already seeded
+# (`np.random.seed(c*100)` in the per-class loop) but the TORCH INITIALISATION was
+# NOT, so every number here was a single draw from an unseeded process -- the same
+# defect found and fixed in training/himal_nd.py and training/proto_nd.py.  Seeded
+# once, before the FIRST model, so every arm of this comparison draws from one
+# stream and the comparison is between arms rather than between draws.
+torch.manual_seed(SEED)
+np.random.seed(SEED)
 mlp=MLPModel()
 res_mlp=train_model("MLP (1024→32→16→8→6)", mlp, tr_f, train_lbl, te_f, test_lbl, True)
 results["MLP"]=res_mlp

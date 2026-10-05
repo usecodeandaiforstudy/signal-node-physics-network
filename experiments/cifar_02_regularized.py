@@ -61,6 +61,7 @@ L1_P=49; L1_G=7; L1_O=12
 L2_P=28; L2_O=8
 L3_P=20; L3_O=6
 EPOCHS = 600; LR = 0.005
+SEED = 0                      # model init, data split, and sampling
 TEMPERATURE = 0.06; PROTO_REG = 0.02
 EVAL_EVERY = 25
 EARLY_STOP_PATIENCE = 14
@@ -203,6 +204,14 @@ class DeepRBF3D(nn.Module):
 # 3. Digital training
 # ═══════════════════════════════════════════════════
 L("\n--- Digital Training (autograd + regularization) ---")
+# ONE SEED COVERS THE MODEL INITIALISATION.  Before this, the DATA SPLIT was seeded
+# (`np.random.seed(c*100)` in the per-class loop) but the TORCH INITIALISATION was
+# NOT, so every number this script published was a single draw from an unseeded
+# process -- the same defect found and fixed in training/himal_nd.py and
+# training/proto_nd.py.  Set here rather than inside the loop so the model, the
+# optimiser state and the sampling all come from one stream.
+torch.manual_seed(SEED)
+np.random.seed(SEED)
 model = DeepRBF3D()
 n_param = sum(p.numel() for p in model.parameters())
 L(f"  Trainable params: {n_param}")

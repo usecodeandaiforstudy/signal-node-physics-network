@@ -723,6 +723,39 @@ def analog_summer(
     return total
 
 
+# =====================================================================================
+#  THE ANALOG GRADIENT CHAIN -- AN INTERNALLY-CONNECTED ISLAND WITH NO ENTRY POINT
+#  =====================================================================================
+#  The eight functions below implement THEORY.md's "Method C" and are NOT part of what
+#  this project offers.  That was decided when the feature list was corrected, and this
+#  note exists because the code is where a reader of the code looks -- the explanation in
+#  THEORY.md is not visible from here.
+#
+#  MEASURED, not assumed.  Scanning every .py in the repository for each name:
+#
+#      analog_loss_readout          0 call sites    <- no entry point
+#      analog_capacitor_integrator  0 call sites    <- no entry point
+#      analog_center_gradient       0 call sites    <- no entry point
+#      analog_width_gradient        0 call sites    <- no entry point
+#      analog_weight_gradient       0 call sites    <- no entry point
+#      analog_gilbert_multiplier    5 call sites, ALL inside this island
+#      analog_gradient_mac          1 call site,    INSIDE this island
+#      analog_adc                   2 call sites,   INSIDE this island
+#
+#  So the accurate statement is an INTERNALLY-CONNECTED ISLAND WITH NO ENTRY POINT, not
+#  "no call site anywhere": the functions do call each other, and a reader who checked
+#  only the five with zero callers would wrongly conclude the rest are live.
+#
+#  AND ONE PRECISION THAT MATTERS FOR THE OTHER DIRECTION: `analog_gilbert_multiplier`
+#  is ALSO used by `gilbert_square`, which IS on the live path, so it is shared rather
+#  than island-only.  Deleting this region wholesale would break the live chain.
+#
+#  Kept rather than deleted because it is the reference implementation of a method the
+#  theory document still describes, and because deleting base code is a decision rather
+#  than a cleanup.  Re-exported from `physical_simulator/__init__.py`, which is why the
+#  names appear to exist.
+# =====================================================================================
+
 def analog_loss_readout(
     predictions: np.ndarray,
     targets: np.ndarray,

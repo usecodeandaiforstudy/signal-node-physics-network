@@ -1,0 +1,46 @@
+============================================================
+  Physical RBF Network Verification
+============================================================
+  Baseline MSE: 1.322
+
+  [1] Training HiMAL-FFA-ND (4,3,2)...
+      HiMALND.predict MSE: 1.292
+
+  [2] Building PhysicalResidualRBFNetworkND from HiMAL layers...
+      net_A params: 70
+      net_B params: 70
+      L1 output match: max|hA - h_pnet| = 1.46e-06
+
+  [3] Comparing PhysicalRBFNetwork.predict vs HiMALND.predict...
+      HiMALND MSE:         1.2922
+      PhysicalRBFNet MSE:  1.2922
+      Max difference:      2.38e-06
+      PASS: predictions match exactly
+
+  [4] Pure physical forward (analog-only, no softmax)...
+      Raw forward output shape: (60, 1)
+      Raw output range: [-0.083, 0.061]
+      Direct h[:,0] MSE: 1.377 (vs proto 1.292)
+      PASS: pure physical forward works
+
+  [5] Digital (PyTorch) vs Physical (numpy) comparison...
+      Max |digital - physical| = 2.43e-01
+      Digital output range: [-0.066, 0.114]
+      Physical output range: [-0.187, 0.343]
+      PASS: digital and physical forward produce similar output
+
+  [6] Noise robustness of physical forward...
+      none    : MSE=1.2922  mean_std=0.000
+      low     : MSE=1.2926  mean_std=0.002
+      medium  : MSE=1.2904  mean_std=0.006
+      high    : MSE=1.2911  mean_std=0.014
+
+============================================================
+  Summary
+============================================================
+  HiMALND.predict:          1.2922
+  PhysicalRBFNet.predict:   1.2922  (match: 2.4e-06)
+  Pure forward h[:,0]:      1.3766
+  Digital-physical diff:    max 2.43e-01
+  All tests: PASS
+============================================================

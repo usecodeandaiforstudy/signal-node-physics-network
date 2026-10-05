@@ -1,7 +1,7 @@
 ﻿"""
 V3 Proto-Guided Layer-wise Trainer for D-Dimensional Particles
 
-Adapts v1 ProtoGuidedTrainer (forward_training/proto_layerwise.py) for
+Adapts v1 ProtoGuidedTrainer (training/proto_layerwise.py) for
 D-dimensional particles.
 
 Key differences from v1:
