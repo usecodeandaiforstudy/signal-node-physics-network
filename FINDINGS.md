@@ -1200,6 +1200,40 @@ Errors fixed in the pre-existing code during the same pass:
   `THEORY_CN.md`) carried the retracted claims with no warning.  Each now opens
   with a status box that enumerates the retractions and points here, and the
   specific lines carry inline corrections.
+* **THE CIFAR LINE'S PUBLISHED NUMBERS WERE SINGLE DRAWS FROM AN UNSEEDED PROCESS,
+  and the seed moves them by up to 6.6 points.**  All seven `cifar_*` scripts
+  seeded only the DATA SPLIT (`np.random.seed(c*100)` inside the per-class loop)
+  and never the torch initialisation.  Re-run with `SEED = 0`, on the same splits:
+
+  | script | published | **seeded** | move |
+  |---|---|---|---|
+  | `cifar_01` baseline | 37.3% | **30.7%** | **-6.6** |
+  | `cifar_02` regularized | 39.3% | **36.0%** | -3.3 |
+  | `cifar_03` 3-layer | 38.0% | **32.0%** | **-6.0** |
+  | `cifar_04` large data | 36.7% | **36.0%** | -0.7 |
+  | `cifar_05` MLP | 34.0% | **28.0%** | **-6.0** |
+  | `cifar_06` MLP arm | 38.7% | **42.7%** | **+4.0** |
+  | `cifar_06` CNN arm | 61.3% | **54.7%** | **-6.6** |
+
+  **The moves go in BOTH directions**, so this is variance rather than a bias,
+  and the peak epochs move too (`cifar_03` reached its peak at epoch 620 before
+  and 220 after).  **Therefore every architecture comparison this line published
+  was between arms whose own seed sensitivity exceeds the differences reported.**
+* **AND THREE SCRIPTS FREEZE THE REFERENCE ARM AS A LITERAL.**  `cifar_04`,
+  `cifar_05` and `cifar_06` each hard-code the RBF result as
+  `peak test 39.3%, peak train 53.6% (from E21)` instead of re-running it.  So
+  those comparisons pit arms that move by up to 6.6 points **against a reference
+  that cannot move at all -- and whose frozen value is a favourable draw**, since
+  the seeded run gives 36.0%.  **The literals are deliberately LEFT IN PLACE**:
+  editing them would silently change a comparison's input, and the finding is
+  that such a literal should not exist.  They are now at least literals whose
+  provenance is tracked, and `cifar_06`'s own report prints the discrepancy.
+* **What is fixed:** all seven scripts seed the model initialisation and print
+  `SEED=` in their reports, so a number and its seed are recorded together.  The
+  line is otherwise unchanged and its conclusions are not recomputed here.
+  Evidence: `outputs/e18,e21,e22,e23,e24,e25_*_report_PRE_SEED.txt` for the
+  published values, the reports themselves for the seeded ones, and the
+  `SEED=` line now present in each.
 
 ---
 
@@ -1347,6 +1381,14 @@ took no `seed` and never seeded the global RNG, so every number published from i
 draw from an unseeded process.  It now takes a `seed` and seeds once at the top of `train`.
 
 ---
+11. **The CIFAR comparisons have not been recomputed under the fixed seeding.**
+   Section 9's new entry records that every number in that line was a single draw from an
+   unseeded process, that the seed moves those numbers by up to 6.6 points in both
+   directions, and that three scripts freeze the RBF reference as a literal.  **The scripts
+   are fixed -- they seed and they record their seed -- but NO comparison has been re-run
+   under the fix**, so the line's published rankings remain the ones the unseeded draws
+   produced.  Re-running the comparisons is a project, not a cleanup: it needs several
+   seeds per arm, and the literals would have to become real runs first.
 
 ## 12. Artifacts
 
