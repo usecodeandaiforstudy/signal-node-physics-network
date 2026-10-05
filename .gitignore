@@ -42,6 +42,20 @@ cifar/
 # The UNSEEDED report is kept as well, because it is the record of what was PUBLISHED
 # before the seed was fixed -- and the two differ by 3.3 points, which is the finding.
 !/outputs/e21_regularized_report_UNSEEDED.txt
+# THE CIFAR LINE'S EVIDENCE, added when section 9's entry was written and its own citations
+# turned out not to exist in a fresh clone -- the precise defect that entry is about.  Both
+# sides are needed: the PRE_SEED files are the PUBLISHED values its table quotes, and the
+# reports are the SEEDED ones that replace them.
+!/outputs/e18_digital_physical_report.txt
+!/outputs/e18_digital_physical_report_PRE_SEED.txt
+!/outputs/e22_reg_3layer_peak_report.txt
+!/outputs/e22_reg_3layer_peak_report_PRE_SEED.txt
+!/outputs/e23_large_reg_4layer_report.txt
+!/outputs/e23_large_reg_4layer_report_PRE_SEED.txt
+!/outputs/e24_mlp_baseline_report.txt
+!/outputs/e24_mlp_baseline_report_PRE_SEED.txt
+!/outputs/e25_compare_report.txt
+!/outputs/e25_compare_report_PRE_SEED.txt
 !/outputs/sub_01_*.png
 
 # The EXTENSION's evidence set (DESIGN section 9.2).  Without these lines the
