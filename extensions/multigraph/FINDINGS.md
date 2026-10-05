@@ -1508,6 +1508,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_42_selector_samples.py` | **section 12.27**: item 2 -- the lever the diagnostic named |
 | `extensions/multigraph/ext_43_calibration_in_deep.py` | **section 12.28**: the closed-form calibration inside the deep trainer |
 | `extensions/multigraph/ext_44_regression_defect.py` | **section 12.29**: the regression prediction dropped the accumulation, and the fix |
+| `extensions/multigraph/ext_45_deep_benchmark.py` | **section 12.30**: the deep regression path, benchmarked -- and beaten by the null |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1565,11 +1566,12 @@ python extensions/multigraph/ext_41_authoritative.py --assert
 python extensions/multigraph/ext_42_selector_samples.py --assert
 python extensions/multigraph/ext_43_calibration_in_deep.py --assert
 python extensions/multigraph/ext_44_regression_defect.py --assert
+python extensions/multigraph/ext_45_deep_benchmark.py --assert
 ```
 
-All forty-four exit non-zero when their own published claim fails, and every one of them
+All forty-five exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43 and ext_44 seconds each.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43, ext_44 and ext_45 seconds each.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3729,3 +3731,62 @@ again.**
 **AND IT LEAVES TWO CLAIMS THAT BOTH STAND**, which is why 12.28's two runs are reported
 separately: a calibration cannot repair a broken prediction path, AND on the repaired path it
 is not the thing that helps.
+
+### 12.30 The deep regression path now works, and it is beaten by the null (ext_45)
+
+**The item, created by 12.29's fix.**  Before it, `HiMALND.predict` returned a residual and
+the regression path scored `-0.0341`.  After it, `+0.2291`.  **So the path clears the
+project's own 0.05 floor for the first time -- and nothing in the repository said whether that
+number is good.**  Its only two users are a speed benchmark and a retracted script, and
+neither reports an accuracy.  **A number with no reference point is not a result.**
+
+**THE COSTS ARE COUNTED, IN TWO UNITS THAT ARE NEVER ADDED.**  The project's unit is forward
+evaluations and both paths are exact in it: SPSA is documented as "2 * spsa_avg forward
+passes" per epoch per network, so the deep arm's `2 * 60 * 3 * 2 = 720` is analytic; and
+`fit_operator` already returns `n_evals` -- "the cost unit here is forward evaluations and a
+restart that is not paid for is not a method".  **The closed-form solve costs `n_train * N`
+READINGS instead**, and the shallow arm pays it while the deep arm does not, so the two are
+reported side by side.  **The shallow arm is SWEPT across its own cost rather than matched by
+hand**, which is the honest way to compare against a budget.
+
+**THE REPOSITORY'S OWN TWO REGRESSION TASKS, 3 SEEDS, PAIRED.**
+
+| task | arm | forwards | calib readings | test `R^2` |
+|---|---|---|---|---|
+| `2d` | **deep (`himal_nd`)** | 720 | 0 | **+0.2291** |
+| `2d` | **RANDOM geometry + solve** | **0** | 20 | **+0.9006** |
+| `2d` | shallow, one layer `N=20` | 214 | 4 100 | +0.9585 |
+| `2d` | shallow, one layer `N=40` | 411 | 8 200 | +0.9825 |
+| `4d` | **deep (`himal_nd`)** | 720 | 0 | **+0.0548** |
+| `4d` | **RANDOM geometry + solve** | **0** | 20 | **+0.2516** |
+| `4d` | shallow, one layer `N=20` | 205 | 4 100 | +0.4479 |
+| `4d` | shallow, one layer `N=40` | 408 | 8 200 | +0.5817 |
+
+> **ON BOTH OF THE REPOSITORY'S REGRESSION TASKS THE DEEP PATH IS BEATEN BY THE NULL** --
+> by `+0.67` on `2d` and by `+0.20` on `4d` -- and the null spends **ZERO forwards** and 20
+> readings against the deep arm's 720 forwards, three layers and 60 particles.  **On `4d` the
+> deep arm scores `+0.0548`, i.e. it barely clears the floor the shallow path exceeds five
+> times over.**
+>
+> **AND THE NULL IS NOT A STRAW MAN.**  Random geometry plus a closed-form solve is the
+> extension's own standard baseline, used in every half-B result, and it is exactly what this
+> project's central claim predicts should be strong: the strengths are SOLVED, so the only
+> thing left to get right is the geometry -- and on these tasks random geometry is already
+> most of the way there.
+
+**AND ONE CLAIM OF MINE THAT `4d` REFUTED, withdrawn rather than kept as a caveat.**  The
+first verdict for `2d` said the deep path "exists for the harder problems in this repository
+-- the 4-D and image lines", i.e. that an easy task is where it loses.  **`4d` refutes it:**
+the deep arm loses to the null there too, and by a wider relative margin.  **A caveat the data
+contradicts is worse than no caveat**, so the sentence is gone from the script and recorded
+here.
+
+**WHAT THE SCOPE LIMIT ACTUALLY IS.**  Toy scale; one deep configuration whose
+hyper-parameters were inherited from a pipeline test and never tuned; and the repository's two
+REGRESSION tasks.  **The image line is CLASSIFICATION, whose readout is nearest-prototype and
+is not what this compares** -- so nothing here says anything about it either way, and that is
+the one place a deep design still has room in this repository.
+
+**THE HONEST LIMITS.**  `n_evals` is the shallow arm's own accounting and the deep arm's is
+analytic from SPSA's documented cost.  Neither counts the feature-matrix evaluations inside
+the closed-form solve, because those are readings rather than forwards.  3 seeds, toy.
