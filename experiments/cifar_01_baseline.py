@@ -161,6 +161,7 @@ L("\n--- Digital Training (autograd) ---")
 # optimiser state and the sampling all come from one stream.
 torch.manual_seed(SEED)
 np.random.seed(SEED)
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
 model=DeepRBF3D()
 n_param=sum(p.numel() for p in model.parameters())
 L(f"  Trainable params: {n_param}")

@@ -78,6 +78,11 @@ L("=" * 60)
 L(f"  {time.strftime('%Y-%m-%d %H:%M:%S')}")
 L(f"  Classes: {N_CLASSES}, Resolution: {IMG_SIZE}x{IMG_SIZE}")
 L(f"  Arch: L0(3D→3D,{L0_P}p,res) → L1(3D→{L1_O}D,{L1_P}p) → L2({L1_O}D→{L2_O}D,{L2_P}p) → L3({L2_O}D→{L3_O}D,{L3_P}p)")
+# THE SEED IS PART OF THE RESULT.  Without this line a reader cannot tell which
+# seed produced the numbers below, which is half of why this line's results were
+# not checkable (extension FINDINGS.md 12.32).
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
+
 L(f"  Regularization: AdamW(wd=1e-5) + center(λ={LAMBDA_C}) + width(λ={LAMBDA_H})")
 L(f"  Training: autograd {EPOCHS}ep | Inference: physical + noise sweep")
 

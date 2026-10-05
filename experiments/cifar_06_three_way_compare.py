@@ -209,6 +209,7 @@ L(f"  Params: {rbf_params} | Peak train={rbf_train}% | Peak test={rbf_test}% (fr
 # stream and the comparison is between arms rather than between draws.
 torch.manual_seed(SEED)
 np.random.seed(SEED)
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
 mlp=MLPModel()
 res_mlp=train_model("MLP (1024→32→16→8→6)", mlp, tr_f, train_lbl, te_f, test_lbl, True)
 results["MLP"]=res_mlp

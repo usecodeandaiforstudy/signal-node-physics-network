@@ -163,6 +163,7 @@ class DeepRBF4LayerReg(nn.Module):
 # optimiser state and the sampling all come from one stream.
 torch.manual_seed(SEED)
 np.random.seed(SEED)
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
 model=DeepRBF4LayerReg()
 n_param=sum(p.numel() for p in model.parameters())
 L(f"  Params: {n_param}")

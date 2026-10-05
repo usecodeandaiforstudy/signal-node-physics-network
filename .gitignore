@@ -39,6 +39,9 @@ cifar/
 # documents cite them -- and the e21 report is the one 12.32 quotes.
 !/outputs/nd_*_report.txt
 !/outputs/e21_regularized_report.txt
+# The UNSEEDED report is kept as well, because it is the record of what was PUBLISHED
+# before the seed was fixed -- and the two differ by 3.3 points, which is the finding.
+!/outputs/e21_regularized_report_UNSEEDED.txt
 !/outputs/sub_01_*.png
 
 # The EXTENSION's evidence set (DESIGN section 9.2).  Without these lines the
