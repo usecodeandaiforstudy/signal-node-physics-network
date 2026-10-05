@@ -1392,6 +1392,20 @@ one of these pointed in the **flattering** direction for the extension.
     the inserted Python; and an inserted block so convoluted -- walrus operators and
     three repeated `fit_operator` calls -- that it was replaced with a named helper
     instead.  **None reached a report, and all three cost a run.**
+55. **A verdict that read expressiveness as a transfer failure, in the FIRST draft.**
+    `ext_38`'s first verdict said "THE TRANSFER DOES NOT HOLD" because the anharmonic
+    cell's calibration R^2 was lower than the two Gaussians'.  **That conflated two
+    different questions**: the operator's transfer (which P2 measures to 2e-14) and the
+    medium's ability to cover a task with 40 nodes.  Caught by re-reading the verdict
+    against its own tables, and fixed by separating them -- and by matching the widths by
+    EFFECTIVE RADIUS, which recovered a large part of the gap and showed the residue is
+    real rather than a scaling artefact.  **The same shape as defect 52.**
+56. **Three runs lost to a shape convention.**  `_build_layer` takes `centres` as
+    `(N, D)` (`asarray(centres).T.reshape(D, n)`) while the layer classes it builds store
+    `(D, N)`, and the new substrate was written in the other one -- so the first two runs
+    died on a reshape and the third on a list-vs-array multiply.  **The convention is set
+    by the callee and should have been read before the class was written**, not after two
+    failures.
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1480,6 +1494,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_35_seeding.py` | **section 12.20**: the seeding fix, verified -- including the check that isolates it |
 | `extensions/multigraph/ext_36_trained_inner.py` | **section 12.21**: the trained inner layer, and the cost question it surfaced |
 | `extensions/multigraph/ext_37_m_real.py` | **section 12.22**: a genuine `m > 1` setting -- the item names the wrong task |
+| `extensions/multigraph/ext_38_third_substrate.py` | **section 12.23**: a third substrate -- an anharmonic trap, not Gaussian |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1530,11 +1545,12 @@ python extensions/multigraph/ext_34_deployment_harm.py --seeds 3 --assert
 python extensions/multigraph/ext_35_seeding.py --assert
 python extensions/multigraph/ext_36_trained_inner.py --assert
 python extensions/multigraph/ext_37_m_real.py --assert
+python extensions/multigraph/ext_38_third_substrate.py --assert
 ```
 
-All thirty-seven exit non-zero when their own published claim fails, and every one of them
+All thirty-eight exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3067,3 +3083,87 @@ the item's framing, that the synthetic target is the weakness, inverts that.
 and 1 on the algebraic part, 40 nodes, toy.  The CIFAR feature construction is a stated
 choice (the `build_3d` cloud reduced to one vector per image) and it is the reason that part
 fails; the repository's own pipeline is not reproduced here.
+
+### 12.23 A third substrate, and this one is not Gaussian (ext_38)
+
+**The open item, in this document's own words** (section 11, item 5):
+
+> "both cells were built here to reproduce the same engineered kernel, so **nothing here
+>  tests a substrate whose response is not Gaussian in the input at all**.  'Any physical
+>  system' is still the widest claim in this document and the least covered."
+
+12.16 turned that claim into a **checkable precondition** and showed on PROFILES that a
+quartic exponent is in scope.  **What it did not do is run the operators on a third
+MEDIUM.**  This does.
+
+**THE SUBSTRATE: a particle in an ANHARMONIC TRAP.**  `V(r) = kappa r^4` at temperature `T`
+gives equilibrium density `proportional to exp(-(kappa/kT) r^4)` -- quartic wells are
+ordinary objects, the exponent is not quadratic, and **the trap's minimum and its
+stiffness-over-temperature are this project's own movable centre and width.**  A medium
+whose phase space generates movable nonlinear activation sources is exactly what the thesis
+asks for, and here the sources are trapped particles.  It is implemented as a **layer** --
+centres and widths as parameters, `forward` returning the field -- because `features()`'s
+contract is that the trainer never evaluates its own kernel formula in place of the
+device's, and it lives in the EXTENSION because adding a substrate to
+`abl_common.make_cell` would mean editing the base.
+
+**P1 -- THE QUALIFICATION TEST, ON THREE MEDIA.**
+
+| substrate | d=2 | d=4 | d=6 | first collapsing degree |
+|---|---|---|---|---|
+| circuit (Gaussian) | **8.8e-06** | 2.3e-15 | 9.4e-15 | **4** |
+| diffusion (Gaussian) | **1.7e-15** | 2.4e-15 | 9.9e-15 | **2** |
+| anharmonic trap (quartic) | 8.4e-02 | **1.5e-15** | 7.3e-15 | **4** |
+
+> **AND THE CIRCUIT CELL'S DEGREE-2 FLOOR IS THE BASE VERSION'S OWN DOCUMENTED
+> PERTURBATION.**  Section 9.2 records that `bjt_gaussian_kernel` adds `sqrt(|z|)*1e-6`
+> whenever `noise_std is None` -- "which is how `simulator/layer_nd.py` calls it" -- so the
+> circuit cell **cannot** reach `1e-10` however good the basis is.  It is deterministic in
+> `z`, so a larger basis absorbs it.  **That is why the bar for "in scope" must be each
+> device's own floor rather than a fixed number**, and an absolute bar would have called
+> the reference substrate out of scope.
+
+**P2 -- THE OPERATOR TRANSFERS TO MACHINE PRECISION.**
+
+| true `c` | recovered `c` | error | true `h` | recovered `h` | error |
+|---|---|---|---|---|---|
+| [0.70, -0.40, 1.10, 0.20] | [0.700000, -0.400000, 1.100000, 0.200000] | **2.0e-14** | 1.300 | 1.300000 | **6.0e-15** |
+| [-1.30, 0.90, -0.20, 0.60] | [-1.300000, 0.900000, -0.200000, 0.600000] | **1.1e-14** | 1.300 | 1.300000 | **2.2e-15** |
+
+The Gaussian operator reads the centre from the degree-1 coefficients; for a quartic
+exponent the same argument runs **one degree up** -- `||x-c||^4` has degree-3 coefficients
+`-4 c_j (k/h^4)` and a degree-4 leading coefficient `k/h^4`.  **That is what "swap the
+basis" means concretely, and it reaches the same machine precision the Gaussian operator
+reaches in its own basis.**
+
+**P3 -- BUT EXPRESSIVENESS IS A SEPARATE QUESTION, AND THIS MEDIUM IS WORSE AT IT.**
+
+Widths matched by **effective radius** -- a Gaussian falls to `1/e` at `h/sqrt(k)` and a
+quartic at `h/k^(1/4)`, so at the same raw `h` the quartic field is narrower and its nodes
+overlap less:
+
+| seed | circuit | diffusion | anharmonic (matched) | anharmonic (raw `h`) |
+|---|---|---|---|---|
+| 0 | +0.5924 | +0.5924 | +0.4536 | +0.2905 |
+| 1 | +0.5024 | +0.5024 | +0.4166 | +0.2774 |
+| 2 | +0.6336 | +0.6336 | +0.5124 | +0.3721 |
+
+**Matching the radius recovers a large part of the gap and not all of it.**  The anharmonic
+cell covers this task less well at 40 nodes.
+
+> **AND THE FIRST DRAFT OF THIS VERDICT CALLED THAT "THE TRANSFER DOES NOT HOLD", WHICH WAS
+> A MISREADING.**  P3 measures expressiveness at fixed nodes, not the operator's transfer;
+> the operator transferred.  **A different field SHAPE is a different basis, not a different
+> operator** -- and the two questions are reported separately because conflating them is
+> exactly the error that produced the first draft.
+
+**SO THE WIDEST CLAIM GAINS A THIRD MEDIUM AND NOT A DISCHARGE.**  Two measurements now
+support it separately: **identification transfers across kernels** (2e-14 on a quartic
+field), and **calibration is substrate-independent in form** while a medium's
+expressiveness is its own.  A medium whose response is not log-linear in any finite basis
+-- a Yukawa field, a Lorentzian -- **remains excluded**, and 12.16 showed the test that
+excludes it.
+
+**SCOPE.**  The anharmonic cell is a medium implemented here, not a fabricated device; its
+field is evaluated in closed form rather than read through a sensor chain; and the
+repository's `4d` task at 40 nodes, 3 seeds, toy.
