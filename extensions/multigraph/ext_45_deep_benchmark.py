@@ -93,13 +93,17 @@ def main():
     ap.add_argument("--assert", dest="do_assert", action="store_true")
     args, _u = ap.parse_known_args()
     do_assert = do_assert or args.do_assert
-    # THE GLOBAL RNG TOO.  `features()` builds a REAL device layer and the device draws
+    # THE GLOBAL RNG TOO, at the repository's own `SEED = 0` convention.  The first fix
+    # used `args.seed` -- WHICH DOES NOT EXIST: these scripts define `--seeds`, a COUNT
+    # looped over with `range(args.seeds)`, and the substring match that checked for it
+    # matched `args.seeds` too.  All 24 crashed with AttributeError until this line.
+    # `features()` builds a REAL device layer and the device draws
     # from `np.random`, so without this the exact path moved between runs in the 5th to
     # 7th digit while everything else stayed put -- defect 58 in FINDINGS.md, which this
     # line closes.  `log_rms`'s healthy band is ~1e-6, i.e. AT the magnitude of that
     # movement, so the test that decides whether a response is a genuine single node was
     # sitting on the non-determinism.
-    np.random.seed(args.seed)
+    np.random.seed(0)
 
     set_ideal()
     rep = Report("ext_45_deep_benchmark.txt")
