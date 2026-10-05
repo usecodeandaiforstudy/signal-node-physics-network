@@ -1509,6 +1509,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_43_calibration_in_deep.py` | **section 12.28**: the closed-form calibration inside the deep trainer |
 | `extensions/multigraph/ext_44_regression_defect.py` | **section 12.29**: the regression prediction dropped the accumulation, and the fix |
 | `extensions/multigraph/ext_45_deep_benchmark.py` | **section 12.30**: the deep regression path, benchmarked -- and beaten by the null |
+| `extensions/multigraph/ext_46_classification_benchmark.py` | **section 12.31**: HiMALND's classification mode -- beaten by the null too |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1567,11 +1568,12 @@ python extensions/multigraph/ext_42_selector_samples.py --assert
 python extensions/multigraph/ext_43_calibration_in_deep.py --assert
 python extensions/multigraph/ext_44_regression_defect.py --assert
 python extensions/multigraph/ext_45_deep_benchmark.py --assert
+python extensions/multigraph/ext_46_classification_benchmark.py --assert
 ```
 
-All forty-five exit non-zero when their own published claim fails, and every one of them
+All forty-six exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43, ext_44 and ext_45 seconds each.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -3790,3 +3792,55 @@ the one place a deep design still has room in this repository.
 **THE HONEST LIMITS.**  `n_evals` is the shallow arm's own accounting and the deep arm's is
 analytic from SPSA's documented cost.  Neither counts the feature-matrix evaluations inside
 the closed-form solve, because those are readings rather than forwards.  3 seeds, toy.
+
+### 12.31 `HiMALND`'s classification mode, and it is beaten by the null too (ext_46)
+
+**SCOPE FIRST, BECAUSE A NOTE OF MINE WAS WRONG.**  The worklist said the classification path
+"is exactly what the CIFAR line uses".  **That is false.**  Searching the CIFAR family for
+`himal` returns NOTHING: that line is `RBFLayerND` trained by PyTorch autograd and exported to
+a physical layer, a DIFFERENT architecture.  **So nothing here says anything about the
+project's image demonstration**, and the note is corrected rather than left to be quoted.
+
+What is true: `HiMALND`'s classification mode is used by `nd_01`, `nd_03`, `reg_03`, `reg_05`
+and `run_all`, and `nd_01` DOES report an accuracy -- against a **v1 ResidualRBFNetwork** and
+an MLP, i.e. against **sibling architectures**.  **What it had never been compared against is
+this project's OWN standard**: the operator's placement, the closed-form solve, and the
+random-geometry null.
+
+**THE COSTS ARE THE SAME TWO UNITS, NEVER ADDED.**  The deep arm's 720 forwards at 60 epochs
+is analytic from SPSA's documented "2 * spsa_avg forward passes"; `fit_operator` returns
+`n_evals`; and the closed-form solve costs `n_train * N` READINGS.
+
+**THE RESULT, ON THE TWO CLASSIFICATION TASKS THE REPOSITORY CAN BUILD WITHOUT DOWNLOADING.**
+
+| task | arm | forwards | calib readings | accuracy |
+|---|---|---|---|---|
+| `moons` | **deep (`himal_nd` classification)** | 720 | 0 | **0.7344** |
+| `moons` | **RANDOM geometry + solve** | **0** | 4 100 | **1.0000** |
+| `moons` | operator + solve, `N=20` | 225 | 4 100 | 1.0000 |
+| `moons4d` | **deep** | 720 | 0 | **0.7417** |
+| `moons4d` | **RANDOM geometry + solve** | **0** | 10 240 | **0.9479** |
+| `moons4d` | operator + solve, `N=40` | 436 | 20 480 | 0.9917 |
+
+> **THE DEEP CLASSIFICATION ARM DOES NOT BEAT THE NULL EITHER** -- and this arrives through a
+> COMPLETELY DIFFERENT READ-OUT (nearest-prototype voting against the regression path's
+> accumulation), **so it is no longer a property of that one prediction path.**  Four
+> task/read-out combinations now agree: `2d` regression `+0.2291` against a null's `+0.9006`,
+> `4d` regression `+0.0548` against `+0.2516`, and these two.
+
+**AND ONE OF THE TWO TASKS IS SATURATED, WHICH LIMITS WHAT IT CAN SAY.**  On `moons` the
+closed-form arms reach **1.0000**, a ceiling: that task shows only that the deep arm is *not*
+perfect, not how far behind it is.  **`moons4d` is the one that discriminates** -- `0.9479`
+for the null against the deep arm's `0.7417`, and `0.9917` for a 40-node operator arm -- so
+the claim rests on that task and `moons` is reported as a ceiling rather than as evidence of
+a gap.
+
+**AND AN ASYMMETRY IN THE NULL, STATED RATHER THAN HIDDEN.**  The closed-form arms read the
+classes as `+-1` and take a sign -- a LEAST-SQUARES classifier, not a margin method, and not
+what the deep arm's prototype voting does.  **Each arm is scored the way it is built to be
+scored**, which is the fair comparison and also one that handicaps the closed-form side on
+tasks where least squares is misspecified.
+
+**THE LIMITS.**  Toy scale, two 2-class tasks, and a deep arm shipping with hyper-parameters
+inherited from a pipeline test and never tuned.  **And the CIFAR line is untouched and
+unmeasured here**, which is the largest caveat this section carries.

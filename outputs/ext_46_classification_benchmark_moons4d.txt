@@ -1,0 +1,69 @@
+==================================================================
+  ext_46 - HiMALND classification, benchmarked
+  task=moons4d epochs=60 seeds=3
+  2026-10-05 19:28:24
+==================================================================
+
+  **SCOPE FIRST, BECAUSE IT IS THE EASIEST THING TO OVERCLAIM HERE.**  A worklist
+  note of mine said the classification path 'is exactly what the CIFAR line uses'.
+  **That is false.**  Searching the CIFAR family for `himal` returns NOTHING: that
+  line is `RBFLayerND` trained by PyTorch autograd and exported to a physical layer,
+  a DIFFERENT architecture.  **So nothing measured here says anything about the
+  project's image demonstration**, and the note is corrected rather than left to be
+  quoted.
+
+  What IS true: this mode is used by `nd_01`, `nd_03`, `reg_03`, `reg_05` and
+  `run_all`, and `nd_01` does report an accuracy -- against a v1 ResidualRBFNetwork
+  and an MLP, i.e. against SIBLING ARCHITECTURES.  **What it has never been compared
+  against is this project's own standard**: the operator's placement, the closed-form
+  solve, and the random-geometry null -- the three things that, applied to
+  regression, showed the deep path to be dominated (12.30).
+
+  the deep arm's cost, analytic from SPSA's documented '2 * spsa_avg forward
+  passes': 2 * 60 * 3 layers * 2 networks = **720 forwards**.
+
+====================================================================================================
+  P1/P2  accuracy, and the operator arm swept across its own cost
+====================================================================================================
+
+  arm                              forwards   calib readings   accuracy
+  ----------------------------------------------------------------------
+  deep (himal_nd, classification)        720                0     0.7417
+  RANDOM geometry + solve                 0           10,240     0.9479
+
+  N=10  rounds=4              107            5,120     0.9000
+  N=10  rounds=2              107            5,120     0.9000
+  N=20  rounds=4              216           10,240     0.9500
+  N=20  rounds=2              216           10,240     0.9500
+  N=40  rounds=4              436           20,480     0.9917
+  N=40  rounds=2              436           20,480     0.9917
+  N=80  rounds=2              876           40,960     0.9979   <-- the deep arm's budget
+  N=80  rounds=4              879           40,960     0.9979   <-- the deep arm's budget
+
+====================================================================================================
+  P3  VERDICT: does the classification path beat the project's own standard?
+====================================================================================================
+
+  deep arm:                0.7417 accuracy at 720 forwards
+  RANDOM geometry + solve: 0.9479 accuracy at 0 forwards
+  operator at or under dc: 0.9917 accuracy at 436 forwards
+
+  **THE DEEP CLASSIFICATION ARM DOES NOT BEAT THE NULL EITHER.**  Random geometry
+  plus a closed-form solve -- ZERO forwards, and the class labels used only as
+  +-1 regression targets -- is at least as accurate.  **That is the same result
+  12.30 found for regression, arriving through a completely different read-out**, so
+  it is no longer a property of that one prediction path.
+
+  **AND THE HONEST ASYMMETRY IN THE NULL.**  The closed-form arms read the classes as
+  +-1 and take a sign, which is a LEAST-SQUARES classifier -- not a margin method,
+  and not what the deep arm's prototype voting does.  **Each arm is scored the way it
+  is built to be scored**, which is the fair comparison and also the one that gives
+  the closed-form side a handicap on tasks where least squares is misspecified.
+
+  **THE LIMITS.**  Toy scale and two 2-class tasks the repository can build without
+  downloading anything; the deep arm ships with hyper-parameters inherited from a
+  pipeline test and never tuned; `n_evals` is the shallow arm's own accounting while
+  the deep arm's is analytic.  **And the CIFAR line is untouched and unmeasured
+  here**, which is the largest caveat this section carries.
+
+  wall time 161.8s
