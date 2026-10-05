@@ -192,7 +192,15 @@ def readout(field, bits=32, full_scale=10.0, noise_rel=0.0, drift=0.0, rng=None)
     the source energy is then chosen to fill it.  The default of 10.0 is large
     enough that the field of a full layer (sum_j W_ij z_j) does not clip.
     """
-    rng = np.random.default_rng() if rng is None else rng
+    # A CALLER THAT OMITS `rng` USED TO GET OS ENTROPY, silently: `default_rng()` with
+    # no argument seeds itself from the operating system, so no amount of
+    # `np.random.seed(...)` upstream could make such a call reproducible.  No caller in
+    # this repository takes that path today -- `DiffusionRBFLayerND._readout` threads
+    # `self._rng` and `abl_common._measure_features` derives a seed from the layer's --
+    # but a SENSOR CHAIN whose default is nondeterministic is a trap for the next caller.
+    # The default is now a FIXED SEED, so an omission is reproducible and a caller who
+    # wants entropy has to ask for it by passing an unseeded generator explicitly.
+    rng = np.random.default_rng(0) if rng is None else rng
     v = np.asarray(field, dtype=np.float64) + float(drift) * float(full_scale)
     if noise_rel > 0:
         v = v + rng.normal(0.0, float(noise_rel) * float(full_scale), v.shape)
