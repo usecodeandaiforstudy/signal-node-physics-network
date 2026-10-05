@@ -1505,6 +1505,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_39_nonlinear_free.py` | **section 12.24**: item 8 -- the replacement it asks for is not needed |
 | `extensions/multigraph/ext_40_drift_rate.py` | **section 12.25**: item 6 -- the drift rate, and the channel it names |
 | `extensions/multigraph/ext_41_authoritative.py` | **section 12.26**: item 7 -- the blocker is not the hook |
+| `extensions/multigraph/ext_42_selector_samples.py` | **section 12.27**: item 2 -- the lever the diagnostic named |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1559,11 +1560,12 @@ python extensions/multigraph/ext_38_third_substrate.py --assert
 python extensions/multigraph/ext_39_nonlinear_free.py --assert
 python extensions/multigraph/ext_40_drift_rate.py --assert
 python extensions/multigraph/ext_41_authoritative.py --assert
+python extensions/multigraph/ext_42_selector_samples.py --assert
 ```
 
-All forty-one exit non-zero when their own published claim fails, and every one of them
+All forty-two exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -1592,12 +1594,14 @@ trail is the point of this document:
 
 **The list, ranked by what would change a conclusion, with each item's CURRENT status
 stated inline.**  The heading used to read "still open", which is no longer true of it:
-**items 1, 3, 4, 5, 6, 7 and 8 have since been closed or answered** (1 by 12.21, 8 by
-12.24, 3 by `ext_20`, 4 by 12.22, 5 by 12.23, 6 by 12.25, 7 by 12.26) and are kept here with their outcomes rather than
+**every item on it has since been closed or answered** (1 by 12.21, 8 by 12.24, 3 by
+`ext_20`, 4 by 12.22, 5 by 12.23, 6 by 12.25, 7 by 12.26, 2 by 12.27) and are kept here with their outcomes rather than
 deleted, because an index whose closed items silently vanish is how the same question gets
-asked twice.  **What is genuinely still open is ITEM 2 ALONE**, plus the third arrangement
-that item 8 now points at instead of the one it named, and the fidelity of `ext_03`'s
-mirrored loop that 12.26 names as untested.
+asked twice.  **Every item on this list now has a measured answer.**  2b is the one that was
+open when the last four were closed, and 12.27 closes it.  What remains is not an open item
+but three NAMED LIMITS: the third arrangement item 8 points at instead of the one it named,
+the fidelity of `ext_03`'s mirrored loop (12.26), and the fact that every number here is at
+the repository's own toy scale.
 
 1. **CLOSED by 12.21 (ext_36), and the answer is on the ACCURACY side only.**  The trade
      was measured at 5.13 and the cheap form says keep the linearity.  **The untested case
@@ -1692,6 +1696,18 @@ mirrored loop that 12.26 names as untested.
    limitations line up exactly: the loop that works is the loop where the rank question is
    empty** -- every scalar run's readout has rank 1.  The mirroring's own fidelity remains
    untested, which is the honest limit.
+
+2b. **CLOSED by 12.27 (ext_42), and the untried lever was the one the diagnostic named.**
+   All three guards `ext_21` measured were **different statistics on the same 51 samples**;
+   the SAMPLE COUNT -- which `ext_22`'s own diagnosis names as the binding constraint -- had
+   never been varied.  **It works**: with the selection set enlarged by fresh probes the
+   oracle ceiling rises by `+0.5881` on `steps` and `+1.9600` on `4d`, and at 51 samples that
+   oracle is catastrophic (`-1.26`), reproducing `ext_22`'s overfitting exactly.  **But the
+   purchase is TASK-DEPENDENT**: `4d` favours spending the measurements on nodes at every
+   point, `steps` at one of four, and one `steps` point is a node-arm BLOW-UP (`-4.7381`) so
+   the head-count '5 of 8' is not a result.  **And the comparison is variance per measurement
+   as much as accuracy per measurement.**  **Item 2's closure stands, now measured rather
+   than assumed: the shipped rule is the most STABLE option per measurement.**
 
 8. **ANSWERED by 12.24 (ext_39): the replacement this item asks for is NOT NEEDED, and
    the premise is too strong.  NOTE FIRST that "combination" here means the READOUT-PATH
@@ -3514,3 +3530,80 @@ That remains untested**, and it is this section's limit rather than a result.
 
 **SCOPE.**  The repository's own `F2` architecture, its own `4d` task, its own `train_model`.
 Nothing here edits the base; the wrapper is installed and removed inside one process.
+
+### 12.27 Item 2: the lever the diagnostic named, and it works but does not pay (ext_42)
+
+**The open item, in this document's own words** (section 11, item 2):
+
+> "The open item is therefore a **GUARD on the selector** ... `ext_21` measured three
+>  candidate guards and **none works** ... `ext_22` then LOCATED it: ... **It is a
+>  BIAS-VARIANCE trade and the SAMPLE COUNT binds**: the shipped rule is defensible not
+>  because it is accurate but because it is STABLE."
+
+**ALL THREE GUARDS WERE DIFFERENT STATISTICS ON THE SAME 51 SAMPLES.**  Guards on the
+prediction spread, on the conditioning, on the shrinkage -- **the same split, three
+statistics.**  **The lever the diagnostic itself names, the sample count, had never been
+varied anywhere in this extension.**  That is what 12.27 varies.
+
+**AND IT IS PRICEABLE.**  More selection samples means more MEASURED probes, at the base's
+own rate; scoring more candidates on a bigger set costs only compute, because they reuse the
+same measured feature matrix.  **So the purchase is well defined and comparable against the
+other thing the same measurements buy -- nodes.**
+
+**P1 -- THE CONTROL, AND `ext_22` REPRODUCED.**  Enlarging the selection set with FRESH
+probes, fitting set held fixed at the shipped 205 samples:
+
+| `n_sel` | `steps` shipped | `steps` oracle | `4d` shipped | `4d` oracle |
+|---|---|---|---|---|
+| **51** | +0.1587 | **-0.1927** | +0.5441 | **-1.2580** |
+| 102 | +0.2038 | +0.0645 | +0.5433 | +0.1772 |
+| 205 | +0.2376 | +0.1339 | +0.5943 | +0.3519 |
+| 410 | +0.3069 | +0.3913 | +0.5729 | +0.6346 |
+| 820 | +0.2370 | **+0.3953** | +0.5634 | **+0.7020** |
+
+> **AT 51 SAMPLES THE ORACLE IS CATASTROPHIC** -- it ranks every candidate by its held-out
+> score and lands at `-1.26` on `4d` -- **which is exactly the overfitting `ext_22`
+> described.**  And **the ceiling RISES with the selection set on both tasks, by `+0.5881`
+> and `+1.9600`.**  **So the sample count is the lever the diagnostic named, and it works.**
+
+**P2 -- THE PURCHASE, PRICED, AND IT IS TASK-DEPENDENT.**
+
+| task | `n_sel` | buys nodes | shipped gain | node-arm gain | winner |
+|---|---|---|---|---|---|
+| `steps` | 102 | 10 | +0.0448 | **-4.7381** | selection |
+| `steps` | 205 | 30 | +0.0789 | +0.0735 | selection |
+| `steps` | 410 | 70 | +0.1482 | +0.0894 | selection |
+| `steps` | 820 | 150 | +0.0783 | +0.1616 | NODES |
+| `4d` | 102-820 | 10-150 | small | positive at every point | **NODES** |
+
+> **COUNTING HEADS GIVES 'NODES WIN 5 OF 8', AND THAT COUNT IS NOT A RESULT.**  An earlier
+> draft of the verdict stopped there.  **`steps` at 102 is a NODE-ARM BLOW-UP** -- the node
+> arm gains `-4.7381`, a geometry whose prediction explodes outside the basis support, which
+> is the failure mode `ext_21` named -- **so selection "winning" there says nothing about
+> selection.**  And the two tasks disagree in a STABLE way: `4d` favours nodes at every
+> point, `steps` at three of four.
+
+**3 -- AND THE COMPARISON IS VARIANCE PER MEASUREMENT, NOT ONLY ACCURACY PER MEASUREMENT.**
+Buying nodes buys a bigger geometry **search**, and this project has measured that the search
+can produce an exploding geometry.  Buying selection samples buys a better-posed **choice**
+among whatever geometries the same search produced.  **On `steps` the node arm's variance is
+visible in this very table.**
+
+**4 -- SO THE GUARD SHOULD NOT BE BUILT, and for a better reason than "it does not pay".**
+Item 2's candidate repairs -- three guards, a criterion replacement, and more samples -- now
+all have measured answers, and **only the samples raise anything.**  **The honest closure is
+the one `ext_22` reached, now with the untried direction measured rather than assumed: the
+shipped rule is defensible neither as accurate nor as improvable by guarding, but as the most
+STABLE option per measurement.**
+
+**AND ONE DEFECT OF MY OWN.**  A patch script modified the verdict text in memory, then died
+on a LATER assert, and wrote the file only at the end -- **so it saved nothing while printing
+`ok` for the first edit.**  The re-run's report then carried the OLD verdict and the NEW
+closure **side by side**, which is how it was caught: **by reading the output rather than
+trusting the patch's own success message.**  Same class as defect 54, with a new way to fail
+quietly.
+
+**THE LIMITS.**  The oracle is a CEILING on what a selector could do with a set, **not a
+selector** -- it re-solves every strength for every candidate and is itself an overfitting
+risk at small `n_sel`, which is exactly why it cannot be shipped.  Repository tasks, 40
+nodes, 3 seeds, toy.
