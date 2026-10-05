@@ -1504,6 +1504,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_38_third_substrate.py` | **section 12.23**: a third substrate -- an anharmonic trap, not Gaussian |
 | `extensions/multigraph/ext_39_nonlinear_free.py` | **section 12.24**: item 8 -- the replacement it asks for is not needed |
 | `extensions/multigraph/ext_40_drift_rate.py` | **section 12.25**: item 6 -- the drift rate, and the channel it names |
+| `extensions/multigraph/ext_41_authoritative.py` | **section 12.26**: item 7 -- the blocker is not the hook |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1557,11 +1558,12 @@ python extensions/multigraph/ext_37_m_real.py --assert
 python extensions/multigraph/ext_38_third_substrate.py --assert
 python extensions/multigraph/ext_39_nonlinear_free.py --assert
 python extensions/multigraph/ext_40_drift_rate.py --assert
+python extensions/multigraph/ext_41_authoritative.py --assert
 ```
 
-All forty exit non-zero when their own published claim fails, and every one of them
+All forty-one exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 a few seconds.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -1590,11 +1592,12 @@ trail is the point of this document:
 
 **The list, ranked by what would change a conclusion, with each item's CURRENT status
 stated inline.**  The heading used to read "still open", which is no longer true of it:
-**items 1, 3, 4, 5, 6 and 8 have since been closed or answered** (1 by 12.21, 8 by 12.24, 3
-by `ext_20`, 4 by 12.22, 5 by 12.23, 6 by 12.25) and are kept here with their outcomes rather than
+**items 1, 3, 4, 5, 6, 7 and 8 have since been closed or answered** (1 by 12.21, 8 by
+12.24, 3 by `ext_20`, 4 by 12.22, 5 by 12.23, 6 by 12.25, 7 by 12.26) and are kept here with their outcomes rather than
 deleted, because an index whose closed items silently vanish is how the same question gets
-asked twice.  **What is genuinely still open is items 2 and 7**, plus the third arrangement
-that item 8 now points at instead of the one it named.
+asked twice.  **What is genuinely still open is ITEM 2 ALONE**, plus the third arrangement
+that item 8 now points at instead of the one it named, and the fidelity of `ext_03`'s
+mirrored loop that 12.26 names as untested.
 
 1. **CLOSED by 12.21 (ext_36), and the answer is on the ACCURACY side only.**  The trade
      was measured at 5.13 and the cheap form says keep the linearity.  **The untested case
@@ -1676,9 +1679,19 @@ that item 8 now points at instead of the one it named.
    re-measurement interval for a PLACEMENT correction cannot be derived from this model at
    all**, and what is missing is a bias-current drift law -- a model, not a measurement.
 
-7. **`ext_03` against the real base trainer.**  It mirrors the base's loop rather than
-   calling it, because the base's closed-form hook has no place for a rank constraint.
-   Wiring that hook would make the comparison authoritative instead of parallel.
+7. **ANSWERED by 12.26 (ext_41), and the STATED BLOCKER IS NOT THE BINDING ONE.**  The
+   closed-form hook CAN be wrapped from the extension with no base edit -- it is a bare
+   module global, which is how 12.19 wrapped the gate -- and the rank projection was
+   demonstrated on a multi-output readout (`3` rows to rank `1` and `2`).  **What actually
+   blocks is the TARGET**: `train_model` is scalar-output by construction and raises
+   `IndexError` on a 2-column one, while half A's rank question is inherently multi-output.
+   **So `ext_03`'s parallel status is a NECESSITY, not a shortcut** -- its disclaimer is the
+   strongest form the comparison can take, not an apology more wiring would remove.  Making
+   it authoritative would mean changing the base's TRAINER (its validation mask, its `r2`
+   path, the hook's `rows=(0,)` default), which the project's rule forbids.  **And the two
+   limitations line up exactly: the loop that works is the loop where the rank question is
+   empty** -- every scalar run's readout has rank 1.  The mirroring's own fidelity remains
+   untested, which is the honest limit.
 
 8. **ANSWERED by 12.24 (ext_39): the replacement this item asks for is NOT NEEDED, and
    the premise is too strong.  NOTE FIRST that "combination" here means the READOUT-PATH
@@ -3427,3 +3440,77 @@ wall-clock interval additionally needs a read rate, which is a device property.
 
 **SCOPE.**  Repository tasks `4d` and `steps`, 40 nodes, 3 seeds, toy; the realization model
 is `ext_15.realize`, imported rather than reimplemented.
+
+### 12.26 Item 7: the blocker is not the hook, and `ext_03`'s status is a necessity (ext_41)
+
+**The open item, in this document's own words** (section 11, item 7):
+
+> "**`ext_03` against the real base trainer.**  It mirrors the base's loop rather than calling
+>  it, **because the base's closed-form hook has no place for a rank constraint.**  Wiring
+>  that hook would make the comparison authoritative instead of parallel."
+
+**THE STATED BLOCKER IS REAL AND IS NOT THE BINDING ONE.**  Two things are true and only the
+second one blocks.
+
+**1 -- THE HOOK CAN BE WRAPPED, AND THAT NEEDS NO BASE EDIT.**  `train_model` calls
+`solve_readout_closed_form` as a **bare module global**, which is exactly the property 12.19
+used to wrap the gate's deploys.  With the global replaced and a multi-output readout:
+
+| readout | `k` | singular values (normalised) | effective rank |
+|---|---|---|---|
+| 1 row | full | [1.0000] | 1 |
+| 3 rows | full | [1.0000, 0.4948, 0.0949] | **3** |
+| 3 rows | **1** | [1.0000, 2.7e-09, 4.1e-10] | **1** |
+| 3 rows | **2** | [1.0000, 0.4948, 1.7e-10] | **2** |
+
+**So the rank projection the item says cannot be wired, can be** -- in a few lines, from the
+extension, with the base untouched.  **The item's reason for leaving this undone does not
+hold.**
+
+**2 -- WHAT ACTUALLY BLOCKS IS THE TARGET, NOT THE HOOK.**  Probed with the base's own loop
+on the repository's own architecture and task:
+
+| target | shape | base loop |
+|---|---|---|
+| scalar (`m = 1`) | `(256,)` | **runs** |
+| multi-output (`m = 2`) | `(256, 2)` | **RAISES** `IndexError: boolean index did not match indexed array along axis 0` |
+
+**The failure's SHAPE is the finding**: a boolean mask built for a 1-D target applied to a
+2-D one.  **`train_model` is scalar-output by construction**, and half A's rank question is
+inherently multi-output -- `ext_02` uses `m = 8`, and at `m = 1` the constraint is vacuous,
+which 12.22 measured from the other side on the repository's own 2-class tasks.
+
+**3 -- SO `ext_03`'s PARALLEL STATUS IS A NECESSITY, NOT A SHORTCUT.**  Its own disclaimer
+calls the mirroring forced and says only the difference between its arms means anything.
+**That is not an apology more wiring would remove; it is the strongest form the comparison
+can take.**  Making it authoritative would mean changing the base version's **trainer**, not
+wiring a hook -- a different order of change from the one item 7 describes.
+
+**AND THE TWO LIMITATIONS LINE UP EXACTLY: the loop that works is the loop where the rank
+question is empty.**  Every scalar run's readout has rank 1:
+
+| seed | readout shape | rank | test `R^2` |
+|---|---|---|---|
+| 0 | (1, 4) | **1** | +0.5348 |
+| 1 | (1, 4) | **1** | +0.5277 |
+| 2 | (1, 4) | **1** | +0.5273 |
+
+**4 -- WHAT A BASE CHANGE WOULD HAVE TO TOUCH**, stated so the decision is informed: the
+validation mask and the `r2` path in `train_model` assume a 1-D target, and the hook's
+`rows=(0,)` default assumes a scalar readout.  **Two places, both in the base's trainer, and
+nothing here does it.**
+
+**5 -- AND MY OWN FIRST DRAFT OF P2 CLAIMED SOMETHING FALSE.**  It ran the wrapper through
+the base's loop on a **scalar** model, showed one singular value before and one after, and
+said "the singular values show the truncation taking effect".  **They show no such thing** --
+a `1 x N` readout has rank 1, so there was nothing to truncate.  **The tell was the single
+singular value**, and the fix was to demonstrate the mechanism where it can exist: on a
+multi-output readout, called directly rather than through the loop that cannot carry one.
+
+**THE HONEST LIMIT.**  `ext_03`'s arms differ only in the readout on one identical geometry
+loop, whose constants its header states.  So the difference it measures is carried entirely
+by the code it mirrors, and **the mirroring is the only place a protocol drift could hide.
+That remains untested**, and it is this section's limit rather than a result.
+
+**SCOPE.**  The repository's own `F2` architecture, its own `4d` task, its own `train_model`.
+Nothing here edits the base; the wrapper is installed and removed inside one process.

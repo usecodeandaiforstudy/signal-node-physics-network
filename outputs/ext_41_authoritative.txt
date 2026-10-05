@@ -1,0 +1,112 @@
+==================================================================
+  ext_41 - item 7: the blocker is not the hook
+  arch=F2 epochs=6 seeds=3
+  2026-10-05 11:16:04
+==================================================================
+
+  Section 11 item 7 says `ext_03` mirrors the base's loop 'because the base's
+  closed-form hook has no place for a rank constraint', and that wiring it would
+  make the comparison authoritative instead of parallel.
+
+  **TWO THINGS ARE TRUE AND ONLY THE SECOND ONE BLOCKS:** the hook CAN be wrapped
+  without editing the base -- but the base's trainer cannot carry the kind of target
+  the rank question needs.  Both are measured below.
+
+====================================================================================================
+  P1  the blocker, probed with the base's OWN loop
+====================================================================================================
+
+  architecture `F2`, the repository's own task `4d`, 256 training samples
+
+  target                            shape      base loop                                      outcome
+  --------------------------------------------------------------------------------------------------
+  scalar (m = 1)                   (256,)           runs                                           --
+  multi-output (m = 2)           (256, 2)         RAISES IndexError: boolean index did not match inde
+
+  **THE RANK CONSTRAINT IS NOT WHAT STOPS THIS.**  The contribution the hook would
+  have to make is a rank projection, which is a few lines and needs no base change;
+  what stops it is that **the loop cannot accept the target at all.**
+
+  the failure verbatim, because its SHAPE is the finding: `boolean index did not match indexed array along axis 0; size of axis is 512 but size of `
+  -- a boolean mask built for a 1-D target being applied to a 2-D one.
+
+====================================================================================================
+  P2  the injection mechanism, which DOES work without a base edit
+====================================================================================================
+
+  `train_model` calls `solve_readout_closed_form` as a bare module global, which is
+  the property 12.19 used to wrap the gate's deploys.  So the global is replaced
+  and the readout is truncated inside the hook.
+
+  **BUT IT CANNOT BE DEMONSTRATED INSIDE `train_model`, AND THAT IS THE POINT.**  An
+  earlier draft of this table ran the wrapper through the base's loop on a scalar
+  model, showed one singular value before and one after, and claimed 'the singular
+  values show the truncation taking effect'.  **They show no such thing** -- a `1 x N`
+  readout has rank 1, so there is nothing to truncate.  The mechanism has to be
+  demonstrated on a MULTI-OUTPUT model, which means calling the hook directly rather
+  than through the loop that cannot carry one.
+
+     readout     k                 singular values (normalised)   effective rank
+  ------------------------------------------------------------------------------
+           1  full                                     [1.0000]                1
+           3  full                       [1.0000 0.4948 0.0949]                3
+           3     1           [1.0000e+00 2.6639e-09 4.1183e-10]                1
+           3     2           [1.0000e+00 4.9481e-01 1.7048e-09]                2
+
+  **THE WRAPPER TRUNCATES A MULTI-OUTPUT READOUT INSIDE THE HOOK, WITH THE BASE
+  UNTOUCHED** -- the `3`-row readout drops from full rank to `k` on demand.  **And the
+  `1`-row row above shows why none of this can be reached through `train_model`:**
+  the loop that runs is the loop whose readout has rank 1.  Truncation observed: True.
+
+====================================================================================================
+  P3  why it is nevertheless MOOT: on a scalar model every k >= 1 is vacuous
+====================================================================================================
+
+  The readout the hook writes for a scalar model is `1 x N` -- ONE row.  Its rank
+  is at most 1, so a rank-`k` constraint with `k >= 1` constrains nothing.  That is
+  the same no-op Section 12.22 measured on the repository's 2-class tasks, arriving
+  here from the other side.
+
+  seed   readout shape   rank   top singular value    test R2
+  --------------------------------------------------------------
+     0          (1, 4)      1             1.000000    +0.5348
+     1          (1, 4)      1             1.000000    +0.5277
+     2          (1, 4)      1             1.000000    +0.5273
+
+  **EVERY ONE OF THE 3 SCALAR RUNS HAS READOUT RANK 1**, so the
+  constraint the hook cannot express is also the constraint that would do nothing
+  here.  **The two limitations line up exactly**: the loop that works is the loop
+  where the rank question is empty.
+
+====================================================================================================
+  P4  VERDICT: what item 7 should say
+====================================================================================================
+
+  **1. `ext_03`'s PARALLEL STATUS IS A NECESSITY, NOT A SHORTCUT.**  Its own
+  disclaimer says the loop 'MIRRORS abl_common.train_model rather than calling it'
+  and that only the difference between its arms means anything.  **That is not an
+  apology that more wiring would remove; it is the strongest form the comparison can
+  take**, because the base's trainer is scalar-output by construction and half A's
+  question is multi-output.
+
+  **2. THE ITEM'S STATED REASON IS WRONG AND ITS CONCLUSION IS RIGHT.**  'Wiring that
+  hook' needs no base edit at all -- the hook is wrap-able, and P2 shows the wrapper
+  working inside the base's own loop.  What would be needed is a change to the
+  TRAINER's target handling, which the project's rule forbids and which is a
+  different order of change from the one the item describes.
+
+  **3. WHAT A BASE CHANGE WOULD HAVE TO TOUCH, stated so the decision is informed:
+  the validation mask and the `r2` path in `train_model` assume a 1-D target, and the
+  hook's `rows=(0,)` default assumes a scalar readout.**  Those are two places, both
+  in the base's trainer, and a multi-output path would have to be threaded through
+  both.  **Nothing here does it.**
+
+  **AND ONE THING THIS SETTLES FOR `ext_03` SPECIFICALLY:** its arms differ only in
+  the readout, on one identical geometry loop.  The loop's constants are stated in
+  its own header, and P3 shows that the part the base CAN do -- the scalar case -- is
+  the part where the arms are identical.  **So the difference `ext_03` measures is
+  carried entirely by the code it mirrors, and the mirroring is the only place a
+  protocol drift could hide.**  That remains untested, and it is the honest limit of
+  this section.
+
+  wall time 4.5s
