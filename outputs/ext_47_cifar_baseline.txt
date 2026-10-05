@@ -1,7 +1,7 @@
 ==================================================================
   ext_47 - the CIFAR line against the project's own standard
-  img=16 nodes=100 draws=5 seeds=3
-  2026-10-05 19:39:02
+  img=16 nodes=100 draws=5 seeds=10
+  2026-10-05 19:50:08
 ==================================================================
 
   **THE REFERENCE POINT WAS ALREADY IN THE REPOSITORY**, written by `cifar_02`
@@ -28,24 +28,31 @@
      0                 0.3027          0.3200     0.3067            0.3930
      1                 0.3320          0.3533     0.3067            0.3930
      2                 0.4400          0.4533     0.4133            0.3930
+     3                 0.3547          0.3733     0.3467            0.3930
+     4                 0.3360          0.3467     0.3533            0.3930
+     5                 0.4333          0.4533     0.4533            0.3930
+     6                 0.3427          0.3667     0.3400            0.3930
+     7                 0.4067          0.4267     0.3867            0.3930
+     8                 0.3307          0.3600     0.3733            0.3930
+     9                 0.3493          0.3667     0.3533            0.3930
 
 ====================================================================================================
   P3  VERDICT
 ====================================================================================================
 
-  random null (mean of 5 draws): 0.3582
-  random, best draw:                       0.3756
-  k-means centres:                         0.3422
+  random null (mean of 5 draws): 0.3628
+  random, best draw:                       0.3820
+  k-means centres:                         0.3633
   the repository's own deep pipeline:      0.3930
   chance:                                  0.2000
 
   the null's own seed-to-seed spread:      0.3027 to 0.4400  (**0.1507**)
-  the margin the deep pipeline has over the null's mean: +0.0348
+  the margin the deep pipeline has over the null's mean: +0.0302
 
   **THIS COMPARISON DOES NOT RESOLVE THE TWO ARMS, AND SAYING OTHERWISE WOULD
   BE THE ERROR.**  An earlier draft of this verdict read the ranking as 'the
   depth is doing work the closed form cannot' -- but **the null's own
-  seed-to-seed spread is `0.1507` against a margin of `+0.0348`,
+  seed-to-seed spread is `0.1507` against a margin of `+0.0302`,
   i.e. EIGHT TIMES larger.**  Three seeds cannot separate arms whose null moves
   that far, so the honest statement is that **CIFAR neither confirms nor refutes
   the pattern the other four combinations found.**
@@ -70,4 +77,4 @@
   FROM A REPORT rather than re-run**, so it carries that report's provenance and not
   a re-measurement.
 
-  wall time 18.5s
+  wall time 130.1s

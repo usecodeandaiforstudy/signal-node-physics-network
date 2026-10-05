@@ -3876,6 +3876,52 @@ a null; k-means is included as a standard closed-form geometry.
 | **the repository's own deep pipeline (reported)** | **0.3930** |
 | chance | 0.2000 |
 
+> ### UPDATE, after the recording defects in this section were fixed
+>
+> Two things changed after this section was written, and **both make the non-resolution
+> stronger rather than weaker.**
+>
+> **1. THE DEEP NUMBER MOVES BY 3.3 POINTS WHEN THE SEED IS FIXED.**  The reported `39.3%`
+> came from a run whose torch initialisation was NEVER SEEDED -- all seven CIFAR scripts
+> seeded only the data split, the third instance of that defect in this repository.  Re-run
+> with `SEED = 0`:
+>
+> | | published (unseeded) | **seeded** |
+> |---|---|---|
+> | digital test | **39.3%** | **36.0%** |
+> | digital train (peak) | 53.6% | 46.2% |
+> | train-test gap | 18.3% | 11.3% |
+> | physical noise `none` -> `high` | 39.3% -> 21.3% | 32.7% -> 24.0% |
+>
+> **The seed alone moves the number `0.033`, and the margin this section was trying to
+> resolve is `+0.030`.**  So the comparison is not merely underpowered against the closed-form
+> null's spread -- **the deep arm's own single-draw variation is the same size as the effect.**
+> Both artifacts are kept: the unseeded one as `e21_regularized_report_UNSEEDED.txt`, because
+> it is the record of what was published, and the seeded one as the report.
+>
+> **2. MORE SEEDS DO NOT SHRINK THE NULL'S SPREAD.**  Ten seeds instead of three:
+>
+> | arm | 3 seeds | **10 seeds** |
+> |---|---|---|
+> | random null (mean) | 0.3582 | **0.3628** |
+> | random (best draw) | 0.3756 | **0.3820** |
+> | k-means centres | 0.3422 | **0.3633** |
+> | margin over the null's mean | +0.0348 | **+0.0302** |
+> | **the null's seed-to-seed spread** | **0.1507** | **0.1507** |
+>
+> **The spread did not move at all.**  More seeds ESTIMATE a spread; they do not SHRINK it --
+> it is a property of the estimator, not of the sample size -- so the premise behind raising
+> the seed count was itself wrong.  The conclusion stands, now on ten seeds instead of three.
+>
+> **3. AND THE RECORDING DEFECTS ARE FIXED RATHER THAN NOTED.**  The flagship report was
+> untracked, `cifar_06` HARD-CODED the result as `rbf_test=39.3`, and no CIFAR report named
+> the seed that produced it.  All seven scripts now seed the model initialisation, record
+> `SEED=` in their reports, and the reports the documents cite are un-ignored in
+> `.gitignore`.  **The `39.3` literal is left in `cifar_06` on purpose**: changing it would
+> silently alter a comparison's input, and the point of this section is that such a literal
+> is exactly what should not exist.  It is now at least a literal whose provenance is
+> tracked.
+
 **AND THE VERDICT IS THAT THIS DOES NOT RESOLVE THE TWO ARMS.**  The ranking above would read
 as "depth wins", and **an earlier draft of it did** -- "the depth is doing work the single-layer
 closed form cannot".  **That is the error this section exists to avoid:** the null's own
