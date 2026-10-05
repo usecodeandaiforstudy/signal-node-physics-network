@@ -262,8 +262,16 @@ def main():
     rep("  optimises all layers JOINTLY -- so those cells compare greedy construction")
     rep("  against joint search, which is stated rather than glossed.")
     rep("")
-    rep(f"  RESUMABLE: one atomic JSON per (cell, seed) in outputs/ext_ckpt/.")
-    rep(f"  Config fingerprint {fp}")
+    rep("  RESUMABLE: one atomic JSON per (cell, seed) in outputs/ext_ckpt/.")
+    # `Config fingerprint {fp}` used to sit here, with `fp` never defined in this function --
+    # the name belongs to `print_fingerprints`, where it is `fp_base`.  The line therefore
+    # raised NameError on EVERY run, which means the committed report predates it and the
+    # numbers in section 12.10 were never regenerated.  The docstring promises a fingerprint
+    # "so changed settings invalidate old cells", so what is printed now is the fingerprint of
+    # each cell THIS run will use -- which is the thing a reader needs to compare.
+    for label, (task, layer_sizes) in CELLS:
+        rep(f"  Config fingerprint {label}: "
+            f"{fingerprint(label, task, layer_sizes, args.rounds)}")
 
     t0 = time.time()
     reused, ran = 0, 0
