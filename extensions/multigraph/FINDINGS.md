@@ -1503,6 +1503,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_37_m_real.py` | **section 12.22**: a genuine `m > 1` setting -- the item names the wrong task |
 | `extensions/multigraph/ext_38_third_substrate.py` | **section 12.23**: a third substrate -- an anharmonic trap, not Gaussian |
 | `extensions/multigraph/ext_39_nonlinear_free.py` | **section 12.24**: item 8 -- the replacement it asks for is not needed |
+| `extensions/multigraph/ext_40_drift_rate.py` | **section 12.25**: item 6 -- the drift rate, and the channel it names |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1555,11 +1556,12 @@ python extensions/multigraph/ext_36_trained_inner.py --assert
 python extensions/multigraph/ext_37_m_real.py --assert
 python extensions/multigraph/ext_38_third_substrate.py --assert
 python extensions/multigraph/ext_39_nonlinear_free.py --assert
+python extensions/multigraph/ext_40_drift_rate.py --assert
 ```
 
-All thirty-nine exit non-zero when their own published claim fails, and every one of them
+All forty exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 a few seconds.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -1588,11 +1590,11 @@ trail is the point of this document:
 
 **The list, ranked by what would change a conclusion, with each item's CURRENT status
 stated inline.**  The heading used to read "still open", which is no longer true of it:
-**items 1, 3, 4, 5 and 8 have since been closed or answered** (1 by 12.21, 8 by 12.24, 3 by
-`ext_20`, 4 by 12.22, 5 by 12.23) and are kept here with their outcomes rather than
+**items 1, 3, 4, 5, 6 and 8 have since been closed or answered** (1 by 12.21, 8 by 12.24, 3
+by `ext_20`, 4 by 12.22, 5 by 12.23, 6 by 12.25) and are kept here with their outcomes rather than
 deleted, because an index whose closed items silently vanish is how the same question gets
-asked twice.  **What is genuinely still open is items 2, 6 and 7**, plus the third
-arrangement that item 8 now points at instead of the one it named.
+asked twice.  **What is genuinely still open is items 2 and 7**, plus the third arrangement
+that item 8 now points at instead of the one it named.
 
 1. **CLOSED by 12.21 (ext_36), and the answer is on the ACCURACY side only.**  The trade
      was measured at 5.13 and the cheap form says keep the linearity.  **The untested case
@@ -1661,17 +1663,29 @@ arrangement that item 8 now points at instead of the one it named.
    discharged by it** -- a response that is not log-linear in any finite basis stays
    excluded, and 12.16 showed the test that excludes it.
 
-6. **The drift RATE.**  ext_15 established that a placement correction has a shelf life,
-   because a drift after the measurement makes it stale.  How often a deployment must
-   re-measure is set by the drift it expects, and no measurement here sets that number
-   for a real cell.
+6. **ANSWERED by 12.25 (ext_40), and the item NAMED THE WRONG CHANNEL.**  The base's own
+   docstring separates `mismatch` (perturbs `h` = GEOMETRY) from `drift` (multiplies the
+   conductances = WEIGHT-only), and a PLACEMENT correction is a width correction -- so its
+   channel is `mismatch`, while `ext_15` drifted widths under the name "drift".  **The two
+   channels also have different rate semantics:** `drift` is drawn per READ and therefore
+   HAS a rate; `mismatch` is drawn ONCE with no time axis and has none.  **The registering
+   test `ext_15` asked for now exists** -- sweeping both signs gives `d* = 0.10` for the
+   geometry tolerance, and the asymmetry confirms its one-sided explanation.  **The interval
+   exists for the weight channel only**: `d*_w = 0.20` and `N* = (d*_w/sigma)^2` gives
+   `1 600` / `40 000` / `160 000` reads at the shipped `high`/`medium`/`low` levels.  **A
+   re-measurement interval for a PLACEMENT correction cannot be derived from this model at
+   all**, and what is missing is a bias-current drift law -- a model, not a measurement.
 
 7. **`ext_03` against the real base trainer.**  It mirrors the base's loop rather than
    calling it, because the base's closed-form hook has no place for a rank constraint.
    Wiring that hook would make the comparison authoritative instead of parallel.
 
 8. **ANSWERED by 12.24 (ext_39): the replacement this item asks for is NOT NEEDED, and
-   the premise is too strong.**  The item presumes that a full nonlinear combination
+   the premise is too strong.  NOTE FIRST that "combination" here means the READOUT-PATH
+   nonlinearity the design memo raises, NOT this project's `W = C . W_graphs`, which is a
+   LINEAR per-graph combination and is half A itself** -- see the box at the head of 12.24.
+   The item's wording came from the memo's paragraph and pointed at a design nobody
+   proposed, and what follows is that paragraph being measured.  The item presumes that a full nonlinear combination
    forfeits the closed-form operator.  **That depends on the ORDER of the operations:**
    `phi(sum_j W_j g_j)` is nonlinear in the strengths and does lose it, while
    **`sum_j W_j phi(g_j)` is nonlinear in the READINGS and LINEAR in the strengths** --
@@ -3214,6 +3228,30 @@ repository's `4d` task at 40 nodes, 3 seeds, toy.
 
 ### 12.24 Item 8, and the replacement it asks for is not needed (ext_39)
 
+> ## WHICH "COMBINATION" -- read this before the rest of 12.24
+>
+> **Two different arrangements have been called "the combination", and only one of them is
+> this project's design.  Stated by the repository owner while this section was being
+> written, and the distinction is load-bearing:**
+>
+> | arrangement | what it is | where it lives here |
+> |---|---|---|
+> | `W = C . W_graphs`, `C` of shape `m x k` | **each graph gets its OWN LINEAR scaling coefficients**, combined linearly -- `C[v,i]` is graph `i`'s coefficient into channel `v` | **THIS IS THE DESIGN.** It is half A, it is `ext_02`-`ext_05`, and its readout stays linear in the strengths |
+> | `sum_j W_j phi(z_j)` | a **nonlinearity inserted into the readout path**: activate, then `phi`, then combine | 12.17/12.21/12.24 -- a HYPOTHETICAL the design memo raises and **the architecture does not use** |
+> | `phi(sum_j W_j z_j)` | the nonlinearity after the sum | raised by the memo, never implemented, and it forfeits the operator |
+>
+> **The architecture's identity is "activate first, then combine LINEARLY"**: the
+> nonlinearity lives in the SOURCE (`z_j(x)` is nonlinear in `x`) and the combination is
+> linear.  **Linearity of the combination is exactly what preserves that.**  A `phi` on the
+> readout path is an EXTRA nonlinearity the design does not have -- which is why 12.24's
+> negative result is a **confirmation** of the architecture's choice rather than a challenge
+> to it: putting nonlinearity into the readout costs accuracy, so it belongs in the source.
+>
+> **And it means item 8's wording pointed at a design nobody proposed.**  The phrase
+> "nonlinear in the readings" comes from the design memo's own paragraph, which raises it as
+> something to *consider and measure* rather than as the plan.  **That paragraph has now been
+> measured, and the answer is the design's own answer: keep the combination linear.**
+
 **The open item, in this document's own words** (section 11, item 8):
 
 > "**A nonlinear combination in full, with a replacement for the closed-form calibration.**
@@ -3289,3 +3327,103 @@ are usable, and that standardisation is a training-statistic constant, stated ra
 hidden.  The arrangement assumes a per-source element **before** the summing crossbar; a
 device where the nonlinearity can only sit **after** the sum is the other arrangement, and
 that one does lose the operator.  Repository tasks, 40 nodes, 3 seeds, toy.
+
+### 12.25 Item 6: the drift RATE, and the item names the wrong channel (ext_40)
+
+**The open item, in this document's own words** (section 11, item 6):
+
+> "**The drift RATE.**  ext_15 established that a placement correction has a shelf life,
+>  because a drift after the measurement makes it stale.  How often a deployment must
+>  re-measure is set by the drift it expects, and **no measurement here sets that number for
+>  a real cell**."
+
+**THERE ARE TWO DRIFT CHANNELS IN THIS REPOSITORY AND THE ITEM NAMES THE WRONG ONE.**  The
+base version's own docstring separates them --
+
+    mismatch -> perturbs h (differential_pair gain) and the MVM gain   = GEOMETRY
+    drift    -> multiplies memristor conductances W                    = WEIGHT-only
+
+-- and `physical_simulator/components.py` implements the first literally:
+
+    L80  # Gain mismatch: each channel's h has independent deviation
+    L81  h_noisy = h * (1 + np.random.normal(0, mismatch_std, h.shape))
+
+**A PLACEMENT correction is a WIDTH correction, so the channel that makes it stale is
+`mismatch`.**  `ext_15` drifted widths (`w * (1 + drift)`) while calling it "drift", so it
+exercised the mismatch channel's effect under the other channel's name.  **That is a naming
+defect in item 6, not in `ext_15`'s measurement.**
+
+**AND THE TWO CHANNELS HAVE DIFFERENT RATE SEMANTICS, which is the whole answer:**
+
+| channel | how it is drawn | rate? |
+|---|---|---|
+| `drift` | `conductance_drift_std`, documented **"per read operation"** -- fresh on every forward call | **yes, per READ** |
+| `mismatch` | `h * (1 + normal(...))` -- **one draw, no time axis** | **no rate at all** |
+
+**1 -- THE REGISTERING TEST `ext_15` SAID WAS MISSING.**  Its P3 notes that "a drift makes
+the realized widths LARGER, and this node set happens to prefer wider widths ... **a drift
+test that could register it would need widths the plan already prefers**", and it swept the
+drift **one-sided** (0 to 0.40).  **Sweeping BOTH signs gives the test that property at no
+cost:**
+
+| `delta` | `4d`: plan - nominal | `steps`: plan - nominal |
+|---|---|---|
+| -0.30 | +0.0329 | -0.0615 |
+| **-0.20** | +0.0527 | **-0.0068** |
+| -0.10 | +0.0645 | +0.0391 |
+| 0.00 | +0.0690 | +0.0524 |
+| +0.40 | +0.0598 | +0.1545 |
+
+> **THE BINDING GEOMETRY TOLERANCE IS `d* = 0.10`** -- the smallest width deviation, in
+> either direction, at which the operator's plan stops beating the nominal widths by
+> `ext_15`'s own `0.02` margin.  **And the asymmetry CONFIRMS `ext_15`'s one-sided
+> explanation**: the negative side is the binding one (`-0.20` already fails on `steps`,
+> `-0.40` fails on both), because the plan prefers wider widths -- which is exactly why the
+> one-sided sweep could not register it.
+
+**BUT THAT TOLERANCE CANNOT BE CONVERTED TO AN INTERVAL, AND THE FIRST DRAFT OF THIS SECTION
+DID EXACTLY THAT.**  It computed `(d* / sigma_drift)^2` -- **a GEOMETRY tolerance divided by
+a WEIGHT rate**, which is the very conflation this section reports in item 6.  Recorded
+rather than quietly dropped.  The weight channel needs its own tolerance, measured with a
+**per-weight random deviation applied AFTER the calibration** -- which is what the device
+does (`normal(0, std, (n_out, n_in))`) and what `ext_15`'s structure was:
+
+| `delta` | 0.00 | 0.05 | 0.10 | **0.20** | 0.40 | 0.80 |
+|---|---|---|---|---|---|---|
+| `4d` | +0.576 | +0.573 | +0.567 | **+0.547** | +0.472 | +0.190 |
+| `steps` | +0.157 | +0.145 | +0.128 | **+0.084** | **-0.049** | -0.499 |
+
+**`d*_w = 0.20`**, against the project's own `0.05` learning floor.  Then the bridge is
+directly available, because this channel really is per-read:
+
+    accumulated drift after N reads = sigma * sqrt(N)    =>    N* = (d*_w / sigma)^2
+
+| device level | `drift` sigma | **`N*` (reads)** | `mismatch` sigma | placement interval |
+|---|---|---|---|---|
+| `high` | 0.005 | **1 600** | 0.05 | **NOT DERIVABLE** |
+| `medium` | 0.001 | **40 000** | 0.02 | **NOT DERIVABLE** |
+| `low` | 0.0005 | **160 000** | 0.01 | **NOT DERIVABLE** |
+
+**2 -- THE LAST COLUMN IS THE ANSWER TO ITEM 6 AND IT IS NOT A NUMBER.**  A placement
+correction's staleness is set by the GEOMETRY channel, and that channel is drawn **once**,
+with no time axis, so **the repository cannot express a rate for it at all**.  A
+re-measurement interval for a placement correction therefore **cannot be derived from this
+model**, which is a sharper statement than "no measurement here sets that number".  **The
+missing piece is a bias-current drift law -- a MODEL, not a measurement.**
+
+**3 -- TWO DEFECTS OF MY OWN, both caught by their own symptoms.**  The first weight sweep
+scaled the whole feature matrix by `(1 + delta)` and reported the **same R^2 at every
+delta** -- because a uniform scaling is absorbed exactly by ridge.  *The flatness was the
+tell.*  And the tolerance was first taken as the **smallest** surviving deviation instead of
+the **largest**, which understated it 4x.  **Both are recorded because a curve that cannot
+move is a stronger signal than a number that looks wrong.**
+
+**THE ASSUMPTIONS.**  The random-walk bridge `sigma*sqrt(N)` is the standard memristor
+picture and is an ASSUMPTION, not a measurement here -- and the model's own semantics are
+**i.i.d. per read** rather than cumulative, so under the model as written the correction is
+stale on every read and "how often to re-measure" does not arise.  **The interval is what a
+cumulative device would need, computed from a tolerance this repository did measure.**  A
+wall-clock interval additionally needs a read rate, which is a device property.
+
+**SCOPE.**  Repository tasks `4d` and `steps`, 40 nodes, 3 seeds, toy; the realization model
+is `ext_15.realize`, imported rather than reimplemented.
