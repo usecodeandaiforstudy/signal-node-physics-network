@@ -966,6 +966,41 @@ class HiMALND:
 
     # ── Inference ──
 
+    def _proto_accumulate(
+        self, layers: List[PhysicalRBFLayerND], X: np.ndarray,
+        proto_h: List[np.ndarray], proto_y: List[np.ndarray],
+    ) -> Optional[np.ndarray]:
+        """
+        Run one network's cascade and SUM each layer's proto-weighted contribution.
+
+        This is the prediction `train` is built around -- its accumulation loop carries the
+        comment "Proto maps h_i -> residual target (or full y for layer 1).  At predict
+        time these are summed -> recovers original y" -- and layers 2 and 3 are trained on
+        `y - acc`, so each layer's own output is a RESIDUAL rather than the target.
+
+        Returns None when the prototypes are not available for every layer, so the caller
+        can fall back rather than guess.
+        """
+        if not layers or len(proto_h) < len(layers) or len(proto_y) < len(layers):
+            return None
+        h = np.asarray(X, dtype=np.float32).copy()
+        acc = None
+        for i, layer in enumerate(layers):
+            h = self._forward_layer(layer, h)
+            if h.shape[0] != X.shape[0]:
+                h = h.T
+            h = self._match_shape(h, (X.shape[0], h.shape[-1]))
+            ph = np.asarray(proto_h[i], dtype=np.float64)
+            py = np.asarray(proto_y[i], dtype=np.float64)
+            # the stored prototype matrix can be in the transposed frame
+            if ph.shape[1] != h.shape[1] and ph.shape[0] == h.shape[1]:
+                ph = ph.T
+            if ph.shape[1] != h.shape[1]:
+                return None
+            pred_i = self._proto_predict(np.asarray(h, dtype=np.float64), py, ph)
+            acc = pred_i if acc is None else _zero_pad_sum(acc, pred_i)
+        return acc
+
     def predict(
         self, layers_A: List[PhysicalRBFLayerND], layers_B: List[PhysicalRBFLayerND],
         X: np.ndarray,
@@ -982,22 +1017,34 @@ class HiMALND:
         if self.task == "classification":
             return self._predict_classification(layers_A, layers_B, X)
 
+        # REGRESSION RETURNS THE ACCUMULATED SUM, NOT THE LAST LAYER'S OUTPUT.
+        #
+        # This branch used to `return (hA + hB) / 2.0`, i.e. the last layer's raw output --
+        # which contradicts the docstring above AND the training path, where layers 2/3
+        # learn `y - acc` and so emit RESIDUALS.  Measured (extension FINDINGS.md 12.29):
+        # the same trained models score -0.0341 through the old return and +0.2291 through
+        # the accumulation, with the per-zone scores near zero either way, which rules out
+        # the A/B median split as the explanation.  The defect survived because no
+        # published number depends on the regression path -- its only two callers were a
+        # speed benchmark and a script that was retracted.
+        acc_A = self._proto_accumulate(layers_A, X, self.proto_h_A, self.proto_y_A)
+        acc_B = self._proto_accumulate(layers_B, X, self.proto_h_B, self.proto_y_B)
+        if acc_A is not None and acc_B is not None:
+            d = min(acc_A.shape[1], acc_B.shape[1])
+            return (acc_A[:, :d] + acc_B[:, :d]) / 2.0
+
+        # FALL BACK, and say so rather than silently returning a residual: a model restored
+        # without its prototypes cannot be read the intended way.
         hA = X.copy()
         hB = X.copy()
-
         for i in range(len(layers_A)):
             hA_out = self._forward_layer(layers_A[i], hA)
             hB_out = self._forward_layer(layers_B[i], hB)
-
             if hA_out.shape[0] != hA.shape[0]:
                 hA_out = hA_out.T
             if hB_out.shape[0] != hB.shape[0]:
                 hB_out = hB_out.T
-
-            # Wire-direct: output IS next input
             hA, hB = hA_out, hB_out
-
-        # Final output = average of last layer's A/B predictions
         return (hA + hB) / 2.0
 
     def _predict_classification(
