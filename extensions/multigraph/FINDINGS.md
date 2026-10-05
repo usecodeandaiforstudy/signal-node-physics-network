@@ -1406,6 +1406,13 @@ one of these pointed in the **flattering** direction for the extension.
     died on a reshape and the third on a list-vs-array multiply.  **The convention is set
     by the callee and should have been read before the class was written**, not after two
     failures.
+57. **Patch anchors that could not match, twice in one experiment, from escaping.**
+    Both failed patches to `ext_39` were triple-quoted Python strings containing `\\'`
+    where the target file has `\'`, so the anchor never matched and the assert fired.
+    **Cost: one wasted re-run each, and the first failure was papered over because the
+    FIRST patch had already succeeded and the run went ahead** -- so the report was
+    regenerated with half the intended change.  The fix is to stop patching through a
+    shell heredoc for anything containing escapes, and use exact-text editing instead.
 Plus ordinary bugs, each of which produced a wrong number before it produced an
 error: the bilinear solve `min ||Z W_g^T C^T - Y||` written as a plain ridge solve
 (**three separate times**), a single `(k,k)` matrix applied to every stage of a
@@ -1495,6 +1502,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_36_trained_inner.py` | **section 12.21**: the trained inner layer, and the cost question it surfaced |
 | `extensions/multigraph/ext_37_m_real.py` | **section 12.22**: a genuine `m > 1` setting -- the item names the wrong task |
 | `extensions/multigraph/ext_38_third_substrate.py` | **section 12.23**: a third substrate -- an anharmonic trap, not Gaussian |
+| `extensions/multigraph/ext_39_nonlinear_free.py` | **section 12.24**: item 8 -- the replacement it asks for is not needed |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1546,11 +1554,12 @@ python extensions/multigraph/ext_35_seeding.py --assert
 python extensions/multigraph/ext_36_trained_inner.py --assert
 python extensions/multigraph/ext_37_m_real.py --assert
 python extensions/multigraph/ext_38_third_substrate.py --assert
+python extensions/multigraph/ext_39_nonlinear_free.py --assert
 ```
 
-All thirty-eight exit non-zero when their own published claim fails, and every one of them
+All thirty-nine exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -1577,18 +1586,26 @@ trail is the point of this document:
 | "optimality or a bound for the placement rule" | ext_14 | done: capture `0.976` at the operating point, `0.282` at `N = 4` -- and note it had been listed TWICE, as items 3 and 6 |
 | *(never listed)* | ext_17 | half B now has evidence from **two substrates**; the omission is the reason this section was rebuilt |
 
-**Still open, ranked by what would change a conclusion:**
+**The list, ranked by what would change a conclusion, with each item's CURRENT status
+stated inline.**  The heading used to read "still open", which is no longer true of it:
+**items 1, 3, 4, 5 and 8 have since been closed or answered** (1 by 12.21, 8 by 12.24, 3 by
+`ext_20`, 4 by 12.22, 5 by 12.23) and are kept here with their outcomes rather than
+deleted, because an index whose closed items silently vanish is how the same question gets
+asked twice.  **What is genuinely still open is items 2, 6 and 7**, plus the third
+arrangement that item 8 now points at instead of the one it named.
 
-1. **The trade is MEASURED (5.13), and the cheap form says keep the linearity.**  A
-   nonlinear readout on the same nodes gains `+0.0295`/`+0.0660`/`-0.0062` on
-   `4d`/`steps`/`hetero`, while spending the budget on more nodes gains
-   `+0.1252`/`+0.1599`/`+0.0996` -- and the nonlinear arm must SEARCH `3200` strengths
-   against the node arm's `320` calibrated ones.  **What remains open is the one thing
-   that could overturn it**: `W` and `b` were drawn, not trained, and the gain saturates
-   and falls with hidden width, so a TRAINED inner layer is the untested case.  A full
-   nonlinear combination with its own calibration story (item 8) is the way to settle
-   it, and it is now a question with a measured prior against it rather than an open
-   end.
+1. **CLOSED by 12.21 (ext_36), and the answer is on the ACCURACY side only.**  The trade
+     was measured at 5.13 and the cheap form says keep the linearity.  **The untested case
+     was the TRAINED inner layer, and it is now tested: training `W` and `b` LOSES `0.0264`
+     on average and beats the node control on `0 of 3` tasks** -- so the expectation that a
+     trained inner layer would do better is wrong on this schedule, and the trade survives
+     on accuracy.  **But a SECOND question the item did not ask decides how the answer
+     should be worded:** `ext_18` charged every arm `n_train` measurements per strength,
+     including a nonlinear layer the design document says can only be SEARCHED.  Under a
+     search-style charge the DRAWN arm's `R^2` per measurement is three times the node
+     arm's, so **"keep the linearity" is a statement about ACCURACY, not about efficiency**
+     -- and which accounting the hardware pays is a modelling question 12.21 surfaces and
+     does not settle.
 
 2. **CLOSED by ext_19 (5.14) and ext_21 (5.16), and it RELOCATED the defect.**  The repair reaches the
    ceiling -- `M = 4` on `steps` lands on `+0.2045`, which is the best-found ceiling
@@ -1622,18 +1639,27 @@ trail is the point of this document:
    is the best of the three at every node count, with `op - random` at `+0.0452`,
    `+0.1849`, `+0.0778`.
 
-4. **A genuine `m > 1` setting for half A.**  Everything there rests on a synthetic
-   multi-output target, and `m = 1` makes half A a no-op.  The repository has a 4D
-   classification task, and classification is where `m` channels are real.  This is the
-   same KIND of gap the substrate one was: the setting does not exercise the thing the
-   claim is about.
+4. **ANSWERED by 12.22 (ext_37): the item NAMES THE WRONG TASK, and both halves are now
+   measured.**  Half A's readout is `W = C . W_g` with `C` of shape `m x k`, so the
+   constraint bites only when `k < min(m, rank(W))`.  **`nd_01`'s 4D classification task is
+   TWO-class, so `m = 2` -- and the measured `rank(W)` is 1, not 2**, because the centred
+   one-hot target makes its channels complementary.  **So even `k = 1` is already full rank
+   there, and running the test on it would have been VACUOUS.**  The repository's genuine
+   `m = 5` setting -- its own cached CIFAR-10 five-class data -- is **out of reach** from
+   half A's machinery: every `k` sits at `R^2 = 0`.  **So the item's conclusion is right
+   and its example is wrong, and `ext_02`'s synthetic `m = 8` was the CORRECT instrument**
+   -- it is what makes the constraint bite at `k = 3`.
 
-5. **Beyond two substrates.**  ext_17 shows the operators do not depend on WHICH of the
-   two cells produced the field, and the prediction states exactly what they need --
-   log-linearity in `[-|x|^2, x, -1]`.  But both cells were built here to reproduce the
-   same engineered kernel, so nothing here tests a substrate whose response is not
-   Gaussian in the input at all.  "Any physical system" is still the widest claim in
-   this document and the least covered.
+5. **DONE by 12.23 (ext_38): there is now a THIRD MEDIUM and it is not Gaussian.**  A
+   particle in an **anharmonic trap** `V(r) = kappa r^4` has equilibrium density
+   `exp(-(kappa/kT) r^4)` -- a quartic exponent, and the trap's minimum and stiffness are
+   this project's own movable centre and width.  Implemented as a **layer**, not a formula.
+   **The operator transfers to machine precision** (centre `2.0e-14`, width `6.0e-15`), the
+   qualification test places it at basis degree 4 exactly as predicted, and **its
+   expressiveness is lower than the Gaussian cells'** (`+0.4609` against `+0.5761` even at
+   matched effective radius).  **"Any physical system" gains a third medium and is not
+   discharged by it** -- a response that is not log-linear in any finite basis stays
+   excluded, and 12.16 showed the test that excludes it.
 
 6. **The drift RATE.**  ext_15 established that a placement correction has a shelf life,
    because a drift after the measurement makes it stale.  How often a deployment must
@@ -1644,10 +1670,20 @@ trail is the point of this document:
    calling it, because the base's closed-form hook has no place for a rank constraint.
    Wiring that hook would make the comparison authoritative instead of parallel.
 
-8. **A non-linear combination in full, with a replacement for the closed-form
-   calibration.**  Item 1 is the cheap measurement of whether the trade is worth making;
-   this is the work of making it, and it is deliberately last because it forfeits the
-   operator the rest of half B is built on.
+8. **ANSWERED by 12.24 (ext_39): the replacement this item asks for is NOT NEEDED, and
+   the premise is too strong.**  The item presumes that a full nonlinear combination
+   forfeits the closed-form operator.  **That depends on the ORDER of the operations:**
+   `phi(sum_j W_j g_j)` is nonlinear in the strengths and does lose it, while
+   **`sum_j W_j phi(g_j)` is nonlinear in the READINGS and LINEAR in the strengths** --
+   the closed-form solve is exact to `9.99e-16` and the measurement cost is `n_train * N`,
+   **identical to the linear readout's**.  `phi` is in the repository's own device library
+   (Gilbert squarer, BJT exponential).  **And the measurement is a clean negative:** all
+   four elementwise `phi` are WORSE than the linear readout (best `tanh`, `-0.0475`, `0 of
+   3` tasks), so this nonlinearity is free but buys nothing -- which is a **stronger**
+   position for the trade than a positive result would have been.
+   **What is still open is the THIRD arrangement**, `phi(sum_j W_j g_j)` with its own
+   calibration story; 12.21's `-0.0264` is the nearest evidence and it loses.  Item 8
+   should be restated as that one arrangement.
 ---
 
 ## 12. An audit of the BASE version's headline, from inside the extension
@@ -1655,8 +1691,16 @@ trail is the point of this document:
 > **The actionable form of this section is [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md).**
 > Section 12 is the evidence; that file is the work list -- for each claim below that the
 > audit corrects, its exact line in the base, the text as it stands, the replacement, and
-> which subsection here backs it.  **No base file has been edited**, by that audit or by
-> this document; applying the list is a decision for the repository's owner.
+> which subsection here backs it.
+>
+> **THE LIST HAS SINCE BEEN APPLIED, at the repository owner's instruction, in three
+> commits** (`2fa691e` the three retractions, `a856dc0` the missing seed in
+> `training/himal_nd.py`, `e0cf9b8` the remaining eight entries).  So the sentence that
+> stood here -- that no base file had been edited by this audit -- **is now false and is
+> kept only as a record of what the position was when the audit was written.**  Every
+> entry in `BASE_CORRECTIONS.md` is marked applied or fixed, and **one entry's replacement
+> text had itself gone stale before it was used**, which is the defect that file exists to
+> fix arriving inside the fix.
 
 **Why this is here and not in `FINDINGS.md`.**  This extension does not modify the base
 version -- that rule has held for all 22 experiments -- and the base version's
@@ -3167,3 +3211,81 @@ excludes it.
 **SCOPE.**  The anharmonic cell is a medium implemented here, not a fabricated device; its
 field is evaluated in closed form rather than read through a sensor chain; and the
 repository's `4d` task at 40 nodes, 3 seeds, toy.
+
+### 12.24 Item 8, and the replacement it asks for is not needed (ext_39)
+
+**The open item, in this document's own words** (section 11, item 8):
+
+> "**A nonlinear combination in full, with a replacement for the closed-form calibration.**
+>  `N(H)` keeps the outer solve closed form on purpose; the full version has to replace the
+>  operator half A is about, and that is a different project."
+
+**THE PREMISE IS TOO STRONG, AND THE ORDER OF THE OPERATIONS IS WHAT DECIDES IT.**  The
+memo concludes that a combination nonlinear in the readings makes fitting the strengths a
+nonlinear problem again.  That is true of
+
+    phi( sum_j W_j g_j )      nonlinear in the STRENGTHS -- the operator IS lost
+
+and **false** of
+
+    sum_j W_j phi(g_j )       NONLINEAR IN THE READINGS, LINEAR IN THE STRENGTHS
+
+because `phi(g_j)` is a fixed feature of a reading that the calibration already takes.
+`DESIGN.md`'s table marks "nonlinear in the readings" as not linear in the strengths; **the
+distinction between these two arrangements is exactly what the table does not draw.**
+
+**AND `phi` IS IN THIS PROJECT'S OWN DEVICE LIBRARY.**  The base analog chain is built from
+a **Gilbert squarer** and a **BJT exponential**, so `g^2` and `exp(g)` are not hypothetical
+nonlinearities -- they are components the repository already models.
+
+**P1 -- THE ALGEBRA, VERIFIED RATHER THAN ASSERTED.**
+
+| check | value |
+|---|---|
+| nonlinear in the readings: `max abs(y(2g) - 2 y(g))` | **2.1300** (nonzero) |
+| linear in the strengths: `max abs(W_hat - W)` | **9.99e-16** (the closed-form solve is exact) |
+| features used | `phi(g_j)` for the SAME readings per sample |
+| measurement cost | `n_train * N`, **identical to the linear readout** |
+
+**P2/P3 -- THE MEASUREMENT, SAME NODES, THREE TASKS, 3 SEEDS.**
+
+| arm | strengths | searched? | measurements | mean `R^2` |
+|---|---|---|---|---|
+| `L40` (linear) | 40 | no | **10 240** | **+0.3183** |
+| ENL `square` (Gilbert) | 40 | no | **10 240** | **-0.0058** |
+| ENL `abs` (rectifier) | 40 | no | **10 240** | +0.2286 |
+| ENL `tanh` (saturation) | 40 | no | **10 240** | +0.2708 |
+| ENL `softplus` (diode) | 40 | no | **10 240** | +0.2459 |
+| `L320` (node control) | 320 | no | 81 920 | +0.4463 |
+
+> **EVERY ELEMENTWISE NONLINEARITY IS WORSE THAN THE LINEAR READOUT.**  The best of the four
+> is `tanh` at `-0.0475`, winning on **0 of 3** tasks.  **The first five rows cost exactly
+> the same**, so elementwise nonlinearity is bought with a COMPONENT -- one element per
+> source -- and not with measurements.
+>
+> **THE SQUARE IS CATASTROPHIC AND THAT IS A PROPERTY, NOT A BUG.**  `g^2` is not injective:
+> it discards the sign of every reading, so the two halves of a node's response become
+> indistinguishable.  **It is also the one element the chain actually contains**, which makes
+> it the most physically available and the least useful of the four.
+
+**P4 -- SO ITEM 8 ASKS FOR A REPLACEMENT OPERATOR AND THIS CLASS DOES NOT NEED ONE.**  And
+the negative is **a stronger position for this project than a positive would have been**:
+the thing the design memo feared -- that nonlinearity would force a search -- can be avoided
+at **zero measurement cost**, and when it is avoided this way **it buys nothing**.  So the
+linearity is not a costly constraint the architecture endures; here it is simply the right
+choice, and 5.13's answer stands for a **second, independent reason**.
+
+**AND THE STRUCTURAL RESULT IS INDEPENDENT OF THE EMPIRICAL ONE.**  P1's algebra is a fact
+about the arrangement; it holds whether or not these four `phi` help.  **That is what makes
+item 8's premise too strong rather than merely premature.**
+
+**WHAT REMAINS OPEN, AND WHAT ITEM 8 SHOULD SAY.**  The third arrangement --
+`phi(sum_j W_j g_j)` with its own calibration story -- is not measured here, and 12.21's
+`-0.0264` (a searched inner layer, which loses) is the nearest evidence.  **The item should
+be restated as that one arrangement**, not as "a full nonlinear combination".
+
+**THE HONEST LIMITS.**  `phi` is applied to the normalised reading so the unbounded elements
+are usable, and that standardisation is a training-statistic constant, stated rather than
+hidden.  The arrangement assumes a per-source element **before** the summing crossbar; a
+device where the nonlinearity can only sit **after** the sum is the other arrangement, and
+that one does lose the operator.  Repository tasks, 40 nodes, 3 seeds, toy.
