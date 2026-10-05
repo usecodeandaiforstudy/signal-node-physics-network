@@ -1,0 +1,35 @@
+============================================================
+  Layer Contribution & Performance Comparison
+============================================================
+  Data: 140 train / 60 test, 2D → scalar
+  Mean baseline MSE: 2445.73
+
+  Training HiMAL-FFA-ND (4,3,2) particles × 60 epochs...
+
+===== HiMAL-FFA Layer 1 (4 particles, in=2D, out=4D) =====
+  Layer epoch  40/40 [SPSA] | loss=4228.115563 | fit_A=2033.5859 fit_B=2194.4671 align=0.2086
+
+===== HiMAL-FFA Layer 2 (3 particles, in=4D, out=3D) =====
+  Layer epoch  40/40 [SPSA] | loss=1245.179738 | fit_A=644.4367 fit_B=600.7362 align=0.0229
+
+===== HiMAL-FFA Layer 3 (2 particles, in=3D, out=1D) =====
+  Layer epoch  40/40 [SPSA] | loss=1207.078035 | fit_A=616.6477 fit_B=590.4246 align=0.0191
+
+  [A] Per-layer contribution (proto-weighted predict):
+  L1 only:          MSE=1496.25  (baseline-949)
+  L1+L2:            MSE=1466.73  (Δ=+29.5)
+  L1+L2+L3 (full):  MSE=1466.08  (Δ=+0.6)
+
+  [B] New (proto-weighted) vs Old (direct h) predict:
+  Old (direct h):   MSE=2431.26  (vs baseline 2446, -14)
+  New (proto-wtd):  MSE=1466.08  (vs baseline 2446, -980)
+  Improvement:      39.7% over old method
+
+============================================================
+  Summary
+============================================================
+  L1 contribution:     949 MSE reduction (39% of baseline)
+  L2 contribution:     29.5 MSE reduction (3% of L1 gain)
+  L3 contribution:     0.6 MSE reduction (0% of L1 gain)
+  Old→New improvement: 965.2 MSE (40%)
+============================================================
