@@ -1283,7 +1283,8 @@ as holding at that scale until scaled up.
    3 000-measurement grid point.  Evidence: extension `FINDINGS.md` 12.9-12.13,
    `outputs/ext_25_budget_matched.txt`, `outputs/ext_26_base_family.txt`,
    `outputs/ext_27_nonmonotone.txt`.
-2. **Equal-parameter-count comparison.**  **CONSTRUCTIBLE, contrary to what this item
+2. ~~Equal-parameter-count comparison.~~  **DONE -- and the checkbox was stale, which is why
+   this line no longer reads as open.**  **CONSTRUCTIBLE, contrary to what this item
    said.**  A layer with input dim `D`, output width `V` and `N` particles stores `(D+1)*N`
    geometry numbers and `V*N` readout numbers, so its geometry share is `(D+1)/(D+1+V)` —
    **`V` is a knob on the share**, which is the same knob the box in section 5 already uses
@@ -1296,7 +1297,8 @@ as holding at that scale until scaled up.
    calibration is a substitute for a good allocation**, and the parameter-count rule of
    section 5 holds for the calibrated arm rather than for the search arms.  Evidence:
    extension `FINDINGS.md` 12.15, `outputs/ext_30_equal_params.txt`.
-3. **Statistical strength.**  **Done.**  abl_01 is 3 seeds, abl_03 is 3 seeds on
+3. ~~Statistical strength.~~  **DONE -- and this checkbox was stale for the same reason as
+   2's and 5's: the item's own text said so and the number did not.**  abl_01 is 3 seeds, abl_03 is 3 seeds on
    both substrates, and abl_04, abl_05 and abl_06 (7 tasks x 2 architectures = 14
    cells) are all 3 seeds.  The seed upgrade was not cosmetic: it **retracted two
    claims** made at 2 seeds — the "40% of the margin is gone at 20% twin error"
@@ -1307,7 +1309,7 @@ as holding at that scale until scaled up.
    is finite-time: it closes to zero and inverts by 160 epochs at budget 1 200.
    Endpoint comparisons must state their epoch count, and section 5 is now labelled
    accordingly.
-5. **Reservoir variant.**  **Tested** (extension 12.14).  A frozen geometry with a single
+5. ~~Reservoir variant.~~  **DONE -- tested, and the checkbox was stale.**  **Tested** (extension 12.14).  A frozen geometry with a single
    closed-form solve beats the geometry arm, at zero probe cost, in most cells (9 of 14)
    — so "only the readout is trainable" is not by itself disqualifying, and the movable
    centres are not earning their keep because a frozen geometry is too weak.  What it
@@ -1337,7 +1339,7 @@ as holding at that scale until scaled up.
    cells are now uninformative about the mechanism, because the gate disables the
    calibration there.  Sections 6.9 and 6.11 close (a) and report three failed
    attempts at (b) — and a fourth that succeeded.
-7. **Task sweep coverage.**  **Restated, because the counts here were stale and this item
+7. ~~Task sweep coverage.~~  **CLOSED BY RESTATEMENT -- the checkbox was stale.**  **Restated, because the counts here were stale and this item
    contradicted item 3 above.**  It is **3 seeds**, not 2, and at 9 seeds the headline is
    **8 of 14**, not nine.  What is genuinely still narrow is not the coverage but the
    reading: **the five losses all reduce to the geometry arm, so they bound the risk
@@ -1380,8 +1382,26 @@ as holding at that scale until scaled up.
 took no `seed` and never seeded the global RNG, so every number published from it was one
 draw from an unseeded process.  It now takes a `seed` and seeds once at the top of `train`.
 
+11. **`outputs/sub_01_diffusion_verify.txt` does not reproduce.**  The suite is the base
+   version's verification, it is TRACKED, and `FINDINGS.md` sections 2, 3 and 8 rest on it — but
+   **three of its error-floor lines change on every run** (the analog circuit's and the two
+   diffusion cells'), by roughly a factor of two, while the script seeds the global RNG itself.
+
+   **THE CAUSE IS NOT ISOLATED AND TWO HYPOTHESES HAVE BEEN REFUTED.**  `PYTHONHASHSEED` was
+   tested because a set of STRINGS could order the computation, and two runs with it fixed still
+   differed.  An unseeded `np.random.default_rng()` in the diffusion sensor chain was found and
+   fixed — **and it is not on the path the suite takes**, so it was not the cause either.
+
+   **THE MAGNITUDE BOUNDS THE DAMAGE.**  The movement is in the 5th to 7th digit while the report
+   quotes four decimals, so no published figure changes.  **But a re-run does not reproduce the
+   artifact**, which for a tracked file that three sections cite is a defect rather than a
+   nicety — and it is recorded as the likely shared cause of the extension's defect 58, whose
+   healthy threshold for `log_rms` (~1e-6) sits AT that magnitude.
+
+   Evidence: extension `FINDINGS.md` 12.32 and defect 58.
+
 ---
-11. **The CIFAR comparisons have not been recomputed under the fixed seeding.**
+12. **The CIFAR comparisons have not been recomputed under the fixed seeding.**
    Section 9's new entry records that every number in that line was a single draw from an
    unseeded process, that the seed moves those numbers by up to 6.6 points in both
    directions, and that three scripts freeze the RBF reference as a literal.  **The scripts
