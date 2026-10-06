@@ -1520,6 +1520,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_47_cifar_baseline.py` | **section 12.32**: the CIFAR line against the project's own standard -- unresolved |
 | `extensions/multigraph/ext_48_lookup_table.py` | **section 12.33**: the lookup table -- the precondition it relaxes, and the defect class it exposed |
 | `extensions/multigraph/ext_49_yukawa_family.py` | **section 12.34**: the h-indexed family -- reaching Yukawa, and the parameterisation lesson |
+| `extensions/multigraph/ext_50_geometry_only.py` | **section 12.35**: geometry-only search -- 12.28's bound is tight, and is now a measurement |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1582,11 +1583,12 @@ python extensions/multigraph/ext_46_classification_benchmark.py --assert
 python extensions/multigraph/ext_47_cifar_baseline.py --assert
 python extensions/multigraph/ext_48_lookup_table.py --assert
 python extensions/multigraph/ext_49_yukawa_family.py --assert
+python extensions/multigraph/ext_50_geometry_only.py --assert
 ```
 
-All forty-nine exit non-zero when their own published claim fails, and every one of them
+All fifty exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s; ext_49 ~1 s.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s; ext_49 ~1 s; ext_50 ~15 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -4082,3 +4084,66 @@ every table size gave it away.
 screening weakens with width leaves it; the fit is LOCAL, starting from a guess, so it can settle
 in a wrong basin where the closed form cannot; and a device must hold a family of tables rather
 than one.
+
+### 12.35 Geometry-only search: 12.28's bound is TIGHT, and it is now a measurement (ext_50)
+
+**THE OWED ITEM, in 12.28's own words:**
+
+    "a true 'calibrate, do not search' arm would remove those coordinates from the parameter
+     vector -- a change to `get_params_vector`, a base method -- and that is NOT done.  The
+     measurement BOUNDS the gain from below rather than measuring it."
+
+**WHAT "REMOVING THE COORDINATES" MEANS, PRECISELY.**  `get_params_vector` concatenates
+`centers (D*N) + h (N) + W_gauss (n_vars*N) + W_act (n_vars*N)`, so the strengths are the last
+`2*n_vars*N` entries and the mask is exact -- **asserted against the layer's own shape before any
+arm runs**, not assumed.  **AND BOTH THE PERTURBATION AND THE UPDATE ARE MASKED**: masking only
+the update would let `L(theta + eps*delta)` differ from `L(theta - eps*delta)` through coordinates
+that never move, which **biases** the estimate instead of restricting it.
+
+**AND THE BASE IS UNTOUCHED.**  `get_params_vector` was not edited; the ARM masks, using the
+same monkey-patch discipline `ext_43` already used.  So the owed change is done **without changing
+the base version**, which is the extension's own rule.
+
+**THREE ARMS AT EQUAL FORWARD PASSES, paired seeds:**
+
+| seed | search | calib (12.28's) | **calib_only (this)** | calib RFit | only RFit |
+|---|---|---|---|---|---|
+| 0 | +0.2184 | +0.0688 | **+0.0655** | 0.4573 | 0.4578 |
+| 1 | +0.1966 | +0.1649 | **+0.1661** | 0.3459 | 0.3461 |
+| 2 | +0.2824 | -0.0000 | **-0.0004** | 0.4253 | 0.4253 |
+| **mean** | **+0.2325** | **+0.0779** | **+0.0771** | | |
+
+**CONTROL FIRST**, because 12.28 failed it once and had to be re-run: the search arm averages
+`+0.2325` against the project's learning floor of `0.05`, so this is a comparison between arms
+that learned.
+
+> **THE ANSWER: `calib -> calib_only` is `-0.0008`.  THE BOUND WAS TIGHT.**
+>
+> The forwards that 12.28's arm spent on coordinates it then overwrote **were buying nothing
+> measurable** -- below a thousandth on the mean, and the per-seed ordering is not even
+> consistent.  **That does not make the arm's DESIGN right; it makes its NUMBER right**, and the
+> distinction governs what may be claimed: **the calibration is not paying for the search it
+> replaces**, so the calibration's own measurement cost is not offset by a search it makes
+> cheaper.  The bound and the measurement agree, and the owed sentence can now be deleted rather
+> than carried.
+
+**AND A NOTE ON COMPARABILITY.**  `ext_43` reported a calibration mean of `-0.0710` and this run
+reports `+0.0779` for the same arm and configuration.  **That is expected and not a
+contradiction**: `ext_43`'s numbers were taken before `ext_44` fixed `HiMALND.predict`, whose
+regression branch returned a residual rather than the accumulated prediction (12.29).  The
+calibration arm's RFit values agree to four decimals (`0.4573/0.4578`, `0.3459/0.3461`,
+`0.4253/0.4253`), which is what shows the two runs computed the same thing and differed only in
+how the model's output was assembled.
+
+**AND ONE BUG OF MINE, of the shape this list keeps recording.**  The first version's ridge solve
+omitted the transpose, so it died on `layer.W_gauss[:d, :] = W` with "could not broadcast (20,1)
+into (1,20)".  `np.linalg.solve` returns `(N, d_out)` while `layer.W_gauss` is `(n_vars, N)`.
+**Found by reading `ext_43`'s version rather than by debugging mine** -- the two scripts must
+share the calibrate step exactly, since it is not a variable under test, and the read was cheaper
+than the reason would have been.
+
+**THE LIMITS.**  One task, one architecture, one scale -- the extension's standing limitation.
+The search is SPSA with one averaging and one perturbation size, both inherited from the shipped
+trainer and never tuned, so the standing of three arms is a statement about THOSE settings.  And
+the arms are compared at equal FORWARDS, which is the project's unit but not the only defensible
+one: per-step, the geometry-only arm updates fewer coordinates.
