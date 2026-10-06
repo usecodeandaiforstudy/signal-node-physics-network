@@ -295,7 +295,52 @@ nothing else it reports can be trusted.
 > agreement elsewhere, and **reports which case it was** — quietly loosening the
 > tolerance for every case would hide a real wiring error.
 
-## 7. Open questions, to settle before coding
+## 7. Open questions, to settle before coding — **five settled, ONE still open**
+
+> **THE HEADING IS KEPT BECAUSE THE QUESTIONS ARE, and the coding happened.**  Each question
+> below now carries its resolution inline, so that a reader can see what the implementation
+> decided rather than having to reconstruct it.  **Five of the six are settled by the work; the
+> sixth is the one thing here that was never taken up**, and it is the one the section itself
+> called the most promising hardware angle of the proposal.
+>
+> **AND THE RESOLUTIONS ARE THE POINT OF THIS NOTE.**  A design document that still lists as
+> "open" what six sections of results have already answered is the same defect as the base's
+> four stale checkboxes -- found the same way, by asking whether the record still matches the
+> code.
+
+**RESOLVED — five of six:**
+
+* **1 (where the combination coefficients come from) — SETTLED, and it is half A.**  The
+  coefficients are the read-out matrix itself, solved in closed form: **`W = C . W_graphs`**,
+  and 12.22 established that the constraint this imposes bites **only when `k < min(m,
+  rank(W))`**.  A learned `A` would have been a second `m x k` matrix, so "matrix-free" is
+  claimed only where it holds.
+* **2 (shared or distinct geometry per graph) — SETTLED as the section recommended: SHARED.**
+  The correctness anchor in §1 depends on it, because `k = m` with a shared geometry and
+  `C = I` is what must reproduce the base version, and it does.
+* **3 (who owns `h`) — SETTLED as the section decided: SHARED**, so there is one
+  amplitude-calibration vector rather than `k`, and the width-mismatch exposure is not
+  multiplied.
+* **4 (the readout coordinate of each graph) — SETTLED by the implementation**: a graph is read
+  at the same probe set as the base version's layers, which is what fixes the meaning of a 1-D
+  output physically.
+* **6 (which realization is the target) — SETTLED in favour of (a)**, folding the combination
+  into the injection strengths and keeping the base crossbar; case (b) would need `k` separate
+  single-output cells and is not what the suite measures.
+
+**AND THE ONE THAT IS NOT:**
+
+* **5 (does the combination exploit PRE-SENSOR superposition?) — NOT TAKEN UP, and it is the
+  only design question here that the implementation never addressed.**  The idea: on the
+  diffusion cell, combining the `s` graphs **in the field** before sensing would cost **one**
+  measurement per probe instead of `t`, and the base version's cost model does not exploit it.
+  **The code acknowledges the mechanism and does not use it** — `graphs.py` notes the
+  qualification the section itself made, that **a linear medium cannot multiply two fields**, so
+  the saving is available only when the combination is linear.  **That is precisely the case the
+  shipped design is in**, which is why this is a live opportunity rather than a closed one: it
+  would change the measured cost of every multi-graph result in the document, not their
+  accuracy.  **It is recorded here as the extension's one open design question**, and the
+  numerical work does not depend on it.
 
 1. **Where do the combination coefficients come from** if the combination is linear —
    learned by finite differences, calibrated in closed form (they are linear in the
@@ -382,12 +427,21 @@ failure boundary — and it can be reported as such.
 
 ---
 
-## 9. Wiring checklist — DOCUMENTED ONLY, NOTHING APPLIED
+## 9. Wiring checklist — **APPLIED, and this header said otherwise until it was checked**
 
-Everything in this section is a note for the implementation step. No file named here
-has been touched; in particular `.gitignore` and `.github/workflows/ci.yml` are, as of
-writing, exactly as the base version left them apart from the base version's own
-earlier edits.
+> **THIS SECTION IS HISTORY, NOT A TO-DO.**  It read "DOCUMENTED ONLY, NOTHING APPLIED" and
+> stated that `.gitignore` and `.github/workflows/ci.yml` were "exactly as the base version
+> left them".  **Both claims are now false and had been for some time**: `.gitignore` carries
+> the extension's evidence whitelist, and the CI's `extension` job runs **30 of the 48 scripts**
+> with `--assert` plus a check of the conventions this repository publishes.  The checklist was
+> accurate when written and was never reconciled with the implementation -- **the same class of
+> defect as the base's four stale checkboxes and 12.28's closed limit, found the same way: by
+> asking whether the record still matches the code.**
+>
+> What the checklist asked for is below, unchanged, because the reasoning is the reason the
+> wiring is shaped the way it is.  **What is NOT here is any item of it that remains undone** --
+> except one, and it is not a wiring item: **§7 question 5, the pre-sensor superposition, is the
+> single design question this implementation never took up.**  See the note there.
 
 ### 9.1 Cache keys — do this FIRST, it can corrupt the base version
 
