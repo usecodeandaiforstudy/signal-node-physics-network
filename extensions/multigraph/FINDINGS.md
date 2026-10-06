@@ -3691,10 +3691,18 @@ not the deep path's bottleneck and **the search is earning its forwards on the G
 **AND THE COST SIDE IS NOT REACHED** -- the arm that pays `n_train * N` measurements does not
 even win on accuracy here.
 
-**THE HONEST LIMIT.**  The calibration is applied AFTER the SPSA step, so a true "calibrate, do
+**THE HONEST LIMIT, WHICH 12.35 HAS SINCE CLOSED.**  The calibration is applied AFTER the SPSA step, so a true "calibrate, do
 not search" arm would remove those coordinates from the parameter vector -- a change to
-`get_params_vector`, a base method -- and that is NOT done.  **The measurement bounds the gain
-from below rather than measuring it.**
+`get_params_vector`, a base method -- and **12.35 has now made it, without editing the base:** the
+arm masks the perturbation and the update to the geometry subspace, and the answer is that the
+bound recorded here **was tight** (`calib -> calib_only` is `-0.0008`).  **So the sentence that
+used to end this paragraph -- "the measurement bounds the gain from below rather than measuring
+it" -- no longer applies**, and what it protects is unaffected either way: the calibration does
+not help the deep path, and the search earns its forwards on the geometry.
+
+**AND THE NUMBERS ABOVE PREDATE 12.29's FIX.**  This table's `-0.0710` mean comes from a run
+before `HiMALND.predict` was corrected, so it is not directly comparable to 12.35's `+0.0779` for
+the same arm; 12.35 shows the two runs agreeing on the calibration's own RFit to four decimals.
 
 ---
 
