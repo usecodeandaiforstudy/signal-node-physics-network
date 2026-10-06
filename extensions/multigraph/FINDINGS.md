@@ -1521,6 +1521,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_48_lookup_table.py` | **section 12.33**: the lookup table -- the precondition it relaxes, and the defect class it exposed |
 | `extensions/multigraph/ext_49_yukawa_family.py` | **section 12.34**: the h-indexed family -- reaching Yukawa, and the parameterisation lesson |
 | `extensions/multigraph/ext_50_geometry_only.py` | **section 12.35**: geometry-only search -- 12.28's bound is tight, and is now a measurement |
+| `extensions/multigraph/ext_51_presensor.py` | **section 12.36**: pre-sensor superposition -- DESIGN 7's last open question, answered |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1584,11 +1585,12 @@ python extensions/multigraph/ext_47_cifar_baseline.py --assert
 python extensions/multigraph/ext_48_lookup_table.py --assert
 python extensions/multigraph/ext_49_yukawa_family.py --assert
 python extensions/multigraph/ext_50_geometry_only.py --assert
+python extensions/multigraph/ext_51_presensor.py --assert
 ```
 
-All fifty exit non-zero when their own published claim fails, and every one of them
+All fifty-one exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s; ext_49 ~1 s; ext_50 ~15 s.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s; ext_49 ~1 s; ext_50 ~15 s; ext_51 ~1 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -4155,3 +4157,46 @@ The search is SPSA with one averaging and one perturbation size, both inherited 
 trainer and never tuned, so the standing of three arms is a statement about THOSE settings.  And
 the arms are compared at equal FORWARDS, which is the project's unit but not the only defensible
 one: per-step, the geometry-only arm updates fewer coordinates.
+
+### 12.36 Pre-sensor superposition: DESIGN 7's item 5, answered (ext_51)
+
+**THE ONE DESIGN QUESTION THIS EXTENSION NEVER TOOK UP.**  DESIGN section 7 lists six questions to
+settle before coding; five were settled by the work and the sixth read:
+
+    "On the diffusion cell, combining the *s* graphs IN THE FIELD before sensing would cost ONE
+     measurement per probe instead of t ... the most promising hardware angle of the whole
+     proposal ... Qualified by section 4.1: it is available only when the combination is linear."
+
+The shipped `MultiGraphStack.forward` reads **k graphs** and then combines them numerically.  This
+does the combination first and measures what it buys.
+
+**WHY THE EQUIVALENCE IS NOT A NEW PHYSICAL CLAIM.**  The fields may be superposed before the
+sensor **because the substrate is linear**, and that is a property this repository VERIFIES rather
+than assumes: `sub_01`'s exact-superposition threshold is one of the assertions CI runs first, and
+the diffusion cell's own header states "superposition is EXACT because the PDE is linear".  **So
+this applies the suite's own verified property one stage earlier** rather than introducing one.
+
+| what was measured | result |
+|---|---|
+| **P1 the equivalence** | pre-sensor reproduces the shipped stage outputs to **`7.4e-08` relative** and the end-to-end prediction to **`1.1e-07`** -- float32 level on the circuit path, i.e. the same computation, with the sensor moved. |
+| **P2 the cost** | **4 sensor reads per probe instead of 12**, at `k = 6` graphs into `m = 2` channels: **a 3.0x cut**, and the ratio is `k/m` by construction because one reading per GRAPH becomes one reading per output CHANNEL.  In the project's unit the multi-graph calibration cost is `n_train * sum(m * N_s)` where it was `n_train * sum(k_s * N_s)`. |
+| **P3 the negative control** | a **tanh** combine, built locally, **fails by `0.675` relative** -- **O(1), not rounding.**  So 4.1's qualification is measured rather than quoted, and the library agrees by construction: `graphs.Nonlinear` **raises on instantiation**, calling itself "a deliberate non-feature" because it "must also happen AFTER sensing". |
+
+**AND IT CHANGES COST, NOT ACCURACY.**  No accuracy figure in this document moves: the same
+output is computed, from the same fields, by the same graphs.  What changes is how many times a
+sensor has to look -- **which is the unit every comparison here is run in**, so this is the one
+open design question whose answer moves the project's own headline currency.
+
+**THE LIMITS, AND THE FIRST ONE IS THAT NOTHING PHYSICAL WAS BUILT.**  This is arithmetic on the
+repository's own models plus a property it verifies; no device was wired to land two fields on one
+sensor, and whether that is arrangeable is exactly the kind of question only hardware settles.
+It also requires **both** the combination and the medium to be linear, which P3 measures the cost
+of violating.  And it is stated at one configuration: `k = 6`, `m = 2`, two stages.
+
+**AND FOUR INTERFACE ERRORS OF MINE IN THIS SCRIPT, ALL CAUGHT BY READING THE CALLEE FIRST.**
+The parameter mask had to be asserted against the layer's own vector length rather than assumed;
+`graphs.Nonlinear` refuses to be constructed, so the control was built locally rather than by
+un-refusing the library; `PhysicalRBFLayerND` takes all-positional arguments and DERIVES
+`dim`/`n_particles`/`n_vars` from array shapes; and the end-to-end comparison initially summed
+each stage output to a scalar, collapsing the batch.  **Each was a wrong assumption about a
+callee, which is the defect this list records more often than any other.**

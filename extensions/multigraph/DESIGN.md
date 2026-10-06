@@ -295,13 +295,13 @@ nothing else it reports can be trusted.
 > agreement elsewhere, and **reports which case it was** — quietly loosening the
 > tolerance for every case would hide a real wiring error.
 
-## 7. Open questions, to settle before coding — **five settled, ONE still open**
+## 7. Open questions, to settle before coding — **all six settled, and the last one pays**
 
 > **THE HEADING IS KEPT BECAUSE THE QUESTIONS ARE, and the coding happened.**  Each question
 > below now carries its resolution inline, so that a reader can see what the implementation
 > decided rather than having to reconstruct it.  **Five of the six are settled by the work; the
-> sixth is the one thing here that was never taken up**, and it is the one the section itself
-> called the most promising hardware angle of the proposal.
+> sixth was answered last, by 12.36, and it is the one the section itself called the most
+> promising hardware angle of the proposal -- **it was right, and it pays 3.0x in sensor reads.**
 >
 > **AND THE RESOLUTIONS ARE THE POINT OF THIS NOTE.**  A design document that still lists as
 > "open" what six sections of results have already answered is the same defect as the base's
@@ -330,8 +330,12 @@ nothing else it reports can be trusted.
 
 **AND THE ONE THAT IS NOT:**
 
-* **5 (does the combination exploit PRE-SENSOR superposition?) — NOT TAKEN UP, and it is the
-  only design question here that the implementation never addressed.**  The idea: on the
+* **5 (does the combination exploit PRE-SENSOR superposition?) — SETTLED, by 12.36, and it
+  PAYS: 4 sensor reads per probe instead of 12 at `k=6`, `m=2`, a 3.0x cut in the project's
+  own unit, reproducing the shipped output to `7.4e-08` relative.**  The section said it was
+  "the most promising hardware angle of the whole proposal" and it was the one item here
+  never taken up; `ext_51` took it up, and the qualification below is measured rather than
+  quoted -- a tanh combine fails by `0.675` relative.  The idea: on the
   diffusion cell, combining the `s` graphs **in the field** before sensing would cost **one**
   measurement per probe instead of `t`, and the base version's cost model does not exploit it.
   **The code acknowledges the mechanism and does not use it** — `graphs.py` notes the
