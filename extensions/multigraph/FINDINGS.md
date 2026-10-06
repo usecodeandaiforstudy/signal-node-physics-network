@@ -1519,6 +1519,7 @@ points, and an edit that left an orphaned function body.
 | `extensions/multigraph/ext_46_classification_benchmark.py` | **section 12.31**: HiMALND's classification mode -- beaten by the null too |
 | `extensions/multigraph/ext_47_cifar_baseline.py` | **section 12.32**: the CIFAR line against the project's own standard -- unresolved |
 | `extensions/multigraph/ext_48_lookup_table.py` | **section 12.33**: the lookup table -- the precondition it relaxes, and the defect class it exposed |
+| `extensions/multigraph/ext_49_yukawa_family.py` | **section 12.34**: the h-indexed family -- reaching Yukawa, and the parameterisation lesson |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
 | `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
 | `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
@@ -1580,11 +1581,12 @@ python extensions/multigraph/ext_45_deep_benchmark.py --assert
 python extensions/multigraph/ext_46_classification_benchmark.py --assert
 python extensions/multigraph/ext_47_cifar_baseline.py --assert
 python extensions/multigraph/ext_48_lookup_table.py --assert
+python extensions/multigraph/ext_49_yukawa_family.py --assert
 ```
 
-All forty-eight exit non-zero when their own published claim fails, and every one of them
+All forty-nine exit non-zero when their own published claim fails, and every one of them
 runs in seconds except ext_03 (~6 min), the cold sweeps of ext_08 (~5 min), ext_14
-(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s.
+(~40 s), ext_16 (~95 s), ext_18 (~135 s), ext_19 (~65 s), ext_20 (~110 s), ext_21 (~35 s) and ext_22 (~80 s).  ext_23 is read-only and takes seconds; ext_24 is ~9 min cold and ~10 s warm; ext_25 is ~14 min cold, ext_26 ~20 min cold, ext_27 ~10 min cold, ext_28 ~36 min cold, ext_29 seconds, ext_30 ~8 min cold, ext_31 under a second and ext_32 ~50 min cold and ext_33 ~13 min cold (cached) and ext_34 ~22 min cold and ext_35 ~14 min cold and ext_36 ~4.5 min cold and ext_37 ~20 s and ext_38 under a second and ext_39 ~2 min cold and ext_40 and ext_41 a few seconds each; ext_42 ~7-15 min, ext_43/44/45 seconds each; ext_46 ~1-3 min; ext_47 ~20 s; ext_48 ~1 s; ext_49 ~1 s.
 
 The three resumable sweeps write 51 cells in total to `outputs/ext_ckpt/`; a warm
 `--report-only` rebuild of any of them takes about a second.
@@ -4016,3 +4018,62 @@ reason stated first.
 takes `k` FIRST and positionally, and it recovers ONE node, so `z` is a 1-D response of length n
 -- not the `(n, N)` matrix.  The first version got both wrong; the operator refused with
 "X has 40 rows but z has 800", **which is the operator behaving correctly.**
+
+### 12.34 The h-indexed family: reaching Yukawa, and the table's parameterisation (ext_49)
+
+**WHERE 12.33 STOPPED.**  It covered any source that is a FIXED function of the single scalar
+`u`, and said plainly that Yukawa's `exp(-a r)/r` is not one -- its SHAPE depends on `h` -- and
+that "`h` would have to index a family of tables".  This is that family, measured.
+
+**AND PHYSICAL ADMISSIBILITY COSTS THE ONE-PARAMETER VERSION.**  With `r = h s`, `s = sqrt(u/k)`,
+
+    z = exp(-a h s)/(h s + r0)   =>   h z = exp(-beta s)/(s + r0/h),   beta = a h
+
+so `h z` is a function of `(u, beta)` **ONLY WHEN `r0 = 0`** -- which is the singular form the
+framework cannot sample, because it measures at the centre.  **The one-parameter family therefore
+reads `inf`, and does not improve with more tables**, because the mismatch is algebraic rather
+than a matter of resolution.  A finite core is not a refinement of this kernel; it changes which
+family is required.
+
+**A SECOND AND MORE GENERAL FINDING: THE TABLE'S PARAMETERISATION MUST MATCH THE KERNEL'S
+SMOOTHNESS.**  The first two-parameter version still read `~2.2` and **hardly moved when the
+table grew from 4 entries to 64**, which is the signature of an error that is not resolution.
+The cause: it was gridded uniformly in `u`, while the kernel is `exp(-beta s)/(s + r0)` with
+`s = sqrt(u/k)`, and `s` has an INFINITE derivative at `u = 0` -- so a uniform `u` grid samples
+the sharpest part of the function with its sparsest spacing.  Gridded in `s` instead:
+
+| gridded in | 4 x 8 tables | 16 x 32 tables |
+|---|---|---|
+| `u` | 2.219e+00 | 2.206e+00 -- **does not converge** |
+| **`s`** | **4.736e-02** | **3.993e-03** -- **converges** |
+
+**`u` is the right variable for a GAUSSIAN** -- 12.33 tabulates `exp(-u)` and converges as
+`(du)^2/8` -- **and the wrong one for anything carrying a `sqrt(u)` or a `1/r`.**
+
+**THE FORWARD IS NOW GOOD ACROSS WIDTHS**: six widths from `h = 0.25` to `3.0` all fall inside
+the family, with errors from `4.0e-03` to `5.0e-02`.
+
+**AND THE RECOVERY IS WHERE THE PRICE IS PAID, stated where the number is.**  The closed-form
+operator does not apply -- measured here, not inherited: its `log_rms` on a Yukawa response is
+`4.16e-01` against a Gaussian node's `~3e-06`.  A table-based fit recovers the geometry while
+spending **ZERO device forwards** (960 table reads, 0 forwards), so **the project's cost claim
+survives: it was always "no device forwards beyond the calibration", not "closed form".**  **But
+the centre is recovered and the WIDTH IS NOT**: centre error `5.99e-02` against a width error of
+`2.78e-01`, with the fit's relative MSE at `4.55e-03` -- i.e. already at the table's own error
+floor.  **The width is WEAKLY IDENTIFIED for a screened source**: its response is a short-range
+bump whose radius is set by `1/a`, so scaling `h` and rescaling the amplitude trade off against
+each other.  A Gaussian has no such degeneracy, which is why the closed form could solve for it.
+**That is a real loss of guarantee bought with the reach, and it is a different thing from the
+loss of closed form.**
+
+**AND TWO OF MY OWN ERRORS, BOTH IN THIS SCRIPT'S REPORTING.**  Its verdict printed
+`min(two_rows, key=lambda r: r[2])` where `r[2]` is the u-ENTRY COUNT, so the "best" row was the
+smallest table and its entry count (`2.56e+02`) was printed as an error; the print then indexed
+`best2[2]` as well, so fixing the sort alone changed nothing.  And the first family gridded in
+`u` for the reason above, which the report blamed on the algebra until the constant error at
+every table size gave it away.
+
+**THE LIMITS.**  The family covers `beta = a h` up to a stated maximum, so a source whose
+screening weakens with width leaves it; the fit is LOCAL, starting from a guess, so it can settle
+in a wrong basin where the closed form cannot; and a device must hold a family of tables rather
+than one.
