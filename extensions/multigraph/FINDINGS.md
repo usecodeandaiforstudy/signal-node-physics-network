@@ -1730,24 +1730,29 @@ the repository's own toy scale.
    as much as accuracy per measurement.**  **Item 2's closure stands, now measured rather
    than assumed: the shipped rule is the most STABLE option per measurement.**
 
-8. **ANSWERED by 12.24 (ext_39): the replacement this item asks for is NOT NEEDED, and
-   the premise is too strong.  NOTE FIRST that "combination" here means the READOUT-PATH
-   nonlinearity the design memo raises, NOT this project's `W = C . W_graphs`, which is a
-   LINEAR per-graph combination and is half A itself** -- see the box at the head of 12.24.
-   The item's wording came from the memo's paragraph and pointed at a design nobody
-   proposed, and what follows is that paragraph being measured.  The item presumes that a full nonlinear combination
-   forfeits the closed-form operator.  **That depends on the ORDER of the operations:**
-   `phi(sum_j W_j g_j)` is nonlinear in the strengths and does lose it, while
-   **`sum_j W_j phi(g_j)` is nonlinear in the READINGS and LINEAR in the strengths** --
-   the closed-form solve is exact to `9.99e-16` and the measurement cost is `n_train * N`,
-   **identical to the linear readout's**.  `phi` is in the repository's own device library
-   (Gilbert squarer, BJT exponential).  **And the measurement is a clean negative:** all
-   four elementwise `phi` are WORSE than the linear readout (best `tanh`, `-0.0475`, `0 of
-   3` tasks), so this nonlinearity is free but buys nothing -- which is a **stronger**
-   position for the trade than a positive result would have been.
-   **What is still open is the THIRD arrangement**, `phi(sum_j W_j g_j)` with its own
-   calibration story; 12.21's `-0.0264` is the nearest evidence and it loses.  Item 8
-   should be restated as that one arrangement.
+8. **ANSWERED by 12.24 (ext_39), AND RESTATED AS THIS ITEM ASKED TO BE.**  The item's original
+   wording came from the design memo's paragraph and pointed at a design nobody had proposed;
+   **NOTE FIRST that "combination" there means the READOUT-PATH nonlinearity, NOT this project's
+   `W = C . W_graphs`, which is a LINEAR per-graph combination and is half A itself** -- see the
+   box at the head of 12.24.
+
+   The item presumed that a full nonlinear combination forfeits the closed-form operator.
+   **That depends on the ORDER of the operations, and the two orders part company:**
+
+   * **`sum_j W_j phi(g_j)`** -- nonlinear in the READINGS, **LINEAR in the strengths**.  The
+     closed-form solve stays exact to `9.99e-16` and the measurement cost is `n_train * N`,
+     **identical to the linear readout's**.  `phi` is in the repository's own device library
+     (Gilbert squarer, BJT exponential).  **Measured, and it is a clean negative**: all four
+     elementwise `phi` are WORSE than the linear readout (best `tanh`, `-0.0475`, `0 of 3`
+     tasks), so that nonlinearity is **free but buys nothing** -- a stronger position for the
+     trade than a positive result would have been.
+   * **`phi(sum_j W_j g_j)`** -- nonlinear in the STRENGTHS, and it **does** lose the operator.
+     **This is the one arrangement still open**, and it needs its own calibration story;
+     12.21's `-0.0264` is the nearest evidence and it loses.
+
+   **SO THIS ITEM NOW READS AS WHAT IT ACTUALLY IS: one open arrangement, not a general worry
+   about nonlinearity.**  Two of the three orders are settled -- one is half A itself, one is
+   measured free-and-useless -- and the restatement was owed since the answer landed.
 ---
 
 ## 12. An audit of the BASE version's headline, from inside the extension
