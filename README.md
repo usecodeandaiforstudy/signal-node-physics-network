@@ -29,6 +29,46 @@
 
 ---
 
+## What this project establishes
+
+**The claim is not that a network architecture is new.** It is that **a network of physical
+sources can be trained by OPERATORS THAT READ THE DEVICE**, spending measurements rather than
+gradients — and that this works on any substrate meeting one checkable condition.
+
+**1. A geometry operator, with a consistency residual.** A node's centre and width are recovered
+in **closed form** from field readings, because `log z(x)` is linear in a fixed finite basis of
+the input. The same operator returns **`log_rms`**, which says whether a response is a *genuine
+single node* at all — **a diagnostic no search-based trainer can report.**
+
+It is also the arm that wins here: **`+0.98` against a gradient-trained `+0.23`** on 2-D
+regression, **`+0.58` against `+0.05`** on 4-D, and **`1.00` against `0.73`** on the moons
+classification task — **at ZERO forward evaluations**, against 600 epochs of autograd.
+
+**2. A checkable substrate precondition.** "Any physical system" becomes a **test** rather than a
+slogan: the source must be such that `log z(x)` is **linear in some fixed finite basis**. A
+Gaussian passes; any polynomial exponent passes at its own degree; a Laplace or Yukawa source
+does **not** — and the operator's own residual shows it, at `4.2e-01` against a Gaussian node's
+`3e-06`.
+
+**3. A cost unit of measurements.** Comparisons run in **read-out calibrations**, not epochs or
+seconds. That is what makes "zero forward evaluations" a measurement instead of a slogan.
+
+**4. And the reach is being extended.** A lookup table relaxes the precondition to *any kernel
+that is a fixed function of one scalar*, and an `h`-indexed family reaches Yukawa — with the
+general lesson that **a table's parameterisation must match the kernel's smoothness** (gridding
+in `u` instead of `s = sqrt(u/k)` left the error at `2.2` and unmoved from 4 tables to 64).
+
+> **AND WHAT DOES NOT WORK, MEASURED HERE RATHER THAN HOPED.** The **deep** architecture this
+> project started with is **beaten by a zero-forward baseline on every task the repository can
+> build**, and the closed-form calibration that was supposed to help it does not. The CIFAR line's
+> numbers are 36–39% on 5 classes against a 20% chance floor, and its architecture comparisons
+> are **noise-dominated** — the seed alone moves them by up to 6.6 points. **Nothing has been
+> fabricated in hardware**; all three substrates are simulated devices.
+>
+> Evidence: [`FINDINGS.md`](FINDINGS.md) sections 6, 9, 11 and the extension's sections 12.30–12.34.
+
+---
+
 ## Introduction
 
 > A neural network architecture based on physical field superposition — each "neuron" is a movable particle in D-dimensional space, with nonlinearity arising from the spatial distance between particle and input. The architecture is mappable to multiple physical platforms (analog circuits, optical systems, wave fields, etc.); this project uses analog circuits as the implementation vehicle, chosen for ease of computer simulation and validation.
@@ -210,6 +250,27 @@ singal-node-physics-network/
 
 ## Results
 
+### The results this project stands behind
+
+**These come from the operator work, and they are the reason the project exists.** Full tables,
+costs and limits are in [`extensions/multigraph/FINDINGS.md`](extensions/multigraph/FINDINGS.md);
+every row has a script with a reproduce command and a tracked artifact.
+
+| Result | Metric | Value |
+|---|---|---|
+| **Geometry operator vs gradient training**, 2-D regression | test R² | **+0.98** vs +0.23 |
+| Same, 4-D regression | test R² | **+0.58** vs +0.05 |
+| Same, moons / 4-D moons classification | accuracy | **1.00 / 0.99** vs 0.73 / 0.74 |
+| **The operator's cost** | forward evaluations | **0** (against 600 epochs of autograd) |
+| **Calibrate strengths + measure geometry**, vs searching either | measurements to reach R² = 0.30 | **15–30× fewer** |
+| Same, at 3 000 measurements | test R² | **+0.39 / +0.53 / +0.54** vs ≤ +0.06 for every search arm |
+| **The substrate precondition**, Laplace against Gaussian | operator's `log_rms` | **4.2e-01** vs 3e-06 — the test *detects* it |
+| **Consistency residual detects a lookup table**, no code change | `log_rms` at M=512 / 64 / 16 | 3 of 3 flagged |
+| Capacity split, equal measurement cost | winner | readout, 8/8 architecture×protocol cells |
+| Second substrate | kernel vs independent PDE solve | 1.62e-05 (the solver's own error) |
+| Particle independence | activation coupling | exact 0 without normalisation; 0.063–0.261 under PU |
+| **The deep architecture**, every task the repository can build | against a zero-forward baseline | **beaten on all of them** *(12.30–12.31)* |
+
 ### Smoke Test
 
 ```bash
@@ -221,6 +282,13 @@ python experiments/run_all.py   # quickly validate 10 basic metrics, ~5 min, all
 > **Note on reported results**: Due to limited computational resources, some experiments did not reach their optimal configurations in terms of training epochs or parameter counts. For example, the CIFAR-10 experiments at 600 epochs with 2,884 parameters still have room for improvement with more training rounds or more particles. Reported numbers should be viewed as lower-bound certification of method effectiveness, not the architecture's performance ceiling. Users are encouraged to scale up training resources to explore higher accuracy.
 
 ### Reproducing Full Experimental Results
+
+**Start with the operator results above** — the extension's reproduce block is the shortest path
+to what this project claims, and most of its scripts run in seconds.
+
+**The CIFAR-10 material below is the project's EARLIEST work and its WEAKEST.** It is kept
+because it is real, and because the retractions in the status box refer to it — not because it is
+what the project stands behind. Reading it first will give a misleading impression of the whole.
 
 Before running CIFAR-10 experiments, download the dataset first (~180MB):
 
@@ -241,10 +309,12 @@ If you have already downloaded CIFAR-10, you can simply place the extracted data
 | Grouped parallel feasibility proof | `python experiments/train_01_grouped_fd.py` | ~5 min |
 | Zero-ADC SPSA verification | `python experiments/train_03_analog_spsa.py` | ~2 min |
 
-### Key Results
+### Early results, kept for provenance
 
-> Every row below except the last two is **superseded**; see the status box at the
-> top and [`FINDINGS.md`](FINDINGS.md). Kept for provenance, not for citation.
+> **Read this block as history, not as claims.** Every row below except the last two is
+> **superseded**; see the status box at the top and [`FINDINGS.md`](FINDINGS.md). It is the
+> CIFAR-era work, it predates the operator results above, and several of its numbers are the
+> ones the status box retracts.
 
 | Experiment | Task | Metric | RBF | MLP | CNN |
 |------------|------|--------|-----|-----|-----|
