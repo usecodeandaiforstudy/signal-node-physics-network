@@ -1345,27 +1345,39 @@ as holding at that scale until scaled up.
    reading: **the five losses all reduce to the geometry arm, so they bound the risk
    without discriminating between the mechanisms.**  That is a limitation of the evidence,
    not a gap in it, and item 3 already covers the seeds.
-8. **Method C — the analog gradient chain.  STILL OPEN AS A METHOD, and it is the largest gap
-   between what this project advertises and what exists — but the ENTRY IS NOW ACCURATE,
-   which it was not when this item was written.**  `THEORY.md` Method C says the method is
-   "not implemented" and instructs: **"Either implement and measure this method, or remove it
-   from the feature list."**
-   **THE REMOVAL BRANCH HAS BEEN TAKEN.**  Method C is no longer offered as a feature: the
-   `THEORY.md` note now states that the decision is REMOVAL, and the README feature bullets in
-   both languages carry an inline correction saying the gradient-estimation half is dead code.
-   **The IMPLEMENT branch has not been taken, and this item is open for that reason alone** —
-   implementing it remains a project rather than a paragraph.
-   **AND THE REACHABILITY IS NOW MEASURED RATHER THAN DESCRIBED.**  This item used to say the
-   functions call each other but "neither enclosing function is called outside `components.py`
-   and `__init__.py`", i.e. an internally-connected island with no entry point.  That is right
-   about the island and **wrong about one member**: the chain is **eight functions**, of which
-   **five have zero call sites anywhere** (`analog_loss_readout`, `analog_capacitor_integrator`,
-   `analog_center_gradient`, `analog_width_gradient`, `analog_weight_gradient`) and **three are
-   called only from inside it** (`analog_gilbert_multiplier` five times, `analog_gradient_mac`
-   once, `analog_adc` twice) — **but `analog_gilbert_multiplier` is ALSO used by the live
-   `gilbert_square`, so deleting the region wholesale would break the live chain.**  The
-   declaration now lives in `physical_simulator/components.py` itself rather than only in
-   `THEORY.md`, because the code is where a reader of the code looks.
+8. ~~Method C — the analog gradient chain.~~  **CLOSED BY REMOVAL, which is one of the two
+   branches this item itself offered.  The checkbox said open only because the METHOD is
+   unimplemented -- and that was never the test.**  The either/or was: **"Either implement and
+   measure this method, or remove it from the feature list."**  The removal branch was taken:
+
+   * **no feature list offers it any more.**  `THEORY.md`'s note states the decision, and the
+     README's feature bullets in both languages carry an inline correction saying the
+     gradient-estimation half is dead code.
+   * **`THEORY.md` still DESCRIBES it**, as unimplemented theory -- which is what a theory
+     document is for, and the description is accurate: it says the method is "not implemented"
+     and that the functions "are defined and re-exported".
+   * **AND THE CODE IS STILL IN THE TREE**, which is the fact this item never recorded and which
+     a reader would otherwise assume had been deleted.  All eight functions remain in
+     `physical_simulator/components.py`, kept deliberately as the reference implementation of a
+     method the theory document still describes.  **Deleting the region wholesale would break
+     the live chain**, because `analog_gilbert_multiplier` is ALSO used by `gilbert_square`,
+     which is on the working path.  The declaration, the measured call-site census and that
+     sharing are recorded AT THE DEFINITION SITE, in the code, where a reader of the code looks.
+     The census, measured rather than described: **five functions have zero call sites**
+     (`analog_loss_readout`, `analog_capacitor_integrator`, `analog_center_gradient`,
+     `analog_width_gradient`, `analog_weight_gradient`) and **three are called only from inside
+     the island** (`analog_gilbert_multiplier` five times, `analog_gradient_mac` once,
+     `analog_adc` twice).
+
+   **AND THE IMPLEMENT BRANCH IS NO LONGER MERELY UNTAKEN -- IT IS LARGELY UNNECESSARY**, for a
+   reason this project found itself: **the source strengths should be CALIBRATED in closed form,
+   not differentiated** (§6).  A gradient chain would therefore be needed only for the
+   **geometry** -- the smaller half of the parameter space, and the half the operator already
+   places from field readings.
+
+   **So this is a decision with a reason rather than a gap with an excuse**, and if the geometry
+   half ever does need exact gradients, the eight functions are still there to build on.
+   Evidence: the declaration in `physical_simulator/components.py`, `THEORY.md` Method C.
 9. ~~The "5x better" direct residual.~~  **RETRACTED — see the note in section 9 and
    THEORY 3.2/7.3.**  It had been stated here only in section 9 and never in this index,
    which is the gap this preamble now names.  Re-measured under control the sign reverses
