@@ -1,7 +1,7 @@
 ==================================================================
   ext_14 - how good is the greedy placement?
   task=4d N=[4, 8, 16, 40] seeds=3 restarts=16 wide=32
-  2026-10-02 23:22:54
+  2026-10-06 00:40:03
 ==================================================================
 
   best-found is an UPPER bound on achievable R^2, so the greedy-vs-best gap
@@ -87,4 +87,4 @@
   more than the honest validation-picked baseline.  It is NOT used, and the
   size of that number is the reason the distinction is worth stating.
 
-  wall time 39.7s
+  wall time 45.4s

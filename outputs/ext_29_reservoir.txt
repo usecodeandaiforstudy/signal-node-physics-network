@@ -1,7 +1,7 @@
 ==================================================================
   ext_29 - the reservoir variant: only the readout is trained
   tasks=7 archs=['G', 'F2'] seeds=3 epochs=40 substrate=diffusion
-  2026-10-04 16:05:35
+  2026-10-06 11:30:59
 ==================================================================
 
   The base's section 11 item 5: on an excitable medium the only trainable part is
@@ -117,4 +117,4 @@
   here -- but 12.12 showed the LOW-budget comparison is not, so no low-budget
   claim is made from this run.
 
-  wall time 2.8s
+  wall time 4.6s

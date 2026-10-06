@@ -1,7 +1,7 @@
 ==================================================================
   ext_05 - the rank budget on the diffusion substrate
   arch=F2 k=[8, 4, 3, 2] splits=3 levels=none/low/medium/high freq=0.5
-  2026-10-02 20:40:27
+  2026-10-06 11:30:37
 ==================================================================
 
   Fixed geometry (ext_02's regime), readout fitted in closed form with the
@@ -64,4 +64,4 @@
   is a property of the architecture and not of one medium or one idealised
   device.  That is the statement the extension needed and did not have.
 
-  wall time 3.6s
+  wall time 4.0s

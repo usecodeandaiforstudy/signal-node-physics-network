@@ -1,7 +1,7 @@
 ==================================================================
   ext_26 - the base's own family, budget held fixed
   task=4d seed=0 epochs=40 budgets=[600, 2400] archs=['T52', 'T104', 'T208']
-  2026-10-04 11:59:03
+  2026-10-06 11:30:58
 ==================================================================
 
   ext_25 removed ext_24's confound and answered NEGATIVELY -- but it said in its
@@ -65,4 +65,4 @@
   to the base's own tail as one task and one seed allow.  A multi-seed version
   would be needed before any of it is quoted as the base's result.
 
-  wall time 0.4s
+  wall time 0.3s

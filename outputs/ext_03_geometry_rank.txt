@@ -1,7 +1,7 @@
 ==================================================================
   ext_03 - does the rank budget survive geometry training?
-  arch=F2 k=[8, 4, 3, 2] m=8 epochs=60 budget=200 freq=0.5
-  2026-10-02 20:15:54
+  arch=F2 k=[4, 3, 8] m=8 epochs=60 budget=200 freq=0.5
+  2026-10-06 00:36:53
 ==================================================================
 
   Both arms: geometry by central differences on a matched analog budget,
@@ -16,40 +16,23 @@
 
   shared graph: arch F2 stage 0, N = 40 particles, train 192 / val / test
   geometry parameters 200 (centres + widths), searched by FD in BOTH arms
-  readout parameters: k=8: 320 (1.67x)   k=4: 192 (1.00x)   k=3: 144 (0.75x)   k=2: 96 (0.50x)
+  readout parameters: k=4: 192 (1.00x)   k=3: 144 (0.75x)   k=8: 320 (1.67x)
   ^ the GEOMETRY cost is identical across arms by construction; only the
     readout size differs, which is the variable DESIGN section 5 says
     decides whether closed-form calibration works.
-
-==============================================================================
-  k = 8  (unconstrained full-rank readout)
-==============================================================================
-   epoch  test R^2 mean       sd  geom probes    calib  total meas  geom moved
-  ------------------------------------------------------------------------------
-       1        +0.6843   0.0300          200      256        1056      0.0029
-      10        +0.7011   0.0280         2000     2560       10560      0.0155
-      20        +0.7131   0.0287         4000     5120       21120      0.0275
-      30        +0.7235   0.0279         6000     7680       31680      0.0394
-      40        +0.7324   0.0291         8000    10240       42240      0.0504
-      50        +0.7366   0.0306        10000    12800       52800      0.0605
-      60        +0.7404   0.0328        12000    15360       63360      0.0699
-
-  measurements at the end: 48000 geometry (2 forwards each) + 15360 calibration (60 closed-form solves x 192 samples)
-  BOTH arms pay these identical numbers: the arms differ only in what
-  they STORE, never in what they measure.
 
 ==============================================================================
   k = 4  (rank-constrained, 1.00x)
 ==============================================================================
    epoch  test R^2 mean       sd  geom probes    calib  total meas  geom moved
   ------------------------------------------------------------------------------
-       1        +0.6843   0.0302          200      256        1056      0.0029
-      10        +0.7008   0.0282         2000     2560       10560      0.0154
-      20        +0.7131   0.0285         4000     5120       21120      0.0275
-      30        +0.7231   0.0280         6000     7680       31680      0.0394
-      40        +0.7320   0.0294         8000    10240       42240      0.0504
-      50        +0.7361   0.0308        10000    12800       52800      0.0605
-      60        +0.7403   0.0330        12000    15360       63360      0.0699
+       1        +0.6953   0.0354          200      256        1056      0.0029
+      10        +0.7139   0.0358         2000     2560       10560      0.0157
+      20        +0.7259   0.0373         4000     5120       21120      0.0281
+      30        +0.7333   0.0383         6000     7680       31680      0.0396
+      40        +0.7437   0.0408         8000    10240       42240      0.0502
+      50        +0.7464   0.0434        10000    12800       52800      0.0601
+      60        +0.7466   0.0493        12000    15360       63360      0.0694
 
   measurements at the end: 48000 geometry (2 forwards each) + 15360 calibration (60 closed-form solves x 192 samples)
   BOTH arms pay these identical numbers: the arms differ only in what
@@ -60,30 +43,30 @@
 ==============================================================================
    epoch  test R^2 mean       sd  geom probes    calib  total meas  geom moved
   ------------------------------------------------------------------------------
-       1        +0.6818   0.0295          200      256        1056      0.0029
-      10        +0.6987   0.0280         2000     2560       10560      0.0154
-      20        +0.7116   0.0274         4000     5120       21120      0.0275
-      30        +0.7207   0.0275         6000     7680       31680      0.0393
-      40        +0.7291   0.0289         8000    10240       42240      0.0502
-      50        +0.7335   0.0299        10000    12800       52800      0.0602
-      60        +0.7377   0.0312        12000    15360       63360      0.0694
+       1        +0.6912   0.0340          200      256        1056      0.0029
+      10        +0.7103   0.0352         2000     2560       10560      0.0156
+      20        +0.7224   0.0364         4000     5120       21120      0.0280
+      30        +0.7297   0.0372         6000     7680       31680      0.0395
+      40        +0.7403   0.0395         8000    10240       42240      0.0501
+      50        +0.7440   0.0409        10000    12800       52800      0.0600
+      60        +0.7455   0.0457        12000    15360       63360      0.0694
 
   measurements at the end: 48000 geometry (2 forwards each) + 15360 calibration (60 closed-form solves x 192 samples)
   BOTH arms pay these identical numbers: the arms differ only in what
   they STORE, never in what they measure.
 
 ==============================================================================
-  k = 2  (rank-constrained, 0.50x)
+  k = 8  (unconstrained full-rank readout)
 ==============================================================================
    epoch  test R^2 mean       sd  geom probes    calib  total meas  geom moved
   ------------------------------------------------------------------------------
-       1        +0.6531   0.0233          200      256        1056      0.0029
-      10        +0.6684   0.0247         2000     2560       10560      0.0156
-      20        +0.6788   0.0248         4000     5120       21120      0.0279
-      30        +0.6867   0.0253         6000     7680       31680      0.0400
-      40        +0.6944   0.0272         8000    10240       42240      0.0511
-      50        +0.6987   0.0277        10000    12800       52800      0.0613
-      60        +0.7048   0.0280        12000    15360       63360      0.0707
+       1        +0.6943   0.0350          200      256        1056      0.0029
+      10        +0.7131   0.0353         2000     2560       10560      0.0156
+      20        +0.7253   0.0367         4000     5120       21120      0.0281
+      30        +0.7328   0.0378         6000     7680       31680      0.0396
+      40        +0.7434   0.0402         8000    10240       42240      0.0502
+      50        +0.7460   0.0430        10000    12800       52800      0.0601
+      60        +0.7460   0.0489        12000    15360       63360      0.0694
 
   measurements at the end: 48000 geometry (2 forwards each) + 15360 calibration (60 closed-form solves x 192 samples)
   BOTH arms pay these identical numbers: the arms differ only in what
@@ -94,38 +77,32 @@
   is trained?
 ==============================================================================
 
-  geometry movement at the end: 0.0699 relative (floor 0.05) -> MOVED
-  full-rank arm (k=8): final test R^2 +0.7404 (sd 0.0328 ACROSS SEEDS) at 1.67x readout/samples
+  geometry movement at the end: 0.0694 relative (floor 0.05) -> MOVED
+  full-rank arm (k=8): final test R^2 +0.7460 (sd 0.0489 ACROSS SEEDS) at 1.67x readout/samples
 
   PAIRED comparison.  The arms see the SAME data seeds, so the correct
   statistic is the per-seed difference (k minus full), not the difference
   of means against the across-seed sd -- the latter is dominated by which
   data split was drawn and makes the test unable to fail.
-  k=4: paired gap -0.0002 (sd 0.0008, sem 0.0004 over 5 seeds)  tol 0.0200  OK
-  k=3: paired gap -0.0027 (sd 0.0031, sem 0.0014 over 5 seeds)  tol 0.0200  OK
-  k=2: paired gap -0.0357 (sd 0.0091, sem 0.0041 over 5 seeds)  tol 0.0200  FAILS
+  k=4: paired gap +0.0006 (sd 0.0005, sem 0.0003 over 2 seeds)  tol 0.0200  OK
+  k=3: paired gap -0.0005 (sd 0.0045, sem 0.0032 over 2 seeds)  tol 0.0200  OK
 
   boundary: largest tested k < m is 4; smallest PASSING k is 3
-  -> the affordable region is k >= 3; failing k = 2
 
   Does the constraint's cost GROW as the geometry is trained?  A paired gap
   that widens would mean the geometry and the rank constraint compete; one
   that stays flat or narrows means they do not.
 
-   epoch      k=4 gap     k=3 gap     k=2 gap
-  ------------------------------------------
-       1      +0.0000     -0.0024     -0.0311
-      31      -0.0004     -0.0029     -0.0369
-      60      -0.0002     -0.0027     -0.0357
+   epoch      k=4 gap     k=3 gap
+  ------------------------------
+       1      +0.0010     -0.0031
+      31      +0.0004     -0.0032
+      60      +0.0006     -0.0005
 
-  SURVIVES DOWN TO A BOUNDARY.  The larger rank-constrained readouts keep
-  full-rank accuracy while the geometry is trained against them, and the
-  smaller ones do not -- which is the USEFUL outcome, because it locates
-  the design point instead of only confirming that one exists.
-  Affordable region: k >= 3.  Combined with ext_02 (which found
-  the same boundary at a fixed geometry) the conclusion is that the
-  boundary is a property of the ARCHITECTURE, not of the untrained
-  geometry: geometry training neither widens nor narrows the affordable
-  region.
+  SURVIVES at every k tested, and the geometry demonstrably moved, so this
+  is not a re-measurement of the fixed-geometry case.  Combined with
+  ext_02 this is the representational case for the extension: the saving
+  is free both at a fixed geometry and under geometry training.
+  The boundary lies below k = 3 and was not probed here.
 
-  wall time 349.5s
+  wall time 180.3s

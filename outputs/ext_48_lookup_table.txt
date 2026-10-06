@@ -1,7 +1,7 @@
 ==================================================================
   ext_48 - the lookup table, and what it actually buys
   nodes=20 seed=0 u_max=12.58
-  2026-10-06 00:03:56
+  2026-10-06 11:31:53
 ==================================================================
 
   **THE PRECONDITION IT RELAXES.**  Section 12.16 requires `log z(x)` to be LINEAR in

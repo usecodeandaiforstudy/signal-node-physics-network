@@ -1,7 +1,7 @@
 ==================================================================
   ext_36 - the trained inner layer: the case that could overturn it
   nodes=40 H=80 epochs=5 seeds=3
-  2026-10-04 23:42:37
+  2026-10-06 00:47:45
 ==================================================================
 
   The extension's section 11, item 1: the trade is measured and the cheap form
@@ -24,7 +24,7 @@
 
   seed        L40    N80 drawn   N80 trained       L320     probes
   --------------------------------------------------------------------
-     0    +0.5924      +0.5856       +0.5834    +0.7494     32,800
+     0    +0.5924      +0.5856       +0.5834    +0.7596     32,800
      1    +0.5024      +0.5542       +0.5294    +0.5914     32,800
      2    +0.6336      +0.6771       +0.6604    +0.7667     32,800
 
@@ -35,7 +35,7 @@
 
   seed        L40    N80 drawn   N80 trained       L320     probes
   --------------------------------------------------------------------
-     0    +0.3076      +0.3429       +0.3432    +0.3686     32,800
+     0    +0.3076      +0.3429       +0.3432    +0.3721     32,800
      1    -0.0696      +0.0619       -0.0402    +0.0734     32,800
      2    +0.2336      +0.2648       +0.2448    +0.4934     32,800
 
@@ -56,8 +56,8 @@
 
   task            L40    N drawn   N trained  training buys       L320  trained - L320
   ------------------------------------------------------------------------------------
-  4d          +0.5761    +0.6056     +0.5911        -0.0145    +0.7025         -0.1114
-  steps       +0.1572    +0.2232     +0.1826        -0.0406    +0.3118         -0.1292
+  4d          +0.5761    +0.6056     +0.5911        -0.0145    +0.7059         -0.1148
+  steps       +0.1572    +0.2232     +0.1826        -0.0406    +0.3130         -0.1304
   hetero      +0.2215    +0.1941     +0.1699        -0.0242    +0.3211         -0.1512
 
   training the inner layer LOSES 0.0264 on average across the three tasks,
@@ -78,7 +78,7 @@
     L40                        40       10,240       10,240    +3.1083    +3.1083
     N drawn H=80            3,280      839,680       20,480    +0.0406    +1.6650
     N trained H=80          3,280      839,680       32,800    +0.0375    +0.9590
-    L320                      320       81,920       81,920    +0.5434    +0.5434
+    L320                      320       81,920       81,920    +0.5452    +0.5452
 
   **THE TWO ACCOUNTINGS DISAGREE ABOUT THE NONLINEAR ARM AND AGREE ABOUT THE
   VERDICT.**  `ext_18` charged it `n_train * strengths` -- the CALIBRATION cost --
@@ -134,4 +134,4 @@
   The training scheme is ONE choice among several; a longer schedule or a
   different parameterisation could buy more, and nothing here bounds that.
 
-  wall time 267.4s
+  wall time 201.8s

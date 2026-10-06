@@ -1,7 +1,7 @@
 ==================================================================
   ext_39 - item 8: the replacement it asks for is not needed
   nodes=40 seeds=3
-  2026-10-05 10:40:06
+  2026-10-06 00:51:23
 ==================================================================
 
   Section 11 item 8 asks for 'a nonlinear combination in full, with a REPLACEMENT
@@ -44,7 +44,7 @@
 
   seed  L40 (linear)      square         abs        tanh    softplus       L320
   -------------------------------------------------------------------------------
-     0       +0.5924     +0.2422     +0.4472     +0.4637     +0.4501    +0.7442
+     0       +0.5924     +0.2422     +0.4472     +0.4637     +0.4501    +0.7596
      1       +0.5024     +0.2900     +0.4978     +0.4691     +0.4652    +0.5914
      2       +0.6336     +0.3670     +0.5957     +0.6106     +0.5860    +0.7667
 
@@ -52,7 +52,7 @@
 
   seed  L40 (linear)      square         abs        tanh    softplus       L320
   -------------------------------------------------------------------------------
-     0       +0.3076     +0.1266     +0.1469     +0.3039     +0.2939    +0.3844
+     0       +0.3076     +0.1266     +0.1469     +0.3039     +0.2939    +0.3721
      1       -0.0696     -0.5679     -0.1379     -0.0262     -0.1834    +0.0734
      2       +0.2336     +0.0847     +0.1538     +0.1413     +0.2042    +0.4934
 
@@ -75,7 +75,7 @@
   ENL abs (rectifier)                 40        no         10,240    +0.2286
   ENL tanh (saturation)               40        no         10,240    +0.2708
   ENL softplus (diode)                40        no         10,240    +0.2459
-  L320 (node control)                320        no         81,920    +0.4463
+  L320 (node control)                320        no         81,920    +0.4467
 
   **THE FIRST FOUR ROWS COST EXACTLY THE SAME.**  `phi(z_j)` is a function of a
   reading the calibration already takes, so elementwise nonlinearity is bought with
@@ -111,4 +111,4 @@
   loses.  **So the item should be restated as that one arrangement**, not as 'a
   full nonlinear combination'.
 
-  wall time 119.9s
+  wall time 96.4s

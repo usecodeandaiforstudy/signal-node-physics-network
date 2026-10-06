@@ -1,7 +1,7 @@
 ==================================================================
   ext_38 - a third substrate, and this one is not Gaussian
   nodes=40 seeds=3 k=0.5
-  2026-10-05 10:28:32
+  2026-10-06 11:31:19
 ==================================================================
 
   Section 11 item 5: both cells tested so far were built to reproduce the same
@@ -22,7 +22,7 @@
 
   substrate                            d=2         d=4         d=6   first d < 1e-10
   ----------------------------------------------------------------------------------
-  circuit (Gaussian)              3.49e-06    1.97e-15    9.23e-15                 4
+  circuit (Gaussian)              4.78e-06    2.37e-15    1.30e-14                 4
   diffusion (Gaussian)            1.74e-15    2.40e-15    9.87e-15                 2
   anharmonic trap (quartic)       8.38e-02    1.53e-15    7.25e-15                 4
 
@@ -102,4 +102,4 @@
   is not log-linear in any finite basis -- a Yukawa field, a Lorentzian -- remains
   excluded, and 12.16 showed the test that excludes it.
 
-  wall time 0.6s
+  wall time 0.5s

@@ -1,7 +1,7 @@
 ==================================================================
   ext_19 - the restart repair, installed and measured
   nodes=40 seeds=3 restarts=(1, 2, 4, 8, 16)
-  2026-10-03 14:34:19
+  2026-10-06 00:44:45
 ==================================================================
 
   ext_14 identified this repair from the placement bound and ext_16 measured
@@ -22,21 +22,21 @@
 
      M    test R^2   gap to best-found      evals   evals/x   oracle gap
   ------------------------------------------------------------------------
-     1     +0.1551             +0.0492        422      1.00      +0.0000
-     2     +0.1754             +0.0289        846      2.00      +0.0158
-     4     +0.2045             -0.0002       1701      4.03      +0.0158
-     8     +0.0564             +0.1479       3387      8.02      +0.1782
-    16     -7.5179             +7.7222       6760     16.01      +7.7794
+     1     +0.1551             +0.0492        420      1.00      +0.0000
+     2     +0.1754             +0.0289        847      2.02      +0.0158
+     4     +0.2045             -0.0002       1695      4.03      +0.0158
+     8     +0.0564             +0.1479       3386      8.05      +0.1782
+    16     -7.5183             +7.7226       6765     16.09      +7.7797
 
   4d: smooth -- the control
 
      M    test R^2   gap to best-found      evals   evals/x   oracle gap
   ------------------------------------------------------------------------
-     1     +0.5817             +0.0194        415      1.00      +0.0000
-     2     -0.4235             +1.0246        841      2.03      +1.0170
-     4     -0.4235             +1.0246       1688      4.07      +1.0170
-     8     +0.5905             +0.0106       3366      8.11      +0.0339
-    16     +0.5910             +0.0101       6752     16.27      +0.0334
+     1     +0.5817             +0.0194        414      1.00      +0.0000
+     2     -0.4235             +1.0246        838      2.02      +1.0171
+     4     -0.4235             +1.0246       1682      4.06      +1.0171
+     8     +0.5905             +0.0106       3363      8.12      +0.0339
+    16     +0.5910             +0.0101       6753     16.31      +0.0334
 
 ==========================================================================================
   P2  does the candidate POOL contain a good node?  (rule vs random draws)
@@ -59,7 +59,7 @@
 
   steps: M=1 +0.1551  best over M +0.2045  repair closed +0.0494 of the +0.0492 gap to best-found
   4d   : M=1 +0.5817  best over M +0.5910  (the control, where greedy was already within 0.031)
-  cost : M=16 costs 16.0x the evaluations of M=1
+  cost : M=16 costs 16.1x the evaluations of M=1
 
   THE REPAIR REACHES THE CEILING -- AND THE SELECTOR IS NOT SAFE.
   At M=4 on `steps` it lands on +0.2045, which IS the best-found ceiling
@@ -70,9 +70,9 @@
     steps M=8   selected +0.0564, worse than the single run (+0.1551);
           the test-best restart over the same pool was +0.2345, so
           selection gave up +0.1782 by choosing on held-out data
-    steps M=16  selected -7.5179, worse than the single run (+0.1551);
+    steps M=16  selected -7.5183, worse than the single run (+0.1551);
           the test-best restart over the same pool was +0.2615, so
-          selection gave up +7.7794 by choosing on held-out data
+          selection gave up +7.7797 by choosing on held-out data
     4d    M=2   selected -0.4235, worse than the single run (+0.5817);
           the test-best restart was +0.5935 -- and this is the
           SMOOTH control, so the failure is not a property of `steps`
@@ -101,4 +101,4 @@
   the same rule wins clearly.  It also explains why the repair is UNSTABLE
   there rather than merely imperfect.
 
-  wall time 72.1s
+  wall time 48.8s

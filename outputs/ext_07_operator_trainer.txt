@@ -1,7 +1,7 @@
 ==================================================================
   ext_07 - can the operators train the network by themselves?
   task=4d nodes=40 seeds=3 rounds=3 fd-epochs=12
-  2026-10-03 14:34:17
+  2026-10-06 11:30:43
 ==================================================================
 
   Arm A  OPERATOR  OP-C placement + strength solve + gate (REFINE is off:
@@ -61,4 +61,4 @@
   scarce', not 'the operators beat a well-converged FD search'.  A longer
   FD run should be measured before that stronger claim is made.
 
-  wall time 1.0s
+  wall time 0.7s

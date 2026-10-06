@@ -1,7 +1,7 @@
 ==================================================================
   ext_10 - a second task and a second architecture
   seeds=3 rounds=3 cells=6
-  2026-10-02 22:38:51
+  2026-10-06 11:30:47
 ==================================================================
 
   Every cell runs three arms: OPERATOR, RANDOM geometry (the null
@@ -15,7 +15,12 @@
   against joint search, which is stated rather than glossed.
 
   RESUMABLE: one atomic JSON per (cell, seed) in outputs/ext_ckpt/.
-  Config fingerprint 8eb0ba4c8b628c67
+  Config fingerprint 1x40_2d: 37c737eaf5c32cb7
+  Config fingerprint 1x40_4d: ab7abc7868ac6d9e
+  Config fingerprint 1x40_10d: 565c3f9562f732c3
+  Config fingerprint 1x80_4d: d70bcc23be89c08a
+  Config fingerprint 2x40_4d: 5abd553a7e86caf4
+  Config fingerprint 2x40_10d: d86b51327c6fddda
 
   cells reused from checkpoint: 18   newly run: 0
 
@@ -24,23 +29,23 @@
 ============================================================================================
   cell        task     layers   OPERATOR    RANDOM        FD   op-random     op-fd    evals op/fd
   ------------------------------------------------------------------------------------------
-  1x40_2d       2d       [40]    +0.9825   +0.9226   +0.9056     +0.0599   +0.0769    410/408    
-  1x40_4d       4d       [40]    +0.5817   +0.2627   +0.1580     +0.3190   +0.4237    407/384    
-  1x40_10d     10d       [40]    -0.0455   -0.0908   -0.0797     +0.0452   +0.0342    421/408    
-  1x80_4d       4d       [80]    +0.6278   +0.2401   -0.0229     +0.3877   +0.6508    808/792    
-  2x40_4d       4d   [40, 40]    +0.5877   +0.2987   +0.0173     +0.2890   +0.5704    860/840    
-  2x40_10d     10d   [40, 40]    -0.0692   -0.0284   +0.0011     -0.0408   -0.0702    868/864    
+  1x40_2d       2d       [40]    +0.9825   +0.9226   +0.9056     +0.0599   +0.0769    414/408    
+  1x40_4d       4d       [40]    +0.5817   +0.2627   +0.1589     +0.3190   +0.4228    408/408    
+  1x40_10d     10d       [40]    -0.0455   -0.0908   -0.0797     +0.0452   +0.0342    422/408    
+  1x80_4d       4d       [80]    +0.6278   +0.2401   -0.0229     +0.3877   +0.6508    809/792    
+  2x40_4d       4d   [40, 40]    +0.5875   +0.2987   +0.0173     +0.2888   +0.5703    859/840    
+  2x40_10d     10d   [40, 40]    -0.0692   -0.0284   -0.0021     -0.0408   -0.0671    870/864    
 
 ============================================================================================
   VERDICT: is the operator advantage a property of the METHOD?
 ============================================================================================
 
   1x40_2d    vs random +0.0599 (tol 0.035) OK   vs FD +0.0769 (tol 0.040) OK
-  1x40_4d    vs random +0.3190 (tol 0.066) OK   vs FD +0.4237 (tol 0.184) OK
+  1x40_4d    vs random +0.3190 (tol 0.066) OK   vs FD +0.4228 (tol 0.185) OK
   1x80_4d    vs random +0.3877 (tol 0.113) OK   vs FD +0.6508 (tol 0.113) OK
-  2x40_4d    vs random +0.2890 (tol 0.087) OK   vs FD +0.5704 (tol 0.346) OK
+  2x40_4d    vs random +0.2888 (tol 0.087) OK   vs FD +0.5703 (tol 0.346) OK
   1x40_10d   EXCLUDED -- no arm clears the 0.05 floor (best arm -0.0455), so this cell cannot discriminate
-  2x40_10d   EXCLUDED -- no arm clears the 0.05 floor (best arm +0.0011), so this cell cannot discriminate
+  2x40_10d   EXCLUDED -- no arm clears the 0.05 floor (best arm -0.0021), so this cell cannot discriminate
 
   informative cells: 4 of 6
   operator beats random in 4/4; matches or beats cost-matched FD in 4/4

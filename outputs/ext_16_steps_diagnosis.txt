@@ -1,7 +1,7 @@
 ==================================================================
   ext_16 - is the steps failure the basis or the placement?
   nodes=40 seeds=12 restarts=16
-  2026-10-02 23:50:12
+  2026-10-06 00:40:51
 ==================================================================
 
   The three levels have to be separated by measurement, not by wording:
@@ -23,7 +23,7 @@
   arm                          test R^2
   --------------------------------------
   OPERATOR (the trainer)        -0.0297
-  RANDOM geometry               -0.1087   (own-draw sd 0.3443)
+  RANDOM geometry               -0.1087   (own-draw sd 0.3442)
   BEST-FOUND (restarts)         +0.2043
 
   width statistic (mean over nodes)       value
@@ -77,4 +77,4 @@
   so the 'chasing the jump with narrow nodes' explanation is NOT supported
   by this measurement and should not be repeated as though it were.
 
-  wall time 94.3s
+  wall time 100.4s

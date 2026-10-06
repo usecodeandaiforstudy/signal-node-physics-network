@@ -1,7 +1,7 @@
 ==================================================================
   ext_43 - the closed-form calibration, inside the deep trainer
   epochs=60 seeds=3 particles=20
-  2026-10-05 19:01:32
+  2026-10-06 11:31:29
 ==================================================================
 
   The project's largest single claim is that the strengths should be CALIBRATED in
@@ -104,4 +104,4 @@
   the arm that pays that cost does not even win on accuracy, so the question does not
   need asking; on a task where it DID win, it would.
 
-  wall time 8.0s
+  wall time 8.3s

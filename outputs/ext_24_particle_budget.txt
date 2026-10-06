@@ -1,7 +1,7 @@
 ==================================================================
   ext_24 - does the low-budget advantage survive more particles?
   task=4d seed=0 epochs=40 substrate=diffusion
-  2026-10-04 11:37:15
+  2026-10-06 11:30:56
 ==================================================================
 
   The base's section 11 leaves one tail open: does the hybrid advantage at 3000
@@ -100,4 +100,4 @@
   -> S208 differ only in N), but S52 is not the base's F2, and the two are reported
   side by side in P0 rather than treated as the same thing.
 
-  wall time 0.1s
+  wall time 0.5s

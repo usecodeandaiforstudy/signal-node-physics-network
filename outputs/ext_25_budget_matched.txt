@@ -1,7 +1,7 @@
 ==================================================================
   ext_25 - fix the budget, vary only N
   task=4d seed=0 epochs=40 budgets=[600, 2400] archs=['S52', 'S104', 'S208']
-  2026-10-04 11:59:02
+  2026-10-06 11:30:57
 ==================================================================
 
   WHY: ext_24 could not answer section 11's tail because `effective_budget`
@@ -70,4 +70,4 @@
   three-layer at the same total particle count), so this bounds the claim for
   THIS family and the base's tail still needs its own budget-matched run.
 
-  wall time 0.1s
+  wall time 0.3s

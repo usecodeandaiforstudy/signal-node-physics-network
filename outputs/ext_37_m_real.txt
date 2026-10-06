@@ -1,7 +1,7 @@
 ==================================================================
   ext_37 - half A where m is real: the item names the wrong task
   nodes=40 seeds=3
-  2026-10-05 00:01:31
+  2026-10-06 11:31:08
 ==================================================================
 
   Section 11 item 4 asks for a genuine `m > 1` setting and suggests 'the repository's
@@ -86,4 +86,4 @@
   target with a real `m` is the CORRECT instrument for a question about rank, and
   the item's framing -- that the synthetic target is the weakness -- inverts that.
 
-  wall time 19.9s
+  wall time 10.2s

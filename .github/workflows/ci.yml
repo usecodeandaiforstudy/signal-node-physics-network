@@ -76,12 +76,6 @@ jobs:
   # substrate packages, and simulator/layer_nd.py imports torch lazily inside
   # methods -- so no torch install here, unlike the base job (whose sub_01
   # --assert does build a digital reference model and therefore needs torch).
-  #
-  # The step below is the correctness ANCHOR, not a smoke test: the extension
-  # must reproduce the base version in the degenerate configuration
-  # (k = m, shared geometry, C = I).  If it does not, every later extension
-  # number is measured against the wrong baseline, so this is the cheapest and
-  # most valuable gate the extension has.
   # ---------------------------------------------------------------------------
   extension:
     runs-on: ubuntu-latest
@@ -98,9 +92,83 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install numpy
+        pip install numpy scipy scikit-learn
 
+    # -- The correctness ANCHOR, and it comes FIRST on purpose. --------------
+    # The extension must reproduce the base version in the degenerate
+    # configuration (k = m, shared geometry, C = I).  If it does not, every
+    # later extension number is measured against the wrong baseline, so this is
+    # the cheapest and most valuable gate the extension has: a failure here
+    # means the numbers below are not worth reading at all.
     - name: Extension correctness anchor (degenerate case must match the base)
       run: |
         python extensions/multigraph/ext_01_baseline.py --assert
       timeout-minutes: 10
+
+    # -- THE SUBSET IS MEASURED, NOT CHOSEN. ---------------------------------
+    # FINDINGS.md carries a reproduce command for all 48 extension scripts, and
+    # until now CI ran exactly ONE of them -- so every number in section 12 was
+    # unverified by CI.  These 30 are every script that, measured one at a time,
+    # completes in under about 12 seconds; together they take ~85 s.  Each runs
+    # with --assert, which is what makes a number a claim rather than a
+    # printout: without it a script prints its results and exits 0 regardless.
+    #
+    # THE 18 NOT RUN HERE ARE EXCLUDED FOR COST, NOT FOR DOUBT, and they are
+    # named so nobody has to guess:
+    #   ext_03 181 s   ext_14  46 s   ext_16 101 s   ext_18 131 s
+    #   ext_19  50 s   ext_20 >90 s   ext_21  23 s   ext_22 106 s
+    #   ext_27 >90 s   ext_28 >90 s   ext_32 >90 s   ext_34 >90 s
+    #   ext_35 >90 s   ext_36 203 s   ext_39  97 s   ext_42 393 s
+    #   ext_46  30 s   ext_47  25 s
+    # They stay reproducible from the reproduce block; they are just too slow to
+    # run on every push.  ext_46 and ext_47 are the two benchmarks and are worth
+    # running by hand.
+    - name: Extension scripts (30 of 48, measured under ~12 s each)
+      run: |
+        set -e
+        for s in \
+          ext_01_baseline ext_02_rank_budget ext_04_calibration_samples \
+          ext_05_diffusion_rank ext_06_node_operator ext_07_operator_trainer \
+          ext_08_long_budget ext_09_probe_selection ext_10_generalization \
+          ext_11_twin_error ext_12_closed_loop ext_13_task_family \
+          ext_15_nonmultiplicative ext_17_second_substrate \
+          ext_23_criterion_audit ext_24_particle_budget ext_25_budget_matched \
+          ext_26_base_family ext_29_reservoir ext_30_equal_params \
+          ext_31_substrate_scope ext_33_gate_power ext_37_m_real \
+          ext_38_third_substrate ext_40_drift_rate ext_41_authoritative \
+          ext_43_calibration_in_deep ext_44_regression_defect \
+          ext_45_deep_benchmark ext_48_lookup_table ; do
+          echo "--- $s"
+          python "extensions/multigraph/$s.py" --assert
+        done
+      timeout-minutes: 20
+
+    # -- AND THE CONVENTIONS THE REPOSITORY PUBLISHES, checked mechanically --
+    # CONTRIBUTING.md says every script takes --assert and writes an artifact,
+    # and that a cited artifact is tracked.  Those are cheap to check and were
+    # both violated in practice -- ext_10 raised NameError on EVERY run while its
+    # committed report sat there looking current -- so they are checked here
+    # rather than trusted.
+    - name: Repository conventions (every script asserts and writes)
+      run: |
+        python - <<'PY'
+        import glob, os, re, sys
+        bad = []
+        scripts = sorted(glob.glob('extensions/multigraph/ext_*.py'))
+        for f in scripts:
+            s = open(f, encoding='utf-8').read()
+            if '--assert' not in s:
+                bad.append(f + ': no --assert')
+            if 'Report(' not in s:
+                bad.append(f + ': writes no report')
+        find = open('extensions/multigraph/FINDINGS.md', encoding='utf-8').read()
+        cited = sorted(set(re.findall(r'`(outputs/[^`]+?\.(?:txt|png))`', find)))
+        for c in cited:
+            if not os.path.exists(c):
+                bad.append(c + ': cited by FINDINGS.md but missing')
+        print(str(len(scripts)) + ' extension scripts, ' + str(len(cited)) + ' cited artifacts')
+        for b in bad:
+            print('  ' + b)
+        sys.exit(1 if bad else 0)
+        PY
+      timeout-minutes: 5

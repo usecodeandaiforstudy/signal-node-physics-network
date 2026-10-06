@@ -1,7 +1,7 @@
 ==================================================================
   ext_02 - what does the rank constraint cost?
   arch=F2 m=8 seeds=3 lam=0.001
-  2026-10-02 19:46:26
+  2026-10-06 11:30:30
 ==================================================================
 
   Closed form, not training: the readout is linear in the strengths, so
@@ -15,23 +15,23 @@
   shared graph: arch F2 stage 0, N = 40 particles
   targets      : m = 8, train 192 / val 64 / test 128
   readout params per sample: full 320/192 = 1.67x   rank-4 192/192 = 1.00x   fixed-4 160/192 = 0.83x
-  averaged over 5 data splits and 10 random +-1 codes; sd is ACROSS SPLITS
+  averaged over 3 data splits and 10 random +-1 codes; sd is ACROSS SPLITS
 
 ==============================================================================
   Test R^2 (mean over output channels), task difficulty freq=1.0
 ==============================================================================
-  full-rank readout: TEST R^2 +0.2162 (sd 0.0570, 320 params)
+  full-rank readout: TEST R^2 +0.2202 (sd 0.0089, 320 params)
 
     k   rank: test    (sd)  rank params   saving  fixed: test    (sd)   saving
   ------------------------------------------------------------------------------------
-    1      +0.1984  0.0180           48     85%      +0.0095  0.0078     88%
-    2      +0.2211  0.0578           96     70%      +0.0325  0.0175     75%
-    3      +0.2362  0.0538          144     55%      +0.0978  0.0275     62%
-    4      +0.2187  0.0544          192     40%      +0.1050  0.0311     50%
-    5      +0.2175  0.0566          240     25%      +0.1287  0.0409     38%
-    6      +0.2169  0.0569          288     10%      +0.1540  0.0454     25%
-    7      +0.2166  0.0569          336     -5%      +0.1718  0.0507     12%
-    8      +0.2163  0.0569          384    -20%      +0.2069  0.0558      0%
+    1      +0.1901  0.0057           48     85%      +0.0107  0.0030     88%
+    2      +0.2187  0.0158           96     70%      +0.0342  0.0046     75%
+    3      +0.2424  0.0033          144     55%      +0.1005  0.0041     62%
+    4      +0.2226  0.0026          192     40%      +0.1063  0.0099     50%
+    5      +0.2214  0.0082          240     25%      +0.1299  0.0045     38%
+    6      +0.2209  0.0089          288     10%      +0.1572  0.0055     25%
+    7      +0.2206  0.0088          336     -5%      +0.1762  0.0059     12%
+    8      +0.2203  0.0088          384    -20%      +0.2117  0.0095      0%
 
   Sanity checks, which validate the algebra rather than the design: at
   k = m a rank-m factorisation can represent ANY m x N matrix, and a
@@ -47,18 +47,18 @@
 ==============================================================================
   Test R^2 (mean over output channels), task difficulty freq=0.5
 ==============================================================================
-  full-rank readout: TEST R^2 +0.6696 (sd 0.0162, 320 params)
+  full-rank readout: TEST R^2 +0.6692 (sd 0.0114, 320 params)
 
     k   rank: test    (sd)  rank params   saving  fixed: test    (sd)   saving
   ------------------------------------------------------------------------------------
-    1      +0.3774  0.0153           48     85%      -0.0356  0.0141     88%
-    2      +0.6416  0.0157           96     70%      +0.0679  0.0155     75%
-    3      +0.6677  0.0178          144     55%      +0.2328  0.0129     62%
-    4      +0.6698  0.0159          192     40%      +0.2375  0.0107     50%
-    5      +0.6705  0.0164          240     25%      +0.3958  0.0181     38%
-    6      +0.6702  0.0164          288     10%      +0.4957  0.0146     25%
-    7      +0.6698  0.0163          336     -5%      +0.5484  0.0156     12%
-    8      +0.6696  0.0162          384    -20%      +0.6402  0.0164      0%
+    1      +0.3781  0.0190           48     85%      -0.0269  0.0115     88%
+    2      +0.6476  0.0132           96     70%      +0.0753  0.0119     75%
+    3      +0.6685  0.0117          144     55%      +0.2361  0.0046     62%
+    4      +0.6697  0.0111          192     40%      +0.2421  0.0016     50%
+    5      +0.6700  0.0114          240     25%      +0.4027  0.0076     38%
+    6      +0.6697  0.0115          288     10%      +0.5014  0.0051     25%
+    7      +0.6693  0.0116          336     -5%      +0.5516  0.0059     12%
+    8      +0.6691  0.0114          384    -20%      +0.6402  0.0108      0%
 
   Sanity checks, which validate the algebra rather than the design: at
   k = m a rank-m factorisation can represent ANY m x N matrix, and a
@@ -75,19 +75,17 @@
   VERDICT: is the parameter saving affordable?
 ==============================================================================
 
-  freq=1.0: sanity OK   (k=m rank +0.2163, k=m fixed +0.2069, full +0.2162)
-    resolving power: split sd 0.0569, SEM 0.0254 over 5 splits, vs tolerance 0.020 -> NOT INFORMATIVE
-    (the MEAN is not pinned down to better than the tolerance, so
-     'smallest affordable k' at this difficulty would be an artifact
-     of the spread and is NOT reported as a finding)
-    at the design point k=4 (40% saving): +0.2187 vs +0.2162  -> +0.0024
-    frozen +-1 code at k=4: +0.1050 (sd 0.0311)  -> -0.1112
+  freq=1.0: sanity OK   (k=m rank +0.2203, k=m fixed +0.2117, full +0.2202)
+    resolving power: split sd 0.0088, SEM 0.0051 over 3 splits, vs tolerance 0.020 -> informative
+    smallest affordable k = 2 (70% fewer readout params): test R^2 +0.2187 vs full-rank +0.2202
+    at the design point k=4 (40% saving): +0.2226 vs +0.2202  -> +0.0024
+    frozen +-1 code at k=4: +0.1063 (sd 0.0099)  -> -0.1139
 
-  freq=0.5: sanity OK   (k=m rank +0.6696, k=m fixed +0.6402, full +0.6696)
-    resolving power: split sd 0.0162, SEM 0.0073 over 5 splits, vs tolerance 0.020 -> informative
-    smallest affordable k = 3 (55% fewer readout params): test R^2 +0.6677 vs full-rank +0.6696
-    at the design point k=4 (40% saving): +0.6698 vs +0.6696  -> +0.0003
-    frozen +-1 code at k=4: +0.2375 (sd 0.0107)  -> -0.4321
+  freq=0.5: sanity OK   (k=m rank +0.6691, k=m fixed +0.6402, full +0.6692)
+    resolving power: split sd 0.0114, SEM 0.0066 over 3 splits, vs tolerance 0.020 -> informative
+    smallest affordable k = 3 (55% fewer readout params): test R^2 +0.6685 vs full-rank +0.6692
+    at the design point k=4 (40% saving): +0.6697 vs +0.6692  -> +0.0006
+    frozen +-1 code at k=4: +0.2421 (sd 0.0016)  -> -0.4271
 
   AFFORDABLE for the LEARNED combination.  Both sanity checks pass at
   both difficulties, and a rank-k readout matches the full-rank one well
@@ -99,4 +97,4 @@
   combination matrix anywhere' -- is therefore not viable as specified,
   which is a negative result for the stronger of the two claims.
 
-  wall time 1.0s
+  wall time 0.6s

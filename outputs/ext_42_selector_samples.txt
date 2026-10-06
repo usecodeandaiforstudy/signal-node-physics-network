@@ -1,7 +1,7 @@
 ==================================================================
   ext_42 - item 2: the sample count, which is the lever nobody pulled
   nodes=40 n_fit=205 seeds=3
-  2026-10-05 15:49:59
+  2026-10-06 00:53:03
 ==================================================================
 
   Section 11 item 2's own diagnostic: three guards were measured and none works, and
@@ -20,7 +20,7 @@
     n_sel   shipped rule  oracle (ceiling)  shipped - oracle   measurements
   --------------------------------------------------------------------------
        51        +0.1587           -0.1927           +0.3515          8,200
-      102        +0.2035           +0.0645           +0.1390          8,200
+      102        +0.2033           +0.0645           +0.1388          8,200
       205        +0.2376           +0.1339           +0.1037          8,200
       410        +0.3069           +0.3913           -0.0844          8,200
       820        +0.2370           +0.3953           -0.1583          8,200
@@ -35,7 +35,7 @@
 
     n_sel   shipped rule  oracle (ceiling)  shipped - oracle   measurements
   --------------------------------------------------------------------------
-       51        +0.5441           -1.2580           +1.8021          8,200
+       51        +0.5441           -1.2580           +1.8022          8,200
       102        +0.5433           +0.1688           +0.3745          8,200
       205        +0.5943           +0.3519           +0.2424          8,200
       410        +0.5729           +0.6346           -0.0617          8,200
@@ -55,9 +55,9 @@
 
   task       n_sel   K * N meas   buys nodes   shipped gain   node-arm gain     winner
   ------------------------------------------------------------------------------------
-  steps        102        2,040           10        +0.0448         -4.7381  selection
+  steps        102        2,040           10        +0.0445         -4.7381  selection
   steps        205        6,160           30        +0.0789         +0.0735  selection
-  steps        410       14,360           70        +0.1482         +0.0894  selection
+  steps        410       14,360           70        +0.1482         +0.0775  selection
   steps        820       30,760          150        +0.0783         +0.1616      NODES
   4d           102        2,040           10        -0.0008         +0.0587      NODES
   4d           205        6,160           30        +0.0502         +0.0694      NODES
@@ -71,7 +71,7 @@
   task      oracle rise 51 -> 820  shipped gap to oracle   closes by
   ------------------------------------------------------------------
   steps                   +0.5881                +0.3515     +0.5098
-  4d                      +1.9600                +1.8021     +1.9407
+  4d                      +1.9600                +1.8022     +1.9408
 
   **THE CEILING RISES WITH THE SELECTION SET ON BOTH TASKS**, so the samples are
   doing something real.  **THE PURCHASE, THOUGH, IS TASK-DEPENDENT AND NOT A
@@ -115,4 +115,4 @@
   do, and whether buying them beats buying nodes, which they do not.  Repository
   tasks, 40 nodes, 3 seeds, toy.
 
-  wall time 412.7s
+  wall time 391.6s

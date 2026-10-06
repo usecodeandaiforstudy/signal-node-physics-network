@@ -1,7 +1,7 @@
 ==================================================================
   ext_41 - item 7: the blocker is not the hook
   arch=F2 epochs=6 seeds=3
-  2026-10-05 11:16:04
+  2026-10-06 11:31:23
 ==================================================================
 
   Section 11 item 7 says `ext_03` mirrors the base's loop 'because the base's
@@ -109,4 +109,4 @@
   protocol drift could hide.**  That remains untested, and it is the honest limit of
   this section.
 
-  wall time 4.5s
+  wall time 4.4s

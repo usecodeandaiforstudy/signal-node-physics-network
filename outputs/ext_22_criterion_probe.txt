@@ -1,7 +1,7 @@
 ==================================================================
   ext_22 - is the upstream defect the candidates or the criterion?
   nodes=40 seeds=3 draws=64
-  2026-10-03 14:46:32
+  2026-10-06 00:45:58
 ==================================================================
 
   ext_19 measured that on `steps` the rule's proposals win only 42.5% of grow
@@ -89,4 +89,4 @@
   has been LOCATED rather than repaired -- and located somewhere the
   previous three experiments did not point at.
 
-  wall time 78.1s
+  wall time 105.5s

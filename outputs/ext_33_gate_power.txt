@@ -1,7 +1,7 @@
 ==================================================================
   ext_33 - does the do-no-harm gate have power at its boundary?
   task=4d arch=G noises=[0.1, 0.4, 0.8, 1.5, 3.0] holdouts=[2, 4, 8, 16] seeds=3 epochs=40 substrate=diffusion
-  2026-10-04 20:03:49
+  2026-10-06 11:31:07
 ==================================================================
 
   Section 6.11 tried three counterexamples and all failed, and it says why the
@@ -104,4 +104,4 @@
   A single boundary is not the boundary: a different task could sit elsewhere and
   behave differently, and nothing here bounds that.
 
-  wall time 0.9s
+  wall time 0.2s

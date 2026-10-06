@@ -1,7 +1,7 @@
 ==================================================================
   ext_09 - which points to fit on, and where free choice really exists
   task=4d seeds=3 grid=4:256:0.0,4:256:0.01,4:128:0.01,4:64:0.01,2:128:0.01
-  2026-10-03 14:23:19
+  2026-10-06 11:30:45
 ==================================================================
 
   THE CONSTRAINT, which changed what this step could be: the residual is
@@ -74,14 +74,14 @@
 
        rule   mean R^2       sd      worst  refine tried   refused    kept
   ------------------------------------------------------------------------
-   leverage    +0.5817   0.0569    +0.5024            53        47       6
+   leverage    +0.5817   0.0569    +0.5024            40        30       9
         all    +0.5817   0.0569    +0.5024            40        39       1
 
   The refinement counters are not decoration: the first version of this
   experiment reported IDENTICAL scores for two different selection rules,
   which is what a step that never fires looks like from the outside.
 
-  max |centres(leverage) - centres(all)| per seed: 2.568e-07, 0.000e+00, 0.000e+00
+  max |centres(leverage) - centres(all)| per seed: 1.210e-07, 0.000e+00, 0.000e+00
   float32 floor on unit-scale coordinates: 4.8e-07 (4 x eps); anything at or below it is rounding
   -> the refinement does NOT move the model: its accepted changes are
      rounding, and on most seeds there is no change at all.
@@ -112,7 +112,7 @@
      MEASURABLE quantity on this hardware rather than an unchecked
      tolerance.  That is what the designed probe set is for.
 
-  P3 end-to-end: leverage +0.5817 vs all +0.5817  (gap -0.0000, tol 0.0657)
+  P3 end-to-end: leverage +0.5817 vs all +0.5817  (gap +0.0000, tol 0.0657)
      The two rules produce the SAME model to within float32 rounding, and
      the decisive fact is the mechanism: OP-G is a FIXED POINT for a node
      that already explains its residual, which is where GROW + SOLVE put
@@ -121,7 +121,7 @@
      weaker claim than 'a trainer using all the operators', and it is the
      one the evidence supports.
 
-  wall time 1.1s
+  wall time 1.0s
 
 ==============================================================================
   ASSERT COVERAGE

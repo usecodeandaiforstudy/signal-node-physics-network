@@ -1,7 +1,7 @@
 ==================================================================
   ext_23 - what the win criterion's defect costs
   recomputed from the base's own published tables
-  2026-10-04 11:19:03
+  2026-10-06 11:30:56
 ==================================================================
 
   `abl_06` calls a cell won when the hybrid beats max(geometry, readout, full).

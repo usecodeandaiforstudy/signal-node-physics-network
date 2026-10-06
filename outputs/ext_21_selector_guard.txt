@@ -1,7 +1,7 @@
 ==================================================================
   ext_21 - a guard for the restart selector
   nodes=40 seeds=3 M=16
-  2026-10-03 14:35:32
+  2026-10-06 00:45:35
 ==================================================================
 
   ext_19 showed `restarts=M` reaches the ceiling AND selected -7.5180 on
@@ -37,8 +37,8 @@
   support.  If NO statistic separates, the mechanism is wrong and the guard has
   to come from somewhere else -- which is what the numbers above decide.
 
-  steps: worst restart test -22.4165, prediction spread 1.373x the target's, weight norm 161.9, cond 7.52e+06
-  4d: worst restart test -2.4421, prediction spread 0.843x the target's, weight norm 37.2, cond 9.54e+06
+  steps: worst restart test -22.4174, prediction spread 1.373x the target's, weight norm 161.9, cond 1.72e+07
+  4d: worst restart test -2.4421, prediction spread 0.843x the target's, weight norm 37.2, cond 9.91e+06
 
 ============================================================================================
   P1b if no statistic separates: is this the WINNER'S CURSE instead?
@@ -52,7 +52,7 @@
 
   task      val of selected   mean val     curse  test of selected   mean test
   ----------------------------------------------------------------------------
-  steps             +0.3909    +0.2253   +0.1656           -7.5181     -0.3404
+  steps             +0.3909    +0.2253   +0.1657           -7.5184     -0.3404
   4d                +0.6166    +0.5003   +0.1163           +0.5910     +0.4859
 
   'curse' is the selected restart's held-out score minus the pool's MEAN
@@ -66,9 +66,9 @@
 
   task       guard  selected test R^2   worst seed   admitted  rejected good
   ----------------------------------------------------------------------------
-  steps       none            -7.5181     -22.4165       16.0              0
-  steps      loose            -7.5181     -22.4165       16.0              0
-  steps      tight            -7.5181     -22.4165       16.0              0
+  steps       none            -7.5184     -22.4174       16.0              0
+  steps      loose            -7.5184     -22.4174       16.0              0
+  steps      tight            -7.5184     -22.4174       16.0              0
 
   4d          none            +0.5910      +0.5004       16.0              0
   4d         loose            +0.5910      +0.5004       16.0              0
@@ -78,7 +78,7 @@
   VERDICT: can the selector be made safe without losing the ceiling?
 ============================================================================================
 
-  steps    unguarded mean -7.5181 worst -22.4165
+  steps    unguarded mean -7.5184 worst -22.4174
            no guard tested lifts the worst case without losing the mean
   4d       unguarded mean +0.5910 worst +0.5004
            no guard tested lifts the worst case without losing the mean
@@ -116,4 +116,4 @@
   a sharper place to look than where this item started, and it is the honest
   outcome of a guard that was measured rather than chosen.
 
-  wall time 28.9s
+  wall time 21.8s

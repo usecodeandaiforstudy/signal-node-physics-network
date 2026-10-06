@@ -1,7 +1,7 @@
 ==================================================================
   ext_30 - the equal-parameter comparison, constructed
   task=4d D=4 target total=312 fixed budget=600 seeds=3 epochs=40
-  2026-10-04 16:05:39
+  2026-10-06 11:31:05
 ==================================================================
 
   The base's section 11 item 2 says an equal-parameter-count comparison is NOT
@@ -95,4 +95,4 @@
   A larger target total or a second task could move the spreads; nothing here
   bounds them.
 
-  wall time 0.1s
+  wall time 0.5s

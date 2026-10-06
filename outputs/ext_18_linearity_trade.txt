@@ -1,7 +1,7 @@
 ==================================================================
   ext_18 - the linearity trade, measured
   nodes=40 seeds=3 hidden=(80, 320, 1280) extra_nodes=(80, 160, 320)
-  2026-10-03 14:00:06
+  2026-10-06 00:42:35
 ==================================================================
 
   THE MEMO'S OWN FRAMING: the strength operator 'exists only because the readout
@@ -39,8 +39,8 @@
 ============================================================================================
   task           L40       N80      N320     N1280       L80      L160      L320
   --------------------------------------------------------------------------------------
-  4d         +0.5761   +0.6056   +0.5314   +0.5645   +0.6405   +0.6596   +0.7013
-  steps      +0.1572   +0.2232   +0.1636   +0.1167   +0.2152   +0.2822   +0.3171
+  4d         +0.5761   +0.6056   +0.5314   +0.5645   +0.6405   +0.6596   +0.7053
+  steps      +0.1572   +0.2232   +0.1636   +0.1167   +0.2293   +0.2947   +0.3318
   hetero     +0.2215   +0.1941   +0.1950   +0.2153   +0.2902   +0.3146   +0.3211
 
 ============================================================================================
@@ -49,8 +49,8 @@
 
   task      nonlin gain (best H)   per extra param  nodes gain (best)  per extra node
   ----------------------------------------------------------------------------------
-  4d                     +0.0295          9.10e-06            +0.1252        4.47e-04
-  steps                  +0.0660          2.04e-05            +0.1599        5.71e-04
+  4d                     +0.0295          9.10e-06            +0.1292        4.61e-04
+  steps                  +0.0660          2.04e-05            +0.1746        6.24e-04
   hetero                 -0.0062         -1.18e-07            +0.0996        3.56e-04
 
   'nonlin gain' is the best nonlinear arm minus the linear arm ON THE SAME 40
@@ -87,8 +87,8 @@
   VERDICT: is the linearity worth its cost?
 ============================================================================================
 
-  4d       nonlinearity +0.0295 (H=80)  nodes +0.1252 (N=320)  -> NODES pay at least as much
-  steps    nonlinearity +0.0660 (H=80)  nodes +0.1599 (N=320)  -> NODES pay at least as much
+  4d       nonlinearity +0.0295 (H=80)  nodes +0.1292 (N=320)  -> NODES pay at least as much
+  steps    nonlinearity +0.0660 (H=80)  nodes +0.1746 (N=320)  -> NODES pay at least as much
   hetero   nonlinearity -0.0062 (H=1280)  nodes +0.0996 (N=320)  -> NODES pay at least as much
 
   nonlinearity gains more than 0.02 on 2/3 tasks
@@ -115,4 +115,4 @@
   This is the answer to a question the design memo said must not be
   'discovered later', and it is the first time it has been measured at all.
 
-  wall time 131.1s
+  wall time 129.8s

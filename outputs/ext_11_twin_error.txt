@@ -1,7 +1,7 @@
 ==================================================================
   ext_11 - what does the device deliver when the twin is wrong?
   task=4d nodes=40 seeds=3
-  2026-10-03 14:23:21
+  2026-10-06 11:30:48
 ==================================================================
 
   The trainer plans ENTIRELY inside the twin: placement, features and the
@@ -41,7 +41,7 @@
 
    device channel  twin report  device planned  device recal  self-deception
   --------------------------------------------------------------------------
-  k=0.5 (twin is right)      +0.5817         +0.5817       +0.5817         +0.0000
+  k=0.5 (twin is right)      +0.5817         +0.5817       +0.5817         -0.0000
   k=0.3 (twin is wrong)      +0.5817         +0.5662       +0.6484         +0.0155
 
 ==================================================================================
@@ -123,4 +123,4 @@
   +10%).  A placement tolerance should therefore be specified on the narrow
   side rather than symetrically.
 
-  wall time 0.7s
+  wall time 0.6s

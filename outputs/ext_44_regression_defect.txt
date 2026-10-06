@@ -1,7 +1,7 @@
 ==================================================================
   ext_44 - the deep regression failure: defect or structural?
   epochs=60 seeds=3 task=2d
-  2026-10-05 19:02:29
+  2026-10-06 11:31:38
 ==================================================================
 
   `ext_43` found the deep regression path at end-to-end `R^2 ~ 0` while its per-layer
@@ -76,4 +76,4 @@
   and not FIXED -- fixing it means changing `HiMALND.predict`, which is a base method
   and a decision rather than a cleanup.
 
-  wall time 2.8s
+  wall time 2.9s

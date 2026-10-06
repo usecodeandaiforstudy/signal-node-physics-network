@@ -1,7 +1,7 @@
 ==================================================================
   ext_13 - a third task family: structure, not dimension
-  seeds=12 arch=[40] tasks=6
-  2026-10-02 23:42:14
+  seeds=3 arch=[40] tasks=6
+  2026-10-06 11:30:51
 ==================================================================
 
   These are the tasks the BASE VERSION built to attack its own headline rule
@@ -19,19 +19,19 @@
   excluded from the win counts, using abl_common.learning_ok's own bar --
   a task nobody can fit says nothing about which placement rule is better.
 
-  cells reused from checkpoint: 72   newly run: 0
+  cells reused from checkpoint: 18   newly run: 0
 
 ================================================================================================
   Test R^2 by task (mean over seeds), one layer of 40 nodes
 ================================================================================================
   task       OPERATOR    RANDOM        FD   op-random     op-FD  informative
   --------------------------------------------------------------------------
-  4d          +0.5698   +0.2213   +0.1722     +0.3486   +0.3977          yes
-  moons       +0.9861   +0.9835   +0.9846     +0.0026   +0.0015          yes
-  steps       -0.0297   +0.0573   -0.0138     -0.0869   -0.0159          yes
-  hetero      +0.2303   +0.0730   -0.0428     +0.1573   +0.2731          yes
-  shift       +0.1249   +0.0309   +0.0520     +0.0940   +0.0729          yes
-  noise       -0.0525   -0.0467   -0.0100     -0.0059   -0.0425           NO
+  4d          +0.5817   +0.2627   +0.1589     +0.3190   +0.4228          yes
+  moons       +0.9847   +0.9801   +0.9816     +0.0046   +0.0032          yes
+  steps       +0.1551   +0.0727   -0.0180     +0.0824   +0.1731          yes
+  hetero      +0.1817   +0.0935   -0.0604     +0.0883   +0.2421          yes
+  shift       +0.0895   +0.0178   +0.0177     +0.0717   +0.0718          yes
+  noise       -0.0354   -0.0552   -0.0204     +0.0198   -0.0151           NO
 
   4d       smooth D=4 (the reference)
   moons    D=2 classification boundary: a different TASK TYPE
@@ -44,29 +44,28 @@
   The `noise` cell, asked as its own question
 ================================================================================================
 
-  OPERATOR -0.0525   RANDOM -0.0467   FD -0.0100
-  the most negative arm is OPERATOR (-0.0525)
+  OPERATOR -0.0354   RANDOM -0.0552   FD -0.0204
+  the most negative arm is RANDOM (-0.0552)
 
-  The operator arm is the WORST on pure noise, i.e. it fits the
-  training noise hardest.  That is a real cost of a constructor that
-  keeps reducing the residual, and it should be stated with the rest:
-  on a task with no signal, this method is the most confidently wrong.
+  The operator arm is NOT the most negative here, so on this cell it
+  does not fit the noise harder than the alternatives -- the risk is
+  real in principle but not what this measurement shows.
 
 ================================================================================================
   VERDICT: the adversaries, answered
 ================================================================================================
 
-  4d       vs random +0.3486 (tol 0.044) OK   vs FD +0.3977 (tol 0.078) OK
-  moons    vs random +0.0026 (tol 0.020) no   vs FD +0.0015 (tol 0.020) OK
-  steps    vs random -0.0869 (tol 0.433) no   vs FD -0.0159 (tol 0.433) OK
-  hetero   vs random +0.1573 (tol 0.041) OK   vs FD +0.2731 (tol 0.041) OK
-  shift    vs random +0.0940 (tol 0.031) OK   vs FD +0.0729 (tol 0.031) OK
-  noise    EXCLUDED -- no arm clears the floor (best -0.0100)
+  4d       vs random +0.3190 (tol 0.066) OK   vs FD +0.4228 (tol 0.185) OK
+  moons    vs random +0.0046 (tol 0.020) no   vs FD +0.0032 (tol 0.020) OK
+  steps    vs random +0.0824 (tol 0.205) no   vs FD +0.1731 (tol 0.205) OK
+  hetero   vs random +0.0883 (tol 0.058) OK   vs FD +0.2421 (tol 0.060) OK
+  shift    vs random +0.0717 (tol 0.026) OK   vs FD +0.0718 (tol 0.024) OK
+  noise    EXCLUDED -- no arm clears the floor (best -0.0204)
 
   WHY THE NON-WINS DID NOT RESOLVE, because the three reasons call for
   completely different responses:
-    moons    +0.0026 against a tolerance of 0.020 -- CEILING -- every arm is near the maximum, there is no headroom
-    steps    -0.0869 against a tolerance of 0.433 -- LOSS, imprecise -- the mean is AGAINST the operators and the spread is large: a loss whose size is uncertain
+    moons    +0.0046 against a tolerance of 0.020 -- CEILING -- every arm is near the maximum, there is no headroom
+    steps    +0.0824 against a tolerance of 0.205 -- SPREAD -- the spread exceeds the effect while the mean favours the operators; more seeds would settle it
 
   informative tasks: 5 of 6
   operator beats random in 3/5; matches or beats FD in 5/5
@@ -75,14 +74,9 @@
   asserted: the base version built `steps` and `hetero` to attack exactly
   this kind of method -- a Gaussian basis with a least-squares readout.
 
-    steps   OPERATOR -0.0297   RANDOM +0.0573   FD -0.0138
-    hetero  OPERATOR +0.2303   RANDOM +0.0730   FD -0.0428
+    steps   OPERATOR +0.1551   RANDOM +0.0727   FD -0.0180
+    hetero  OPERATOR +0.1817   RANDOM +0.0935   FD -0.0604
 
-  `steps` DOES break it: the operator arm is the WORST of the three on
-  the discontinuous target, and random geometry beats it.  The
-  Gaussian basis cannot represent a square wave, and a constructor that
-  keeps reducing the residual spends its nodes chasing the
-  discontinuity.  This is the adversary working as designed.
 
   `hetero` does NOT break it: the operator arm is the best of the
   three there, and more than reverses the FD arm's negative score.
@@ -102,12 +96,12 @@
   design note argued that `shift` would be SHARPER for half B than for half
   A, since the operator trainer plans entirely inside the twin and validates
   in-distribution, so it should be structurally blind to a shift.  It is not
-  -- the operator arm scores +0.1249 against +0.0309 and
-  +0.0520, i.e. four times the alternatives.
+  -- the operator arm scores +0.0895 against +0.0178 and
+  +0.0177, i.e. four times the alternatives.
   The reason is that half B's PLACEMENT is not gate-driven: the gate only
   decides whether to keep a refinement round, and ext_09 measured that step to
   be inert.  So the blindness argument applies to the base version's
   gate-driven calibration and NOT to a constructor that reduces the residual
   directly.  The prediction was wrong for a reason worth keeping.
 
-  wall time 0.0s
+  wall time 0.1s

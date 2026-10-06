@@ -1,7 +1,7 @@
 ==================================================================
   ext_01 - the extension must degrade to the base version
   arch=G seeds=2 assert=on
-  2026-10-02 19:25:19
+  2026-10-06 11:30:29
 ==================================================================
 
   DESIGN constraint C4.  The base version's numbers ARE the baseline, so
