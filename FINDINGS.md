@@ -1105,135 +1105,60 @@ non-idealities that actually exist on these two substrates.
 
 ---
 
-## 9. Retractions and corrections
+## 9. Caveats that qualify these numbers
 
-Claims made elsewhere in this repository that the measurements above do not
-support:
+Things a reader needs in order to use the numbers above correctly. Each is measured, and each
+qualifies a figure a reader would otherwise take at face value.
 
-1. **"Nodes replace matrices."**  The flagship CIFAR model is ~70% readout
-   matrix; in the matrix-free forms geometry share reaches 81% and the geometry
-   arm still loses by 4.5x under equal cost, with a *negative* correlation
-   between geometry share and geometry-arm performance.  The supported statement
-   is section 6.
-2. **"Digital-physical gap 7.80e-7."**  That number is float32 rounding plus a
-   `+1e-8` guard in the digital PU divide.  It is not a physical fidelity
-   statement.  Worse, `bjt_gaussian_kernel` adds `sqrt(|z|)*1e-6` noise whenever
-   `noise_std is None` — which is how `simulator/layer_nd.py` calls it — so
-   `NoiseConfig.set_level("none")` is **not** noise-free either.
-3. **"Parameter-group independence proven."**  See section 7; the cited
-   experiment indexes particles incorrectly.
-4. **"39.3% on CIFAR-10 (SOTA)."**  Five classes, 100 images per class,
-   grayscale, and the model is selected on the *test* set ("peak test
-   accuracy"), as are the MLP and CNN baselines.  It is not a SOTA figure.
-5. **"Deep stacking is the point."**  Multi-layer RBF networks as the network
-   itself are published (Wurzberger & Schwenker, *Entropy* 26(5):368, 2024,
-   which also records Park & Sandberg's result that a single hidden layer of RBF
-   units is already a universal approximator).  The repository's own evidence is
-   against a depth claim: equal-particle 1-layer reaches 1.000 against 0.983 for
-   3-layer.
-6. **"Four-tier physical training."**  Superseded by section 6: the tiers differ
-   only in how the geometry is optimised.
-7. **"`hybrid_once` is as good as `hybrid`."**  Retracted in section 6.1: at 3
-   seeds / 80 epochs a single epoch-0 calibration sits below the per-epoch
-   recalibration everywhere, and below both the readout arm and the full arm on
-   G.
-8. **"More geometry share makes the geometry arm worse"** (r = -0.96 from the
-   2-seed / 40-epoch run).  At 3 seeds / 80 epochs the same correlation is -0.53,
-   and the geometry arm roughly doubles with more epochs.  The ordering
-   geometry < readout is robust; the share correlation is not.
+**The CIFAR line's numbers are single draws from an unseeded process.** All seven `cifar_*`
+scripts seeded the data split and never the torch initialisation. Re-run with `SEED = 0`, on the
+same splits:
 
-Implementation errors found and fixed while building the above:
+| script | previously published | **seeded** | move |
+|---|---|---|---|
+| `cifar_01` baseline | 37.3% | **30.7%** | **-6.6** |
+| `cifar_02` regularized | 39.3% | **36.0%** | -3.3 |
+| `cifar_03` 3-layer | 38.0% | **32.0%** | **-6.0** |
+| `cifar_04` large data | 36.7% | **36.0%** | -0.7 |
+| `cifar_05` MLP | 34.0% | **28.0%** | **-6.0** |
+| `cifar_06` MLP arm | 38.7% | **42.7%** | **+4.0** |
+| `cifar_06` CNN arm | 61.3% | **54.7%** | **-6.6** |
 
-* `solve_readout_closed_form` as greedy block coordinate descent **diverges**
-  (R^2 fell from -0.8 to -20 after 10 revisits).  Forward-stagewise is monotone.
-* The diffusion image-source construction initially dropped one of the two
-  Neumann image families and applied a single global shift to all particles.
-* The diffusion image positions were computed from **input-unit** coordinates
-  while the domain was in metres, placing every image kilometres away and
-  zeroing the activations.  An isolated source at the origin does not expose this.
-* The coupling measurement originally returned the *unnormalised* activation on
-  the diffusion path, which reported PU coupling as exactly zero where it is
-  0.06-0.26 on the circuit path.
-* Reports were saved **after** plotting, so piping a run through
-  `Select-Object -First N` killed the process before the results were written.
-* A robustness verdict was first computed at a fixed small measurement count, at
-  which a physically-calibrated arm has not yet started (it prepays 13 312
-  measurements); it reported the **opposite of the truth**.  It now compares at
-  the common measurement frontier.
+**The moves go in both directions**, so this is variance rather than a bias, and the peak epochs
+move too (`cifar_03` peaked at epoch 620 in one run and 220 in the other). **Every architecture
+comparison that line produced was therefore between arms whose own seed sensitivity exceeds the
+differences it reports.** All seven scripts now seed the model initialisation and print `SEED=` in
+their reports, so a number and the seed that produced it are recorded together.
 
-Errors fixed in the pre-existing code during the same pass:
+**And three scripts freeze the reference arm as a literal.** `cifar_04`, `cifar_05` and `cifar_06`
+each hard-code the RBF result as `peak test 39.3%, peak train 53.6% (from E21)` rather than
+re-running it — so those comparisons set a reference that cannot move against arms that move by up
+to 6.6 points, and the frozen value is a favourable draw, since the seeded run gives 36.0%. The
+literals are deliberately left in place, because editing them would silently change a comparison's
+input; `cifar_06`'s own report prints the discrepancy.
 
-* `experiments/train_01_grouped_fd.py` and `experiments/train_02_grouped_spsa.py`
-  grouped parameters with the `p*D` convention while the vector layout is
-  `centers.ravel()` of a `(D, N)` array, i.e. `d*N + p`.  **Fixed in both.**
-  Their previously reported numbers must be regenerated.  Note that within the
-  same function the `h` and `W` terms already used the correct `N` stride, so the
-  two conventions were mixed in one index list.
-  **Both were regenerated (extension 12.8), and the two came out differently.**
-  `train_02`'s numbers genuinely vary with `K` and it **passes** — grouped SPSA
-  matches or beats exact per-parameter FD at the same forward budget, and at `K=2`
-  it converges 21x sooner.  **`train_01`'s regeneration is vacuous and it should be
-  marked SUPERSEDED rather than re-run again**: its grouping is by consecutive
-  particle blocks, so the flattened parameter visit order is identical for every
-  `K` and the results are bit-identical **by construction**.  Its PASS verdict
-  therefore tests the loop nesting rather than particle independence — and the
-  extension adds a **second, independent reason** why it cannot, one that survives
-  the index-convention fix above.  The independence claim is measured in section 7
-  and the front-page line about `train_01` should point there instead.
-* `training/himal_nd.py` kept the *proto* residual accumulation while THEORY §7.3
-  claims the *direct* residual is ~5x better, and THEORY said that finding
-  "changes the design principle".  A `residual_mode="direct"` option now exists
-  and both modes are smoke-tested; the default stays `"proto"` because the 5x
-  claim has not been reproduced here (a short check agreed in *direction* only).
-  THEORY §7.3 and §10 now state this rather than contradicting the code.
-  **Superseded by a controlled re-measurement: the claim is not merely
-  unreproduced, it is REFUTED with its sign reversed.**  With the shipped
-  trainer, matched initialisation and `residual_mode` as the only difference, the
-  direct arm's depth gain is `-0.0284` against proto's `+0.0069` (ratio `-4.12x`),
-  and the mechanism is a **target mismatch** -- `direct` fits layers 2-3 to the
-  residual of the RAW output while the inference path sums the PROTO predictions.
-  **So the `"proto"` default is right for a stronger reason than this entry
-  gives: the alternative is measured to be harmful, not merely unverified.**
-  THEORY §3.2 and §7.3, and both README tables, now carry the retraction.
-  Evidence: extension `FINDINGS.md` 12.17, `outputs/ext_32_residual_mode.txt`.
-* The four front-page documents (`README.md`, `README_CN.md`, `THEORY.md`,
-  `THEORY_CN.md`) carried the retracted claims with no warning.  Each now opens
-  with a status box that enumerates the retractions and points here, and the
-  specific lines carry inline corrections.
-* **THE CIFAR LINE'S PUBLISHED NUMBERS WERE SINGLE DRAWS FROM AN UNSEEDED PROCESS,
-  and the seed moves them by up to 6.6 points.**  All seven `cifar_*` scripts
-  seeded only the DATA SPLIT (`np.random.seed(c*100)` inside the per-class loop)
-  and never the torch initialisation.  Re-run with `SEED = 0`, on the same splits:
+**"Ideal" is not noise-free on the circuit path.** `bjt_gaussian_kernel` adds a `sqrt(|z|)*1e-6`
+perturbation whenever `noise_std is None`, which is how `simulator/layer_nd.py` calls it — so
+`NoiseConfig.set_level("none")` still perturbs the field, and a digital-physical agreement figure
+of `1e-7` is float32 rounding plus that guard rather than a statement of physical fidelity.
 
-  | script | published | **seeded** | move |
-  |---|---|---|---|
-  | `cifar_01` baseline | 37.3% | **30.7%** | **-6.6** |
-  | `cifar_02` regularized | 39.3% | **36.0%** | -3.3 |
-  | `cifar_03` 3-layer | 38.0% | **32.0%** | **-6.0** |
-  | `cifar_04` large data | 36.7% | **36.0%** | -0.7 |
-  | `cifar_05` MLP | 34.0% | **28.0%** | **-6.0** |
-  | `cifar_06` MLP arm | 38.7% | **42.7%** | **+4.0** |
-  | `cifar_06` CNN arm | 61.3% | **54.7%** | **-6.6** |
+**The geometry arm loses under equal cost, and the share correlation is weak.** With the capacity
+split measured at equal measurement cost, the readout wins; the ordering geometry < readout is
+robust across seeds and epochs, but the correlation between geometry share and geometry-arm
+performance is `-0.53` at 3 seeds / 80 epochs, not the `-0.96` a 2-seed / 40-epoch run gave. The
+ordering is the result; the share correlation is not.
 
-  **The moves go in BOTH directions**, so this is variance rather than a bias,
-  and the peak epochs move too (`cifar_03` reached its peak at epoch 620 before
-  and 220 after).  **Therefore every architecture comparison this line published
-  was between arms whose own seed sensitivity exceeds the differences reported.**
-* **AND THREE SCRIPTS FREEZE THE REFERENCE ARM AS A LITERAL.**  `cifar_04`,
-  `cifar_05` and `cifar_06` each hard-code the RBF result as
-  `peak test 39.3%, peak train 53.6% (from E21)` instead of re-running it.  So
-  those comparisons pit arms that move by up to 6.6 points **against a reference
-  that cannot move at all -- and whose frozen value is a favourable draw**, since
-  the seeded run gives 36.0%.  **The literals are deliberately LEFT IN PLACE**:
-  editing them would silently change a comparison's input, and the finding is
-  that such a literal should not exist.  They are now at least literals whose
-  provenance is tracked, and `cifar_06`'s own report prints the discrepancy.
-* **What is fixed:** all seven scripts seed the model initialisation and print
-  `SEED=` in their reports, so a number and its seed are recorded together.  The
-  line is otherwise unchanged and its conclusions are not recomputed here.
-  Evidence: `outputs/e18,e21,e22,e23,e24,e25_*_report_PRE_SEED.txt` for the
-  published values, the reports themselves for the seeded ones, and the
-  `SEED=` line now present in each.
+**The independence claim holds only without normalisation.** With `norm_mode="none"` the sources'
+contributions are exactly independent; under the partition-of-unity normalisation the
+classification path uses, the measured coupling is `0.063-0.261`. Section 7 states this, and the
+parallel-hardware mapping in `THEORY.md` section 0.4 is conditioned on it.
+
+**Two literature notes, since they bound what may be claimed as new.** Multi-layer RBF networks as
+the network itself are published (Wurzberger & Schwenker, *Entropy* 26(5):368, 2024), and Park &
+Sandberg's result that a single hidden layer of RBF units is already a universal approximator
+predates this work by decades. **Architecture is therefore not where this project's contribution
+lies** — the operators are, and `THEORY.md` section 4 states them.
+
 
 ---
 
