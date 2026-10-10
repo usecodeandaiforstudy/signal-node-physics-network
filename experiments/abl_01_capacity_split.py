@@ -567,7 +567,7 @@ def main(argv=None):
     # (e.g. `python ... | Select-Object -First 20`) the process is killed on its
     # next print, and results must not be lost to a cosmetic failure.
     path = rep.save()
-    print(f"\nReport saved: {path}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
     # ---- plot ----
     plt = try_plots()

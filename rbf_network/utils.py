@@ -13,7 +13,10 @@ from typing import Optional, List, Tuple, Dict
 from matplotlib.colors import ListedColormap
 from scipy.spatial.distance import cdist
 
-plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
+# Same correction as network/utils_nd.py: `font.sans-serif` rather than `font.family`,
+# and families that exist on the platform rather than two Linux/macOS ones.  See the
+# comment there for what the wrong form does to every figure.
+plt.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 

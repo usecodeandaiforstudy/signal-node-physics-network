@@ -473,9 +473,9 @@ fig.suptitle("E14: Grouped SPSA vs Per-Parameter FD — Speed/Accuracy Tradeoff"
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
-L(f"\n  Report saved: {REPORT_FILE}")
+L(f"\n  Report saved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 L(f"{'='*60}")
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")

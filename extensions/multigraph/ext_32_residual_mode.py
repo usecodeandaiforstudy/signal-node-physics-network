@@ -340,7 +340,7 @@ def main():
     rep(f"\n  wall time {time.time()-t0:.1f}s")
 
     path = rep.save()
-    print(f"\nReport saved: {path}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
     plt = try_plots()
     if plt is not None:
@@ -378,7 +378,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_32_residual_mode_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {p}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
     ok = (all(len(runs[m]) == args.seeds for m in MODES)
           and all(np.isfinite(r["curve"]).all() for m in MODES for r in runs[m])

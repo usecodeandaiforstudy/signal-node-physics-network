@@ -387,7 +387,7 @@ plt.suptitle("E18: Digital Train + Physical Deploy — 3D Deep RBF",fontsize=14,
 plt.tight_layout()
 plt.savefig(PLOT_FILE,dpi=150)
 plt.close()
-L(f"\n  Plot: {PLOT_FILE}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 L(f"  Report: {REPORT_FILE}")
 L("="*60)
 with open(REPORT_FILE,"w",encoding="utf-8") as f:

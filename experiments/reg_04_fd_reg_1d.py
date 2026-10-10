@@ -369,7 +369,7 @@ fig.suptitle("E11-FD-REG-1D: Single-Network sin(x) Regression", fontsize=13)
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
 L(f"\n{'='*55}")
 if r2_dense > 0.8:

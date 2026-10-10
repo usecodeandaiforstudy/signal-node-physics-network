@@ -168,7 +168,7 @@ def main():
     plt.tight_layout()
     path = os.path.join(OUTPUT_DIR, "05_himal_vs_e2e.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
-    print(f"\n  Figure saved: {path}")
+    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
     plt.close()
 
     ratio = r2_himal / r2_e2e if r2_e2e > 0 else 0

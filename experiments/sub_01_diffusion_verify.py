@@ -729,7 +729,7 @@ def main():
     path = os.path.join(OUT_DIR, "sub_01_diffusion_verify.txt")
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(report) + "\n")
-    print(f"\nReport saved: {path}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 
     # ---- plot ----
     try:
@@ -773,7 +773,7 @@ def main():
         plot = os.path.join(OUT_DIR, "sub_01_diffusion_verify_plot.png")
         plt.savefig(plot, dpi=150)
         plt.close()
-        print(f"Plot saved: {plot}")
+        print(f"Plot saved: {os.path.relpath(plot, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
     except Exception as exc:
         print(f"[warn] plotting skipped: {exc}")
 

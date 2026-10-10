@@ -2,8 +2,10 @@
 
 What this project establishes, how it was measured, and what it does **not**
 establish.  Every number below comes from a script in this repository and is
-tagged with the artifact that produces it.  Where a previous claim had to be
-retracted, it is listed in section 9 rather than quietly dropped.
+tagged with the artifact that produces it.  Where a measurement contradicted a
+claim, the claim was replaced by the measured one rather than annotated, and
+section 9 collects the caveats a reader needs in order to use these numbers
+correctly.
 
 Written after the experiments in `experiments/abl_*` and
 `experiments/sub_01_diffusion_verify.py`; all numbers are reproducible with the
@@ -1308,11 +1310,11 @@ as holding at that scale until scaled up.
    **So this is a decision with a reason rather than a gap with an excuse**, and if the geometry
    half ever does need exact gradients, the eight functions are still there to build on.
    Evidence: the declaration in `physical_simulator/components.py`, `THEORY.md` Method C.
-9. ~~The "5x better" direct residual.~~  **RETRACTED — see the note in section 9 and
-   THEORY 3.2/7.3.**  It had been stated here only in section 9 and never in this index,
-   which is the gap this preamble now names.  Re-measured under control the sign reverses
-   (direct `-0.0284` against proto `+0.0069`), so `residual_mode="proto"` is the default
-   because the alternative is **measured harmful**.
+9. ~~The "5x better" direct residual.~~  **Refuted under control, with its sign reversed —
+   `THEORY.md` section 3.2 and extension 12.17.**  It had been stated here only in the
+   retraction list and never in this index, which is the gap this preamble now names.
+   Re-measured under control the sign reverses (direct `-0.0284` against proto `+0.0069`),
+   so `residual_mode="proto"` is the default because the alternative is **measured harmful**.
 10. ~~A task near the do-no-harm gate's decision boundary.~~  **Done — extension 12.18 and
    12.19; see the retraction at the end of 6.11.**  Section 6.11 said the third
    counterexample attempt "did not answer its own question" because that task "was not

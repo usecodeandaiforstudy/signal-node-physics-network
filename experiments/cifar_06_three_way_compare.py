@@ -237,7 +237,7 @@ L(f"  RBF (2884p) vs CNN ({res_cnn[0]}p): test {rbf_test:.1f}% vs {res_cnn[2]*10
 L(f"\n  Key insight: RBF with fewest params (2884) achieves better test")
 L(f"  than MLP with 11.7x more params (33644). Only CNN's conv inductive")
 L(f"  bias beats it, but CNN cannot be implemented in pure analog circuits.")
-L(f"\n  Plot: {PLOT_FILE} | Report: {REPORT_FILE}"); L("="*60)
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}"); L("="*60)
 with open(REPORT_FILE,"w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
 
 # ═══════════════════════════════════════════════════

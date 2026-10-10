@@ -298,7 +298,7 @@ L(f"  D-P gap:       {dp_mse:.6f} MSE")
 noise_drop = (acc_phys["none"] - acc_phys["high"]) / max(acc_phys["none"], 1e-10) * 100
 L(f"  Physical noise drop:  none={acc_phys['none']*100:.1f}% → high={acc_phys['high']*100:.1f}% ({noise_drop:.1f}%)")
 
-L(f"\n  Plot: {PLOT_FILE} | Report: {REPORT_FILE}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
 L("=" * 60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f: f.write("\n".join(report) + "\n")
 

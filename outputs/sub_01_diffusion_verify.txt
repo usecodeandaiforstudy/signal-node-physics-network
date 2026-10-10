@@ -1,7 +1,7 @@
 ====================================================================
   Diffusion-field substrate -- verification suite
   Project: singal-node-physics-network
-  2026-10-02 13:30:04
+  2026-10-10 18:55:31
 ====================================================================
 ====================================================================
   PART 0: interface equivalence -- same parameters, same contract
@@ -12,9 +12,9 @@
 
   substrate                            max|out_g - digital|   max|out_a - digital|
   --------------------------------------------------------------------------------
-  analog circuit (NoiseConfig none)               6.835e-07              7.238e-07
-  diffusion cell (ideal, float64)                 7.056e-08              3.662e-08
-  diffusion cell (ideal, float32)                 5.960e-08              3.725e-08
+  analog circuit (NoiseConfig none)               6.529e-07              3.958e-07
+  diffusion cell (ideal, float64)                 7.635e-08              4.600e-08
+  diffusion cell (ideal, float32)                 7.451e-08              5.960e-08
 
   Read this carefully.  In the ideal limit BOTH substrates agree with the
   digital model; in float32 both are rounding-limited at ~1e-7.  The
@@ -191,7 +191,7 @@
   boundary: source-to-wall/h for 1e-3 rel. error         : 2.0x
   positioner spec keeping output error < 0.5%            : <= 10 um
   measurements per block, strength-encoded dual          : 4 (naive 62)
-  wall time: 2.9s
+  wall time: 24.0s
 
   What this establishes, and what it does not:
    + a second substrate implements the same network with a byte-identical

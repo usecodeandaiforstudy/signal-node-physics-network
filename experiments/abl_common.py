@@ -87,6 +87,28 @@ CACHE_DIR = os.path.join(OUT_DIR, "abl_cache")
 os.makedirs(OUT_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+ROOT_DIR = os.path.dirname(OUT_DIR)
+
+
+def rel(path):
+    """
+    A path as a reader of a report should see it: relative to the repository root.
+
+    Reports print where their artifacts went, and those lines used to carry the absolute
+    path -- `Report: F:\\...\\outputs\\...` -- which puts the maintainer's drive layout into
+    every published report.  It is not a secret, since no user name is in it, but it is
+    information about the machine rather than about the measurement, and it makes a report
+    non-portable.  Wrapping the value here keeps the path usable for I/O (which needs the
+    absolute form) while the printed form stays repository-relative.
+
+    Reports ALREADY written keep their absolute lines.  They are evidence, and editing
+    evidence to tidy its formatting is the trade this repository refuses elsewhere.
+    """
+    try:
+        return os.path.relpath(str(path), ROOT_DIR).replace(os.sep, "/")
+    except ValueError:                      # a different drive: no relative path exists
+        return str(path)
+
 IDEAL = dict(mismatch=0.0, noise=0.0, drift=0.0, stuck=0.0, v_t=1.0)
 
 # Architecture family. Particle counts are held FIXED across the three, so any
