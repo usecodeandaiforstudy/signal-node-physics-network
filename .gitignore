@@ -36,7 +36,10 @@ cifar/
 # cannot be cited cannot be checked, which is what made the CIFAR comparison unresolvable
 # (extension FINDINGS.md 12.32).  These are tracked for the reason stated above -- the
 # documents cite them -- and the e21 report is the one 12.32 quotes.
-!/outputs/nd_*_report.txt
+# The `nd_*` reports were dropped from the whitelist entirely.  Only three exist --
+# nd_04_himal_pipeline, nd_05_himal_comparison, nd_07_physical_verify -- and no document
+# names any of them.  (An earlier edit here listed six `nd_NN_report.txt` files that do
+# not exist: written from memory, and caught by listing the directory.)
 !/outputs/e21_regularized_report.txt
 # The UNSEEDED report is kept as well, because it is the record of what was PUBLISHED
 # before the seed was fixed -- and the two differ by 3.3 points, which is the finding.
@@ -69,13 +72,25 @@ cifar/
 !/outputs/abl_02_parallel.png
 !/outputs/abl_06_task_sweep_plot.png
 
-# The EXTENSION's evidence set (DESIGN section 9.2).  Without these lines the
-# extension's reports are ignored and its conclusions would cite files that a
-# clone cannot see -- the same defect that was fixed for the base version above.
-# REPORTS ONLY.  The matching `!/outputs/ext_*.png` was removed: no document cites
-# a single extension figure, so those were fifty-odd committed images that no claim
-# depended on.
-!/outputs/ext_*.txt
+# The EXTENSION's evidence set, and it is EIGHT REPORTS, named one by one.
+#
+# The rule here used to be `!/outputs/ext_*.txt`, which tracked every report all fifty-one
+# scripts ever wrote.  The extension's artifact map cites the SCRIPTS, not the reports, so
+# forty-five of those fifty-three files were named by no document -- a run's intermediate
+# output rather than its evidence.  A reader who wants one can produce it by running the
+# script the document does cite; shipping it saved them a run and cost the repository a
+# directory of files nothing pointed at.
+#
+# These eight are the ones a document quotes BY NAME as its evidence
+# (BASE_CORRECTIONS.md and FINDINGS.md sections 9 and 12.15-12.19).
+!/outputs/ext_25_budget_matched.txt
+!/outputs/ext_26_base_family.txt
+!/outputs/ext_27_nonmonotone.txt
+!/outputs/ext_29_reservoir.txt
+!/outputs/ext_30_equal_params.txt
+!/outputs/ext_32_residual_mode.txt
+!/outputs/ext_33_gate_power.txt
+!/outputs/ext_34_deployment_harm.txt
 
 # Four STALE ablation-A figures, ignored BY NAME rather than by widening the rule
 # above.  No script in the repository emits a `_smoke` or a non-`_shareaxis` plot
