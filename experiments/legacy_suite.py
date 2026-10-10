@@ -16,13 +16,13 @@ Runs all verifiable experiments and extracts key numbers:
   Part 8:  V3 ND digital baseline (moons, PyTorch)
   Part 9:  Depth ablation (equal 9 particles, 1L vs 3L)
 
-Output: outputs/run_all_report.txt
+Output: outputs/legacy_suite_report.txt
 """
 import subprocess, sys, os, time, re
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE)
-OUT = os.path.join(ROOT, "outputs", "run_all_report.txt")
+OUT = os.path.join(ROOT, "outputs", "legacy_suite_report.txt")
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 report = []
