@@ -44,7 +44,7 @@ No model selection is performed anywhere, so the reported R^2 is test R^2.
 This is the x-axis of the prediction: it varies WITHIN each architecture,
 so the correlation is not degenerate over three points.
 
-Output: outputs/abl_03_mismatch.txt + _plot.png
+Output: outputs/abl_03_mismatch_sensitivity.txt + _plot.png
 """
 
 import argparse
