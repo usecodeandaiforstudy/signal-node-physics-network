@@ -3,11 +3,10 @@ message: "If you use this software, please cite it using the metadata below."
 title: "Physical-Domain RBF Particle Neural Network"
 abstract: >-
   A neural network whose nodes are movable particles in a physical field, trained by
-  operators that read the device rather than by gradients. The repository's FINDINGS.md is
-  the current statement of what it establishes; six claims that its README once made have
-  been measured and retracted, and the deep architecture is measured to be beaten by a
-  zero-forward closed-form baseline on every task the repository can build. Cite the
-  methods, not the retracted claims.
+  operators that read the device rather than by gradients. The operators recover each
+  particle's position and width from field readings in closed form, report a consistency
+  residual that detects a substrate the family does not cover, and cost zero forward
+  evaluations; see THEORY.md for the mathematics and FINDINGS.md for what is measured.
 authors:
   # The repository's commits carry only a GitHub noreply address, so no real name is
   # recorded anywhere in it. None is invented here: replace this with the author's name

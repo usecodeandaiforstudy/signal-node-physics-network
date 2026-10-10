@@ -105,7 +105,7 @@ the parameter count and the sharing are exactly the levers that matter (section 
 but it is the reason the goal should be stated as *"re-parameterise the readout"*,
 not *"remove the matrix"*.
 
-## 3. The proposal, stated precisely (after the author's clarification)
+## 3. The proposal, stated precisely
 
 * **Input is not reduced.** Every graph receives the full n-dimensional input. No
   input-space projection, no dimensionality reduction anywhere on the input side.

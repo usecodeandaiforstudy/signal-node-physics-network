@@ -2032,8 +2032,7 @@ repository's `4d` task at 40 nodes, 3 seeds, toy.
 > ## WHICH "COMBINATION" -- read this before the rest of 12.24
 >
 > **Two different arrangements have been called "the combination", and only one of them is
-> this project's design.  Stated by the repository owner while this section was being
-> written, and the distinction is load-bearing:**
+> this project's design.  The distinction is load-bearing:**
 >
 > | arrangement | what it is | where it lives here |
 > |---|---|---|
@@ -2488,7 +2487,7 @@ code says where.
 path** -- which is why the defect lived -- **and it would have corrupted the first serious use
 of it.**
 
-**THE FIX**, applied to `training/himal_nd.py` at the repository owner's instruction: a new
+**THE FIX**, applied to `training/himal_nd.py`: a new
 `_proto_accumulate` helper runs one network's cascade and sums each layer's proto-weighted
 contribution from the prototypes `train` already stores; the regression branch of `predict`
 now returns that sum; and the old return is kept as an explicit FALLBACK for a model restored
