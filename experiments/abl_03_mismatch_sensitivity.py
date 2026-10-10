@@ -177,7 +177,7 @@ def main(argv=None):
     arms = [a.strip() for a in args.arms.split(",") if a.strip()]
 
     sub_tag = "" if args.substrate == "circuit" else "_" + args.substrate
-    rep = Report(f"abl_03_mismatch{sub_tag}.txt")
+    rep = Report(f"abl_03_mismatch_sensitivity{sub_tag}.txt")
     for line in header("Ablation C - damage sensitivity of geometry vs weights",
                        f"substrate={args.substrate} task={args.task} "
                        f"archs={archs} arms={arms} seeds={args.seeds} "

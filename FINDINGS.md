@@ -1388,7 +1388,7 @@ live outputs of the older experiment scripts and must not be moved or deleted).
 | `outputs/abl_01_capacity_split_diffusion_shareaxis_plot.png` | 5 (the capacity-split figure) |
 | `outputs/abl_02_locality.txt` | 7 (M1 coupling, M2/M3 parallel price) |
 | `outputs/abl_02_coupling.png`, `outputs/abl_02_parallel.png` | 7 (the two figures) |
-| `outputs/abl_03_mismatch.txt`, `outputs/abl_03_mismatch_diffusion.txt` | 8.1 (both substrates) |
+| `outputs/abl_03_mismatch_sensitivity.txt`, `outputs/abl_03_mismatch_sensitivity_diffusion.txt` | 8.1 (both substrates) |
 | `outputs/abl_04_calibration_robustness.txt` | 6.2 (3 seeds) |
 | `outputs/abl_05_twin_error.txt` | 6.3 (3 seeds) |
 | `outputs/abl_06_task_sweep.txt` | 6.5 (before the gate) |
