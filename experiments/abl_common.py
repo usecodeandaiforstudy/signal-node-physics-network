@@ -1535,7 +1535,18 @@ class Report:
     def save(self):
         with open(self.path, "w", encoding="utf-8") as f:
             f.write("\n".join(self.lines) + "\n")
-        return self.path
+        # Return a path RELATIVE to the repository root, not the absolute one that
+        # `self.path` holds.  Scripts print this value into their reports (and into the
+        # `Report:` line of the artifact itself), and an absolute path puts the
+        # maintainer's drive layout into every published report.  It is not a secret --
+        # no user name is in it -- but it is information about the machine rather than
+        # about the measurement, and it makes the reports non-portable.  Reports written
+        # before this change still carry the absolute form; they were left alone,
+        # because they are evidence and editing evidence to tidy it is the wrong trade.
+        try:
+            return os.path.relpath(self.path, os.path.dirname(OUT_DIR)).replace(os.sep, "/")
+        except ValueError:                      # different drives: no relative path exists
+            return self.path
 
 
 def header(title, subtitle=""):
