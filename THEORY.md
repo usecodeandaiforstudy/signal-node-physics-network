@@ -2,8 +2,8 @@
 
 > **What this document is.** The theory behind the network: the physical model, the forward pass,
 > the two training operators and their mathematics, what a substrate must satisfy, and how the
-> cost is accounted. **What is measured — including what failed and what was retracted — is in
-> [`FINDINGS.md`](FINDINGS.md)**, which is the current statement of what the project establishes.
+> cost is accounted. **What is measured is in [`FINDINGS.md`](FINDINGS.md)**, which is the current
+> statement of what the project establishes, and what qualifies those measurements is its §9.
 > Numbers appear here only where the theory needs one to be intelligible, and each is traceable
 > to a section of that document or of the extension's.
 
@@ -175,11 +175,11 @@ sums the **prototype** predictions — so the deeper layers are trained against 
 inference never reconstructs. `proto` is therefore not merely the safer default; the alternative is
 measurably worse for a reason that can be named.
 
-**A note on how this was learned.** The comparison was first made through two different programs
-rather than one trainer with one switch, and it reported the opposite sign. Re-measured under
-control — the shipped trainer, matched initialisation, and the mode as the only difference — the
-sign reverses. The correction is recorded in `FINDINGS.md` §9; the table above states the
-conclusion that survived.
+**On the strength of this comparison.** The conclusion above comes from a **controlled
+re-measurement** — one trainer, matched initialisation, and the residual mode as the only
+difference between the arms — rather than from a comparison run through two different programs.
+That distinction is what makes the sign meaningful, and it is why the table is stated as a result
+rather than as a preference.
 
 ---
 

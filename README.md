@@ -149,9 +149,9 @@ checks whether its model matches the object it is modelling.
 * **One substrate family is covered so far** — polynomial exponents, plus the table-based
   extension. Non-log-linear kernels need the table, and the table needs a fixed single-scalar form.
 
-The full record — what was measured, what was retracted, what remains open — is
-[`FINDINGS.md`](FINDINGS.md), including [§9](FINDINGS.md) for corrections and
-[§11](FINDINGS.md) for open items. **Read those before citing a number.**
+The full record — what was measured, how, and what qualifies it — is
+[`FINDINGS.md`](FINDINGS.md): [§9](FINDINGS.md) states the caveats that bound the numbers, and
+[§11](FINDINGS.md) what remains open. **Read those before citing a number.**
 
 ---
 
@@ -201,11 +201,11 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 |---|---|
 | `README.md` / `README_CN.md` | this file, in English and Chinese |
 | `THEORY.md` / `THEORY_CN.md` | the full derivation: the physical mapping, the training schemes A–D, and the mathematics of the operators |
-| `FINDINGS.md` | **the current statement of what the project establishes.** Sections 0–12: reproduce commands, the substrate verification, the capacity analysis, the headline training rule, locality, the cost model, corrections, open items, artifacts |
-| `extensions/multigraph/FINDINGS.md` | the extension's own record: sections 12.1–12.36 — every operator result, every negative result, and a numbered list of the defects found along the way |
+| `FINDINGS.md` | **the current statement of what the project establishes.** Sections 0–11: reproduce commands, the substrate verification, the capacity analysis, the headline training rule, locality, the cost model, the caveats that bound the numbers, scope, what remains open, artifacts |
+| `extensions/multigraph/FINDINGS.md` | the extension's own record: sections 0–11 plus 23 subsections numbered 12.x — every operator result, every negative result, and the substrates' evidence |
 | `extensions/multigraph/DESIGN.md` | the design of the multi-graph extension: notation, the two halves, the combination operator's mathematics, parameter economics, and the constraints any implementation must satisfy |
 | `extensions/multigraph/BASE_CORRECTIONS.md` | the extension's audit of the base version's headline claims — one item per claim, with the measurement that settles it |
-| `CONTRIBUTING.md` | the conventions this repository runs on: how a number gets written down, how a claim gets retracted |
+| `CONTRIBUTING.md` | the conventions this repository runs on: how a number gets written down, and how it gets verified before it is published |
 | `CITATION.cff` | how to cite it |
 
 ### The library
@@ -274,14 +274,16 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | what is actually established, with numbers | [`FINDINGS.md`](FINDINGS.md) |
 | the operator work, in full | [`extensions/multigraph/FINDINGS.md`](extensions/multigraph/FINDINGS.md) |
 | why the extension is built the way it is | [`extensions/multigraph/DESIGN.md`](extensions/multigraph/DESIGN.md) |
-| which earlier claims were wrong, and why | [`FINDINGS.md`](FINDINGS.md) §9 |
+| what qualifies the numbers, and why | [`FINDINGS.md`](FINDINGS.md) §9 |
 | what is still open | [`FINDINGS.md`](FINDINGS.md) §11 |
 
-**On the record-keeping.** This project states claims and then measures them, and it keeps the
-corrections rather than quietly editing them: `FINDINGS.md` §9 lists every claim that had to be
-withdrawn and the measurement that forced it, and the extension keeps a numbered list of the
-defects its own work produced. **If a number on this page ever disagrees with those documents, the
-documents are right.**
+**On the record-keeping.** This project states claims and then measures them, and where a
+measurement contradicted a claim, the claim was **replaced by the measured one** rather than
+annotated — so what these documents contain is the version that survived, with its number.
+`FINDINGS.md` §9 collects the caveats a reader needs in order to use those numbers correctly: the
+CIFAR line's published figures being single draws from an unseeded process, "ideal" not being
+noise-free on the circuit path, the geometry arm losing under equal cost. **If a number on this
+page ever disagrees with those documents, the documents are right.**
 
 ---
 
@@ -294,7 +296,7 @@ not is in §4 above; the full record is in [`FINDINGS.md`](FINDINGS.md).
 
 **Citation.** See [`CITATION.cff`](CITATION.cff). Please cite the *methods* — the geometry
 operator, the substrate precondition, the measurement-cost accounting — rather than the early
-headline numbers, which the FINDINGS corrections qualify.
+headline numbers, which `FINDINGS.md` §9 qualifies.
 
 **Contributing.** See [`CONTRIBUTING.md`](CONTRIBUTING.md). Contributions that extend the
 substrate coverage, replace a simulation with a measurement, or falsify a claim are the ones this

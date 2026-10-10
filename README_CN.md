@@ -110,7 +110,7 @@ log z_j(x) = -alpha_j ||x||^2 + gamma_j . x - delta_j
 * **本项目起步时那个深层架构不成立。** 它在仓库能构造的**每一个**任务上都被一个**零前向基线**打败。**交付的是算子那一半；深层叠加不是。**
 * **目前只覆盖一个基底族** —— 多项式指数，加上基于查表的扩展。非对数线性的核需要查表，而查表需要一个固定的单标量形式。
 
-完整记录（测过什么、撤回过什么、还开着什么）在 [`FINDINGS.md`](FINDINGS.md)，其中 [§9](FINDINGS.md) 是更正、[§11](FINDINGS.md) 是开放项。**引用任何数字之前请先读它们。**
+完整记录 —— 测了什么、怎么测的、以及什么限定了这些数字 —— 在 [`FINDINGS.md`](FINDINGS.md)：其中 [§9](FINDINGS.md) 是限定这些数字的 caveat、[§11](FINDINGS.md) 是还开着什么。**引用任何数字之前请先读它们。**
 
 ---
 
@@ -232,10 +232,10 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | 究竟确立了什么（带数字） | [`FINDINGS.md`](FINDINGS.md) |
 | 算子工作的全貌 | [`extensions/multigraph/FINDINGS.md`](extensions/multigraph/FINDINGS.md) |
 | 扩展为什么这样设计 | [`extensions/multigraph/DESIGN.md`](extensions/multigraph/DESIGN.md) |
-| 早先哪些主张错了、为什么 | [`FINDINGS.md`](FINDINGS.md) §9 |
+| 什么限定了这些数字、为什么 | [`FINDINGS.md`](FINDINGS.md) §9 |
 | 还开着什么 | [`FINDINGS.md`](FINDINGS.md) §11 |
 
-**关于记录方式。** 本项目先提出主张、再测量它，并且**留下更正而不是悄悄改掉**：`FINDINGS.md` §9 列出每一条不得不撤回的主张以及迫使它撤回的那个测量，扩展里则保留了一份带编号的、它自己工作产生的缺陷清单。**如果本页的某个数字与那些文档冲突，以文档为准。**
+**关于记录方式。** 本项目先提出主张、再测量它；**而当测量与主张冲突时，主张被【换成测出来的那个】**，而不是在旁边加注 —— **所以这些文档里留下的是活下来的版本，带着它的数字**。`FINDINGS.md` §9 收集的是**读者要正确使用这些数字就必须知道的 caveat**：CIFAR 那条线公布的数字是未播种过程的单次抽样、电路路径上"理想"档并非无噪、几何臂在等成本下落败。**如果本页的某个数字与那些文档冲突，以文档为准。**
 
 ---
 
