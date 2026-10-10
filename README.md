@@ -242,7 +242,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `experiments/train_01…train_03` | grouped finite differences, grouped SPSA, and zero-ADC analog SPSA |
 | `experiments/ref2d/` | the 2-D reference series, including the v1 trainers |
 | `experiments/benchmarks/` | dataset loaders, baseline models and the report writer used by the benchmark runner |
-| `experiments/run_all.py` | the legacy smoke test |
+| `experiments/legacy_suite.py` | the original nine-part verification suite — digital-physical consistency, the FD depth proofs, noise robustness, the v1 baselines, the depth ablation. Kept because the early sections still cite its numbers; `abl_run_all.py` is the current batch runner |
 | `experiments/download_cifar.py` | fetches CIFAR-10 into `cifar/` (gitignored) |
 
 ### Experiments — the extension

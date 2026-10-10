@@ -12,7 +12,7 @@ exported to a physical layer, a DIFFERENT architecture.  So nothing measured her
 anything about the project's image demonstration.
 
 What is true: `HiMALND`'s classification mode is used by `nd_01`, `nd_03`, `reg_03`, `reg_05`
-and `run_all`, and `nd_01` DOES report an accuracy -- against a **v1 ResidualRBFNetwork** and
+and `legacy_suite`, and `nd_01` DOES report an accuracy -- against a **v1 ResidualRBFNetwork** and
 an MLP, i.e. against **sibling architectures**.  **What it has never been compared against is
 this project's OWN standard**: the operator's placement, the closed-form solve, and the
 random-geometry null -- the three things that, applied to regression, showed the deep path to
@@ -133,7 +133,7 @@ def main():
     rep("  quoted.")
     rep("")
     rep("  What IS true: this mode is used by `nd_01`, `nd_03`, `reg_03`, `reg_05` and")
-    rep("  `run_all`, and `nd_01` does report an accuracy -- against a v1 ResidualRBFNetwork")
+    rep("  `legacy_suite`, and `nd_01` does report an accuracy -- against a v1 ResidualRBFNetwork")
     rep("  and an MLP, i.e. against SIBLING ARCHITECTURES.  **What it has never been compared")
     rep("  against is this project's own standard**: the operator's placement, the closed-form")
     rep("  solve, and the random-geometry null -- the three things that, applied to")

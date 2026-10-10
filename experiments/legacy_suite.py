@@ -1,6 +1,10 @@
 """
-run_all.py — Full Verification Suite
-======================================
+legacy_suite.py — the original nine-part verification suite
+============================================================
+Kept because the early sections of FINDINGS.md still cite its numbers.  The name it
+used to carry, `run_all.py`, did not say what it was: there is a second runner,
+`abl_run_all.py`, which is the ablation batch runner and the current one.
+
 Runs all verifiable experiments and extracts key numbers:
   Part 1:  Digital-physical consistency
   Part 2:  FD classification depth proof (moons, multi-seed)

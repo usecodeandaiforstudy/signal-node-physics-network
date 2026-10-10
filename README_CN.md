@@ -200,7 +200,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `experiments/train_01…train_03` | 分组有限差分、分组 SPSA、以及零 ADC 的模拟 SPSA |
 | `experiments/ref2d/` | 2 维参考系列，含 v1 训练器 |
 | `experiments/benchmarks/` | 数据集加载、基线模型、以及基准运行器的报告写出 |
-| `experiments/run_all.py` | 旧版冒烟测试 |
+| `experiments/legacy_suite.py` | **最初的九部分验证套件** —— 数字-物理一致性、有限差分深度证明、噪声鲁棒性、v1 基线、深度消融。保留是因为早期章节仍引用它的数字；当前那套批跑是 `abl_run_all.py` |
 | `experiments/download_cifar.py` | 把 CIFAR-10 下到 `cifar/`（已 ignore） |
 
 ### 实验 —— 扩展

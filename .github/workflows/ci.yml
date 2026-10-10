@@ -39,8 +39,8 @@ jobs:
       run: |
         pip install -e .
 
-    # -- The two steps below are the regression guard for FINDINGS.md. --------
-    # They run BEFORE the legacy smoke test so a broken claim fails fast.
+    # -- The three steps below are the regression guard for FINDINGS.md. ------
+    # They run BEFORE the legacy suite so a broken claim fails fast.
     #
     # sub_01 --assert enforces the physical thresholds that FINDINGS sections 2,
     # 3 and 8 rest on (kernel vs an independent PDE solve, exact superposition,
@@ -62,9 +62,15 @@ jobs:
         python experiments/abl_run_all.py --quick
       timeout-minutes: 25
 
-    - name: Legacy smoke test (run_all)
+    # Named `legacy_suite.py` rather than `run_all.py`, which did not say what it
+    # was: this is the original nine-part verification suite (digital-physical
+    # consistency, the FD depth proofs, noise robustness, the v1 baselines, the
+    # depth ablation), kept because its numbers are still the ones the early
+    # sections cite.  `abl_run_all.py` above is the ablation batch runner, which
+    # is the current one.  Renaming it meant this file and eight others.
+    - name: Legacy verification suite
       run: |
-        python experiments/run_all.py
+        python experiments/legacy_suite.py
       timeout-minutes: 20
 
   # ---------------------------------------------------------------------------

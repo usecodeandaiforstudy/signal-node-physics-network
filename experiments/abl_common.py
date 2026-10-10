@@ -1522,7 +1522,7 @@ def load_model(arch, arm, norm_mode, seed, task, epochs, budget, X_ref,
 # --------------------------------------------------------------
 
 class Report:
-    """Tiny tee-to-file reporter, same pattern as experiments/run_all.py."""
+    """Tiny tee-to-file reporter, same pattern as experiments/legacy_suite.py."""
 
     def __init__(self, filename):
         self.path = os.path.join(OUT_DIR, filename)

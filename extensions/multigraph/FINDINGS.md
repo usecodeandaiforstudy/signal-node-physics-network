@@ -2573,7 +2573,7 @@ a physical layer, a DIFFERENT architecture.  **So nothing here says anything abo
 project's image demonstration**, and the note is corrected rather than left to be quoted.
 
 What is true: `HiMALND`'s classification mode is used by `nd_01`, `nd_03`, `reg_03`, `reg_05`
-and `run_all`, and `nd_01` DOES report an accuracy -- against a **v1 ResidualRBFNetwork** and
+and `legacy_suite`, and `nd_01` DOES report an accuracy -- against a **v1 ResidualRBFNetwork** and
 an MLP, i.e. against **sibling architectures**.  **What it had never been compared against is
 this project's OWN standard**: the operator's placement, the closed-form solve, and the
 random-geometry null.

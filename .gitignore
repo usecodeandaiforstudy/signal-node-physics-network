@@ -115,10 +115,10 @@ cifar/
 # so nobody "tidies" it away.
 outputs/ext_cache/
 
-# experiments/cifar_07_4d_rgb.py resolves its OUT_DIR relative to itself, so when
-# it is run from inside experiments/ it writes here instead of outputs/.  That
-# script is not tracked yet (its inclusion was never decided), so neither are its
-# artefacts -- ignore them rather than leaving two permanently-untracked files.
+# experiments/cifar_07_4d_rgb.py used to resolve a nested experiments/outputs/ relative to
+# itself, so a run from inside experiments/ wrote there instead of to the repository's own
+# outputs/.  That script now follows the convention and the nested directory is gone; this
+# rule stays only so that a stale copy left on someone's disk is not picked up.
 experiments/outputs/
 
 test_outputs/

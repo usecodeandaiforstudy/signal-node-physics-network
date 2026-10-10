@@ -498,7 +498,7 @@ version's comment block warns about.
 
 The base CI job now runs three steps: `sub_01_diffusion_verify.py --assert` (seconds,
 the sharp guard), `abl_run_all.py --quick` (~15 min, pipeline smoke), and the legacy
-`run_all.py`. The extension should **not** be added to that job: it is multiplied by
+`legacy_suite.py`. The extension should **not** be added to that job: it is multiplied by
 the three-Python matrix and would slow the base version's own protection.
 
 Add a **separate job**, single Python version, with two steps in this order:
@@ -506,12 +506,14 @@ Add a **separate job**, single Python version, with two steps in this order:
 1. `python extensions/multigraph/ext_01_baseline.py --assert` — the degenerate-case
    test. This is the correctness anchor (constraint C4) and is fast, so it belongs in
    CI.
-2. `python extensions/multigraph/ext_run_all.py --quick` — the extension's own
-   pipeline smoke, only if step 1 is cheap enough to leave budget.
+2. the extension's assertions, run as the loop `.github/workflows/ci.yml` actually
+   carries — thirty scripts, each measured under about twelve seconds, rather than a
+   batch runner. (This section used to name an `ext_run_all.py`, which was never
+   written; the loop replaced it.)
 
 The extension must **not** be added to `experiments/abl_run_all.py`: that file belongs
 to the base version, and editing it to know about `extensions/` is precisely the kind
-of coupling this memo's scope rule forbids. The extension gets its own runner.
+of coupling this memo's scope rule forbids.
 
 ### 9.4 Commit hygiene
 
