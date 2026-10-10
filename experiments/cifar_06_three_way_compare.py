@@ -18,7 +18,7 @@ All models share:
   - Same training: 600 epochs, MultiStepLR[400,550], LR=0.005
   - Same loss: CE with learnable prototype vectors
 
-Output: outputs/e25_compare_report.txt + _plot.png
+Output: outputs/cifar_06_three_way_compare_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -30,8 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e25_compare_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e25_compare_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_06_three_way_compare_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_06_three_way_compare_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

@@ -22,7 +22,7 @@ digital controller from ADC-read analog signals. No extra analog gradient
 circuits are needed (SPSA/FD only requires the scalar loss value).
 Training uses PyTorch autograd; deployment exports to PhysicalRBFLayerND.
 
-Output: outputs/e21_regularized_report.txt + _plot.png
+Output: outputs/cifar_02_regularized_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -37,8 +37,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e21_regularized_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e21_regularized_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_02_regularized_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_02_regularized_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

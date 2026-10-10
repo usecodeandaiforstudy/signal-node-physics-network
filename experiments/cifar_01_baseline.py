@@ -14,7 +14,7 @@ Architecture (shared across all classes):
 Training: PyTorch autograd, 500 epochs
 Deployment: from_digital() → PhysicalRBFLayerND → noise sweep test
 
-Output: outputs/e18_digital_physical_report.txt + _plot.png
+Output: outputs/cifar_01_baseline_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -29,8 +29,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e18_digital_physical_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e18_digital_physical_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_01_baseline_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_01_baseline_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

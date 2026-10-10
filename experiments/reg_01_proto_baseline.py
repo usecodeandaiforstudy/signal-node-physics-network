@@ -35,7 +35,7 @@ from training.himal_nd import HiMALND, _zero_pad_sum
 
 
 # ═══════════════════════════════════════════════════════
-#  v6-style RBF Layer (same as e12_california_reg_v6)
+#  v6-style RBF Layer (same as reg_06_california_v6)
 # ═══════════════════════════════════════════════════════
 
 class PhysicalRBFLayerNDv6:

@@ -11,7 +11,7 @@ Key improvements over v1:
 
 Purpose: Compare single-network vs HiMAL dual-network on smooth 1D regression.
 
-Output: outputs/e11_fd_reg_1d_single.png + _report.txt
+Output: outputs/reg_04_fd_reg_1d.png + _report.txt
 """
 import sys, os, time
 import numpy as np
@@ -31,8 +31,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e11_fd_reg_1d_single_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e11_fd_reg_1d_single.png")
+REPORT_FILE = os.path.join(OUT_DIR, "reg_04_fd_reg_1d_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "reg_04_fd_reg_1d.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False

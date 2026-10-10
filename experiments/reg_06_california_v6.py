@@ -10,7 +10,7 @@ All 5 improvements integrated:
 
 All ops from physical_simulator.components.
 
-Output: outputs/e12_california_reg_v6_report.txt + .png
+Output: outputs/reg_06_california_v6_report.txt + .png
 """
 import sys, os, time, types
 import numpy as np
@@ -35,8 +35,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e12_california_reg_v6_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e12_california_reg_v6.png")
+REPORT_FILE = os.path.join(OUT_DIR, "reg_06_california_v6_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "reg_06_california_v6.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False

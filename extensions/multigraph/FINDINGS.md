@@ -1162,8 +1162,8 @@ is not the base's, so ext_07's R^2 values should not be read against `FINDINGS.m
 | `extensions/multigraph/ext_50_geometry_only.py` | **section 12.35**: geometry-only search -- 12.28's bound is tight, and is now a measurement |
 | `extensions/multigraph/ext_51_presensor.py` | **section 12.36**: pre-sensor superposition -- DESIGN 7's last open question, answered |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
-| `outputs/e13_parallel_benchmark_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
-| `outputs/e14_parallel_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
+| `outputs/train_01_grouped_fd_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
+| `outputs/train_02_grouped_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
 | `extensions/multigraph/trainer.py` | `features` gained `substrate` and `measured` (ext_17); `node_amplitude`; `n_random` (ext_14); `restarts=M` (ext_19) |
 | `outputs/` | the reports, `ext_<NN>_<name>.txt` and a matching `_plot.png`, one pair per experiment 01-22 |
 | `outputs/ext_ckpt/` | the resumable sweep cells: 15 for ext_08, 18 for ext_10, 18 for ext_13 |
@@ -2625,7 +2625,7 @@ physical layer -- so the project's most impressive demonstration had never been 
 against the project's own standard.
 
 **AND ITS NUMBER WAS ALREADY IN THE REPOSITORY.**  `cifar_02` writes
-`outputs/e21_regularized_report.txt`, which reports a DIGITAL TEST ACCURACY of **39.3%** on 5
+`outputs/cifar_02_regularized_report.txt`, which reports a DIGITAL TEST ACCURACY of **39.3%** on 5
 classes, a train accuracy of 53.6% -- an **18.3% train-test gap** -- and a collapse to 21.3%
 at the `high` physical-noise preset.  **So the reference point needed reading, not a 600-epoch
 torch run**, and the file is untracked, which is why no measurement had ever cited it.
@@ -2665,8 +2665,9 @@ a null; k-means is included as a standard closed-form geometry.
 > **The seed alone moves the number `0.033`, and the margin this section was trying to
 > resolve is `+0.030`.**  So the comparison is not merely underpowered against the closed-form
 > null's spread -- **the deep arm's own single-draw variation is the same size as the effect.**
-> Both artifacts are kept: the unseeded one as `e21_regularized_report_UNSEEDED.txt`, because
-> it is the record of what was published, and the seeded one as the report.
+> Both artifacts are kept: the unseeded one as
+> `cifar_02_regularized_report_UNSEEDED.txt`, because it is the record of what was published,
+> and the seeded one as the report.
 >
 > **2. MORE SEEDS DO NOT SHRINK THE NULL'S SPREAD.**  Ten seeds instead of three:
 >

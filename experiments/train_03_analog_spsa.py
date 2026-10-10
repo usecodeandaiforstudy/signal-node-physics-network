@@ -21,7 +21,7 @@ Experiment:
                 loss difference via analog_subtractor
                 no ADC used for gradient updates
 
-Output: outputs/e26_analog_spsa_no_adc_report.txt + _plot.png
+Output: outputs/train_03_analog_spsa_report.txt + _plot.png
 """
 import sys, os, time
 import numpy as np
@@ -35,8 +35,8 @@ from physical_simulator.components import analog_subtractor, NoiseConfig
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e26_analog_spsa_no_adc_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e26_analog_spsa_no_adc_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "train_03_analog_spsa_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "train_03_analog_spsa_plot.png")
 
 report = []
 def L(s): print(s, flush=True); report.append(s)

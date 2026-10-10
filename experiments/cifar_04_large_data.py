@@ -16,7 +16,7 @@ Data:                  200 img/class (vs E21's 100), 30 test/class
 Regularization (E21):  Center repulsion λ=5e-4 + Width deviation λ=5e-3
 Physical:              from_digital() → PhysicalRBFLayerND → noise sweep
 
-Output: outputs/e23_large_reg_4layer_report.txt + _plot.png
+Output: outputs/cifar_04_large_data_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -31,8 +31,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e23_large_reg_4layer_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e23_large_reg_4layer_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_04_large_data_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_04_large_data_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

@@ -16,7 +16,7 @@ from experiments.benchmarks.datasets import load_dataset
 from simulator.layer_nd import PhysicalRBFLayerND
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))), "outputs", "e11_fd_cls_result.txt")
+    os.path.abspath(__file__))), "outputs", "reg_05_fd_cls_moons_report.txt")
 
 report = []
 def L(s):

@@ -20,7 +20,7 @@ Question:
 
 Task: 1D sin(x) regression, single-layer RBF, 40 particles, 160 params.
 
-Output: outputs/e14_parallel_spsa.png + _report.txt
+Output: outputs/train_02_grouped_spsa.png + _report.txt
 """
 import sys, os, time
 import numpy as np
@@ -39,8 +39,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e14_parallel_spsa_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e14_parallel_spsa.png")
+REPORT_FILE = os.path.join(OUT_DIR, "train_02_grouped_spsa_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "train_02_grouped_spsa.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False

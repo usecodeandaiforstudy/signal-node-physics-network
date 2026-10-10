@@ -1130,6 +1130,11 @@ comparison that line produced was therefore between arms whose own seed sensitiv
 differences it reports.** All seven scripts now seed the model initialisation and print `SEED=` in
 their reports, so a number and the seed that produced it are recorded together.
 
+**Both sides of that table are tracked, so either column can be checked.** The published values
+are `outputs/{cifar_01_baseline,cifar_02_regularized,cifar_03_3layer_reg,cifar_04_large_data,cifar_05_mlp_baseline,cifar_06_three_way_compare}_report_PRE_SEED.txt`,
+and the seeded ones are the same names without the suffix. Each script writes the name that
+matches it, so a report can be found from the script that produced it.
+
 **And three scripts freeze the reference arm as a literal.** `cifar_04`, `cifar_05` and `cifar_06`
 each hard-code the RBF result as `peak test 39.3%, peak train 53.6% (from E21)` rather than
 re-running it — so those comparisons set a reference that cannot move against arms that move by up

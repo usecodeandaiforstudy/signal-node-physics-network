@@ -12,7 +12,7 @@ trained by PyTorch autograd and exported to a physical layer -- and the worklist
 impressive demonstration has never been compared against the project's own standard.
 
 **AND ITS NUMBER IS ALREADY IN THE REPOSITORY**, written by `cifar_02` itself:
-`outputs/e21_regularized_report.txt` reports a DIGITAL TEST ACCURACY of **39.3%** on 5 classes
+`outputs/cifar_02_regularized_report.txt` reports a DIGITAL TEST ACCURACY of **39.3%** on 5 classes
 (chance 20%), a train accuracy of 53.6% -- an 18.3% train-test gap -- and a physical-noise
 drop to 21.3% at the `high` preset.  **So no 600-epoch torch run is needed to get the
 reference point**; it only needed reading.
@@ -177,7 +177,7 @@ def main():
                        f"seeds={args.seeds}"):
         rep(line)
 
-    report = os.path.join(ROOT, "outputs", "e21_regularized_report.txt")
+    report = os.path.join(ROOT, "outputs", "cifar_02_regularized_report.txt")
     rep("")
     rep("  **THE REFERENCE POINT WAS ALREADY IN THE REPOSITORY**, written by `cifar_02`")
     rep("  itself.  Reading it is what this section needed; running 600 epochs of torch is")

@@ -18,10 +18,10 @@ cifar/
 #   outputs/abl_*.txt    ablation reports  (sections 5, 6, 8, 11)
 #   outputs/abl_*.png    their figures
 #   outputs/sub_01_*     the substrate verification suite (sections 2, 3, 8)
-# Everything else under outputs/ is ignored: outputs/abl_cache/ (137 model
-# caches), outputs/acl_diag/, and the legacy eNN_* reports, which are the live
-# outputs of the older experiment scripts -- experiments/cifar_07_4d_rgb.py READS
-# outputs/e18_digital_physical_report.txt, so those must not be moved or deleted.
+# Everything else under outputs/ is ignored: outputs/abl_cache/ (the model caches)
+# and every report or figure no document names.  experiments/cifar_07_4d_rgb.py
+# READS outputs/cifar_01_baseline_report.txt, so that pair must not be moved or
+# deleted without updating the reader.
 # The patterns below are ANCHORED with a leading slash on purpose.  Unanchored,
 # `outputs/*` and its negations match a directory named `outputs` at ANY depth,
 # so `experiments/outputs/abl_something.txt` would have been whitelisted too.
@@ -34,30 +34,25 @@ cifar/
 # nothing, so their numbers existed only in a terminal, and the CIFAR line's flagship number
 # lived in an untracked report that a comparison script then HARD-CODED.  A number that
 # cannot be cited cannot be checked, which is what made the CIFAR comparison unresolvable
-# (extension FINDINGS.md 12.32).  These are tracked for the reason stated above -- the
-# documents cite them -- and the e21 report is the one 12.32 quotes.
+# (extension FINDINGS.md 12.32).  These are tracked for the reason stated above -- a document
+# names them -- and `cifar_02_regularized_report.txt` is the one 12.32 quotes.
 # The `nd_*` reports were dropped from the whitelist entirely.  Only three exist --
 # nd_04_himal_pipeline, nd_05_himal_comparison, nd_07_physical_verify -- and no document
 # names any of them.  (An earlier edit here listed six `nd_NN_report.txt` files that do
 # not exist: written from memory, and caught by listing the directory.)
-!/outputs/e21_regularized_report.txt
-# The UNSEEDED report is kept as well, because it is the record of what was PUBLISHED
-# before the seed was fixed -- and the two differ by 3.3 points, which is the finding.
-!/outputs/e21_regularized_report_UNSEEDED.txt
-# THE CIFAR LINE'S EVIDENCE, added when section 9's entry was written and its own citations
-# turned out not to exist in a fresh clone -- the precise defect that entry is about.  Both
-# sides are needed: the PRE_SEED files are the PUBLISHED values its table quotes, and the
-# reports are the SEEDED ones that replace them.
-!/outputs/e18_digital_physical_report.txt
-!/outputs/e18_digital_physical_report_PRE_SEED.txt
-!/outputs/e22_reg_3layer_peak_report.txt
-!/outputs/e22_reg_3layer_peak_report_PRE_SEED.txt
-!/outputs/e23_large_reg_4layer_report.txt
-!/outputs/e23_large_reg_4layer_report_PRE_SEED.txt
-!/outputs/e24_mlp_baseline_report.txt
-!/outputs/e24_mlp_baseline_report_PRE_SEED.txt
-!/outputs/e25_compare_report.txt
-!/outputs/e25_compare_report_PRE_SEED.txt
+!/outputs/cifar_01_baseline_report.txt
+!/outputs/cifar_01_baseline_report_PRE_SEED.txt
+!/outputs/cifar_02_regularized_report.txt
+!/outputs/cifar_02_regularized_report_UNSEEDED.txt
+!/outputs/cifar_02_regularized_report_PRE_SEED.txt
+!/outputs/cifar_03_3layer_reg_report.txt
+!/outputs/cifar_03_3layer_reg_report_PRE_SEED.txt
+!/outputs/cifar_04_large_data_report.txt
+!/outputs/cifar_04_large_data_report_PRE_SEED.txt
+!/outputs/cifar_05_mlp_baseline_report.txt
+!/outputs/cifar_05_mlp_baseline_report_PRE_SEED.txt
+!/outputs/cifar_06_three_way_compare_report.txt
+!/outputs/cifar_06_three_way_compare_report_PRE_SEED.txt
 
 # The FIVE figures a document actually cites, whitelisted by name.  Plots are not
 # evidence the way a report is: a plot is regenerable from the report's numbers by

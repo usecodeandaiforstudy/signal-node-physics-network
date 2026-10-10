@@ -20,7 +20,7 @@ Regularization (all physically realizable via analog circuits + single ADC):
   Center repulsion:  λ_c * Σ exp(-||c_i - c_j||² / 2σ²)  — prevent collapse
   Width deviation:   λ_h * Σ (h_j - h_init)²              — maintain coverage
 
-Output: outputs/e22_reg_3layer_peak_report.txt + _plot.png
+Output: outputs/cifar_03_3layer_reg_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -35,8 +35,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e22_reg_3layer_peak_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e22_reg_3layer_peak_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_03_3layer_reg_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_03_3layer_reg_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

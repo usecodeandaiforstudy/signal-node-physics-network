@@ -22,7 +22,7 @@ Note: The RBF (E21) was trained with AdamW weight_decay=1e-5 + center+width
       regularization. This MLP uses only AdamW weight_decay=1e-5 for a
       clean baseline (no RBF-specific reg).
 
-Output: outputs/e24_mlp_baseline_report.txt + _plot.png
+Output: outputs/cifar_05_mlp_baseline_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -34,8 +34,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e24_mlp_baseline_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e24_mlp_baseline_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_05_mlp_baseline_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_05_mlp_baseline_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")

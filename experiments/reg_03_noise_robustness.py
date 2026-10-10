@@ -123,7 +123,7 @@ def main():
     ax.legend()
     ax.grid(axis="y", alpha=0.3)
     ax.set_ylim(0, 1.0)
-    path = os.path.join(OUT_DIR, "v3_e10_noise.png")
+    path = os.path.join(OUT_DIR, "reg_03_noise_robustness_plot.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"\n  Figure saved: {path}")

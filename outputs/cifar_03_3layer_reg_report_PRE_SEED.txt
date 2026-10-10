@@ -1,0 +1,58 @@
+============================================================
+  E22: E19 3-Layer + Regularization — Peak Accuracy Hunt
+============================================================
+  2026-08-01 16:16:37
+  Classes: 5, Resolution: 32x32, Train: 80/class
+  Arch: L1(3D→12D,49p grid) → L2(12D→8D,25p) → L3(8D→6D,20p)
+  Regularization: center(λ=0.0005) + width(λ=0.005)
+  Training: 1000ep, LR=0.004, MultiStepLR[500,750,900] gamma=0.3
+  Data: train=400, test=100
+  Params: 2547
+
+--- Training (tracking peaks) ---
+  ep  100 | loss=1.4327 (CE=1.4109+reg=0.0219) | train=0.395 | test=0.340 | lr=4.00e-03
+  ep  200 | loss=1.3782 (CE=1.3581+reg=0.0201) | train=0.390 | test=0.360 | lr=4.00e-03
+  ep  300 | loss=1.3301 (CE=1.3105+reg=0.0196) | train=0.407 | test=0.360 | lr=4.00e-03
+  ep  400 | loss=1.3167 (CE=1.2974+reg=0.0194) | train=0.433 | test=0.370 | lr=4.00e-03
+  ep  500 | loss=1.3102 (CE=1.2911+reg=0.0191) | train=0.463 | test=0.370 | lr=1.20e-03
+  ep  600 | loss=1.2511 (CE=1.2316+reg=0.0195) | train=0.482 | test=0.360 | lr=1.20e-03
+  ep  700 | loss=1.2248 (CE=1.2054+reg=0.0194) | train=0.495 | test=0.350 | lr=1.20e-03
+  ep  800 | loss=1.2033 (CE=1.1839+reg=0.0194) | train=0.517 | test=0.340 | lr=3.60e-04
+  ep  900 | loss=1.1870 (CE=1.1676+reg=0.0194) | train=0.515 | test=0.340 | lr=1.08e-04
+  Early stop at ep 980 (no test improvement for 360 epochs)
+  Restored best test model (38.0%)
+
+  Training done: 2888s, 980 epochs evaluated
+  Peak train: 51.7% @ ep 800
+  Peak test:  38.0% @ ep 620
+  Best test (early-stop restored): 38.0%
+
+--- Physical Deployment ---
+  D-P feature MSE (10 imgs): 0.000000
+  Physical   none: 38.0%
+  Physical    low: 36.0%
+  Physical medium: 31.0%
+  Physical   high: 23.0%
+
+  Physical confusion:
+    airplane    11   4   1   2   2  (55%)
+    automobile   4  12   2   2   0  (60%)
+    bird         7   2   1   5   5  (5%)
+    cat          1   6   1   5   7  (25%)
+    deer         2   3   3   3   9  (45%)
+
+============================================================
+  SUMMARY
+============================================================
+  Peak train:    51.7% @ epoch 800
+  Peak test:     38.0% @ epoch 620
+  Best test (es):38.0%
+  Final train:   51.2%
+  Final test:    35.0%
+  Train-Test gap (final): 16.2%
+  Training time: 2888s
+  D-P gap:       0.000000 MSE
+  Physical noise drop:  none=38.0% → high=23.0% (39.5%)
+
+  Plot: F:\singal-node-physics-network\outputs\e22_reg_3layer_peak_plot.png | Report: F:\singal-node-physics-network\outputs\e22_reg_3layer_peak_report.txt
+============================================================
