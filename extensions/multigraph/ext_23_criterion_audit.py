@@ -142,7 +142,7 @@ def main():
             f"would produce a wrong win count rather than an error")
         tables[label] = rows
         print(f"  [read] {label:<22} {len(rows)} cells from "
-              f"{os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}",
+              f"{os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))).replace(os.sep, '/')}",
               flush=True)
 
     summary = {}
@@ -237,7 +237,7 @@ def main():
     rep("  what the sentence is meant to claim.")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
 
     plt = try_plots()
     if plt is not None:
@@ -286,7 +286,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_23_criterion_audit_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
 
     # The assert encodes what the measurement supports: every cell of every run was
     # parsed and scored under both criteria.  It cannot encode "the defect matters",

@@ -1,0 +1,107 @@
+==================================================================
+  ext_13 - a third task family: structure, not dimension
+  seeds=3 arch=[40] tasks=6
+  2026-10-11 16:24:01
+==================================================================
+
+  These are the tasks the BASE VERSION built to attack its own headline rule
+  ('solve the readout in closed form'), on the argument that a positive sweep
+  is circular without them.  Half B uses a Gaussian basis and the same
+  least-squares solve, so the same attacks apply, and it had never been
+  pointed at them.  Two are sharper for half B than for half A:
+
+    shift  the operator trainer plans entirely in the twin and validates
+           in-distribution, so it has no device-side signal at all
+    noise  a greedy constructor fits the residual, and with pure noise the
+           only way to score below R^2 = 0 is to fit the training noise
+
+  Cells where NO arm clears the 0.05 floor are reported but
+  excluded from the win counts, using abl_common.learning_ok's own bar --
+  a task nobody can fit says nothing about which placement rule is better.
+
+  cells reused from checkpoint: 18   newly run: 0
+
+================================================================================================
+  Test R^2 by task (mean over seeds), one layer of 40 nodes
+================================================================================================
+  task       OPERATOR    RANDOM        FD   op-random     op-FD  informative
+  --------------------------------------------------------------------------
+  4d          +0.5817   +0.2627   +0.1589     +0.3190   +0.4228          yes
+  moons       +0.9847   +0.9801   +0.9816     +0.0046   +0.0032          yes
+  steps       +0.1551   +0.0727   -0.0180     +0.0824   +0.1731          yes
+  hetero      +0.1817   +0.0935   -0.0604     +0.0883   +0.2421          yes
+  shift       +0.0895   +0.0178   +0.0177     +0.0717   +0.0718          yes
+  noise       -0.0354   -0.0552   -0.0204     +0.0198   -0.0151           NO
+
+  4d       smooth D=4 (the reference)
+  moons    D=2 classification boundary: a different TASK TYPE
+  steps    D=4 DISCONTINUOUS: a Gaussian basis cannot fit it
+  hetero   D=4 HETEROSCEDASTIC: least squares is misspecified
+  shift    train [-2,2] vs test [-3,3]: the gate is blind by construction
+  noise    y independent of x: no method can beat R^2 = 0
+
+================================================================================================
+  The `noise` cell, asked as its own question
+================================================================================================
+
+  OPERATOR -0.0354   RANDOM -0.0552   FD -0.0204
+  the most negative arm is RANDOM (-0.0552)
+
+  The operator arm is NOT the most negative here, so on this cell it
+  does not fit the noise harder than the alternatives -- the risk is
+  real in principle but not what this measurement shows.
+
+================================================================================================
+  VERDICT: the adversaries, answered
+================================================================================================
+
+  4d       vs random +0.3190 (tol 0.066) OK   vs FD +0.4228 (tol 0.185) OK
+  moons    vs random +0.0046 (tol 0.020) no   vs FD +0.0032 (tol 0.020) OK
+  steps    vs random +0.0824 (tol 0.205) no   vs FD +0.1731 (tol 0.205) OK
+  hetero   vs random +0.0883 (tol 0.058) OK   vs FD +0.2421 (tol 0.060) OK
+  shift    vs random +0.0717 (tol 0.026) OK   vs FD +0.0718 (tol 0.024) OK
+  noise    EXCLUDED -- no arm clears the floor (best -0.0204)
+
+  WHY THE NON-WINS DID NOT RESOLVE, because the three reasons call for
+  completely different responses:
+    moons    +0.0046 against a tolerance of 0.020 -- CEILING -- every arm is near the maximum, there is no headroom
+    steps    +0.0824 against a tolerance of 0.205 -- SPREAD -- the spread exceeds the effect while the mean favours the operators; more seeds would settle it
+
+  informative tasks: 5 of 6
+  operator beats random in 3/5; matches or beats FD in 5/5
+
+  WHAT THE ADVERSARIES ACTUALLY SHOWED, read off this table rather than
+  asserted: the base version built `steps` and `hetero` to attack exactly
+  this kind of method -- a Gaussian basis with a least-squares readout.
+
+    steps   OPERATOR +0.1551   RANDOM +0.0727   FD -0.0180
+    hetero  OPERATOR +0.1817   RANDOM +0.0935   FD -0.0604
+
+
+  `hetero` does NOT break it: the operator arm is the best of the
+  three there, and more than reverses the FD arm's negative score.
+
+  SO THE ADVERSARY RESULT IS SPLIT, one each -- which is a better answer
+  than either uniform outcome would have been, and it is only visible
+  because the seed count was raised until the comparison could resolve.
+
+  AND THE 3-SEED READING WAS WRONG.  At 3 seeds this table said the
+  operator arm was the BEST on `steps` (+0.155 against +0.073 and -0.018)
+  and that it did NOT fit pure noise hardest.  At 12 seeds it is the WORST
+  on `steps` (-0.030 against +0.057) and it DOES fit the noise hardest.
+  Both flips go AGAINST the method, and both were forecast as 'more seeds
+  would settle it' -- so this is the settling, not a new experiment.
+
+  A PREDICTION THAT FAILED, recorded because it was stated in advance: the
+  design note argued that `shift` would be SHARPER for half B than for half
+  A, since the operator trainer plans entirely inside the twin and validates
+  in-distribution, so it should be structurally blind to a shift.  It is not
+  -- the operator arm scores +0.0895 against +0.0178 and
+  +0.0177, i.e. four times the alternatives.
+  The reason is that half B's PLACEMENT is not gate-driven: the gate only
+  decides whether to keep a refinement round, and ext_09 measured that step to
+  be inert.  So the blindness argument applies to the base version's
+  gate-driven calibration and NOT to a constructor that reduces the residual
+  directly.  The prediction was wrong for a reason worth keeping.
+
+  wall time 0.2s

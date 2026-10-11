@@ -380,6 +380,6 @@ else:
     L(f"  VERDICT: NEEDS WORK (R^2={r2_dense:.4f} < 0.50)")
 L(f"{'='*55}")
 
-L(f"\nSaved: {REPORT_FILE}")
+L(f"\nSaved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")

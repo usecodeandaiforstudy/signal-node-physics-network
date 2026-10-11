@@ -88,6 +88,7 @@ cifar/
 # looked like coverage while providing none.
 !/outputs/ext_10_generalization.txt
 !/outputs/ext_11_twin_error.txt
+!/outputs/ext_13_task_family.txt
 !/outputs/ext_25_budget_matched.txt
 !/outputs/ext_26_base_family.txt
 !/outputs/ext_27_nonmonotone.txt

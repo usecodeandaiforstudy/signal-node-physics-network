@@ -389,4 +389,4 @@ L(f"{'='*60}")
 
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report)+"\n")
-L(f"Saved: {REPORT_FILE}")
+L(f"Saved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")

@@ -4,14 +4,14 @@ D=4 → K random 4→2 projections → K 2D RBFs → average fusion
 Comparison: RBF-2D (first two dims only) / MLP-4D (full dims)
 """
 import sys, os, time
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import numpy as np, torch, torch.nn as nn, torch.optim as optim
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from rbf_network import ResidualRBFNetwork
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, "outputs")
 os.makedirs(OUT, exist_ok=True)
 

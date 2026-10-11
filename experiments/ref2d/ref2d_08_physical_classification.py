@@ -3,7 +3,7 @@ Experiment 8: Physical Network 2D Classification
 Train digital model → sync to physical → evaluate + visualize at 4 noise levels
 """
 import sys, os, time
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import numpy as np, torch, torch.nn as nn, torch.optim as optim
 from sklearn.datasets import make_circles, make_moons
 from sklearn.model_selection import train_test_split
@@ -16,7 +16,7 @@ from matplotlib.colors import ListedColormap
 from rbf_network import ResidualRBFNetwork
 from physical_simulator import PhysicalResidualRBFNetwork, NoiseConfig
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(ROOT, "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 

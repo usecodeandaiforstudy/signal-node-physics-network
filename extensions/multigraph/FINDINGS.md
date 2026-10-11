@@ -462,7 +462,7 @@ attacks apply, and it had never been pointed at them.
 | task | structure | OPERATOR | RANDOM | FD | op-random | op-FD |
 |---|---|---|---|---|---|---|
 | `4d` | smooth (the reference) | +0.5698 | +0.2213 | +0.1722 | +0.3486 | +0.3977 |
-| `moons` | a different TASK TYPE (classification boundary) | +0.9861 | +0.9835 | +0.9846 | +0.0026 | +0.0015 |
+| `moons` | a different TASK TYPE (classification boundary) | +0.9847 | +0.9801 | +0.9816 | +0.0046 | +0.0032 |
 | `steps` | **DISCONTINUOUS**: a Gaussian basis cannot fit it | **-0.0297** | **+0.0573** | -0.0138 | **-0.0869** | -0.0159 || `hetero` | **HETEROSCEDASTIC**: least squares is misspecified | **+0.2303** | +0.0730 | **-0.0428** | +0.1573 | +0.2731 |
 | `shift` | train `[-2,2]` vs test `[-3,3]` | **+0.1249** | +0.0309 | +0.0520 | +0.0940 | +0.0729 |
 | `noise` | `y` independent of `x` | -0.0525 | -0.0467 | -0.0100 | *excluded* | *excluded* |
@@ -1191,12 +1191,18 @@ four arms per cell, so this re-reads"* -- it measures none of them, so shipping 
 have looked like coverage while providing none. The rest of the fifty-one reports are a
 run's intermediate output, reproducible by running the script this document does cite.
 
-**One figure has no artifact at all.** The moons classification result `0.9861` (section
-12.2) appears in no report, live or removed -- the audit searched all forty-four of the
-removed ones for it and found nothing -- so which run produced it is unresolved. It is the
-only one of the twenty-five load-bearing figures in that position, and it is stated here
-rather than left for a reader to discover: **that number can currently only be checked by
-re-running the classification experiments**, which CI does (`ext_07`, `ext_13`).
+**One figure used to have no artifact at all, and now it has one.** The moons row above read
+`+0.9861 / +0.9835 / +0.9846 / +0.0026 / +0.0015`, digits that appear in no report, live or
+removed -- the audit searched all forty-four of the removed ones and found nothing. The row now
+carries what `ext_13_task_family.py` actually prints on the current checkpoint
+(`+0.9847 / +0.9801 / +0.9816 / +0.0046 / +0.0032`), and that script's report is tracked, so the
+row can be checked without re-running it. The `steps` row was already reproducible and is
+unchanged.
+
+**The reason the old digits were unreproducible is worth stating**: `ext_13` reuses cells from
+`outputs/ext_ckpt/`, so its table is a function of the checkpoint as well as of the code. A table
+quoted from one checkpoint state cannot be reproduced from another, and half of this one had been
+re-run.
 
 Reproduce with:
 

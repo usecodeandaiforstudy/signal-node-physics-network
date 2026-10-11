@@ -14,7 +14,7 @@ Key properties:
 This is the true HiMAL approach — per-layer autograd, no SPSA, no finite differences.
 """
 import sys, os, time
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import numpy as np
 import torch
 import torch.nn as nn
@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from rbf_network.core import RBFLayer
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(ROOT, "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
