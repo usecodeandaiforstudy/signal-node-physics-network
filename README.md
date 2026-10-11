@@ -301,3 +301,4 @@ headline numbers, which `FINDINGS.md` §9 qualifies.
 **Contributing.** See [`CONTRIBUTING.md`](CONTRIBUTING.md). Contributions that extend the
 substrate coverage, replace a simulation with a measurement, or falsify a claim are the ones this
 project is built to accept.
+
