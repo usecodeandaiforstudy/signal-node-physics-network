@@ -67,25 +67,43 @@ cifar/
 !/outputs/abl_02_parallel.png
 !/outputs/abl_06_task_sweep_plot.png
 
-# The EXTENSION's evidence set, and it is EIGHT REPORTS, named one by one.
+# The EXTENSION's evidence set: EIGHTEEN REPORTS, named one by one.
 #
 # The rule here used to be `!/outputs/ext_*.txt`, which tracked every report all fifty-one
 # scripts ever wrote.  The extension's artifact map cites the SCRIPTS, not the reports, so
-# forty-five of those fifty-three files were named by no document -- a run's intermediate
-# output rather than its evidence.  A reader who wants one can produce it by running the
-# script the document does cite; shipping it saved them a run and cost the repository a
-# directory of files nothing pointed at.
+# forty-five of those fifty-three files were named by no document and were removed as a
+# run's intermediate output.
 #
-# These eight are the ones a document quotes BY NAME as its evidence
-# (BASE_CORRECTIONS.md and FINDINGS.md sections 9 and 12.15-12.19).
+# THAT WAS TOO BLUNT, and the mistake is worth recording.  "Is the filename mentioned in a
+# document" is a weaker test than "does a number a document leans on come from here".  An
+# audit of the twenty-five load-bearing figures found that ten of the removed reports were
+# the PRIMARY SOURCE for one or more of them -- the operator cascade's +0.9825 and +0.5817
+# live in ext_10, the search arm's +0.2291 and the deep calibration's -0.0710 in ext_43, the
+# table's 2.482e-05 and 1.168e-03 in ext_48 -- so those ten are back.  A reader can now
+# check those numbers without re-running the scripts.
+#
+# The other thirty-five stayed out, and one distinction decided it: ext_23_criterion_audit
+# says in its own text "No new run: both reports already carry the four arms per cell, so
+# this re-reads" -- it QUOTES eleven figures and measures none, so restoring it would have
+# looked like coverage while providing none.
+!/outputs/ext_10_generalization.txt
+!/outputs/ext_11_twin_error.txt
 !/outputs/ext_25_budget_matched.txt
 !/outputs/ext_26_base_family.txt
 !/outputs/ext_27_nonmonotone.txt
 !/outputs/ext_29_reservoir.txt
 !/outputs/ext_30_equal_params.txt
+!/outputs/ext_31_substrate_scope.txt
 !/outputs/ext_32_residual_mode.txt
 !/outputs/ext_33_gate_power.txt
 !/outputs/ext_34_deployment_harm.txt
+!/outputs/ext_35_seeding.txt
+!/outputs/ext_38_third_substrate.txt
+!/outputs/ext_43_calibration_in_deep.txt
+!/outputs/ext_48_lookup_table.txt
+!/outputs/ext_49_yukawa_family.txt
+!/outputs/ext_50_geometry_only.txt
+!/outputs/ext_51_presensor.txt
 
 # Four STALE ablation-A figures, ignored BY NAME rather than by widening the rule
 # above.  No script in the repository emits a `_smoke` or a non-`_shareaxis` plot

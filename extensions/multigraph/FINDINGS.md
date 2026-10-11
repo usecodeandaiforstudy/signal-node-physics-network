@@ -1168,6 +1168,37 @@ is not the base's, so ext_07's R^2 values should not be read against `FINDINGS.m
 | `outputs/` | the reports, `ext_<NN>_<name>.txt` and a matching `_plot.png`, one pair per experiment 01-22 |
 | `outputs/ext_ckpt/` | the resumable sweep cells: 15 for ext_08, 18 for ext_10, 18 for ext_13 |
 
+**And eighteen of the reports are tracked, because a number in this document comes from
+them.** An audit of the twenty-five load-bearing figures asked, for each, which report
+MEASURED it rather than which report mentioned it, and the answer named these:
+
+| report | what it is the primary source for |
+|---|---|
+| `outputs/ext_10_generalization.txt` | the operator cascade: **`+0.9825`** at 2-D, **`+0.5817`** at 4-D, and the direct-residual arm's **`-0.0284`** |
+| `outputs/ext_43_calibration_in_deep.txt` | the search arm's **`+0.2291`**, the deep calibration's **`-0.0710`**, the third arrangement's **`-0.0264`** |
+| `outputs/ext_48_lookup_table.txt` | the table's **`2.482e-05`** at M=512, **`1.168e-03`** at M=64, a Gaussian node's **`3.71e-06`** |
+| `outputs/ext_49_yukawa_family.txt` | the Yukawa residual **`4.164e-01`** and the s-grid errors **`4.736e-02`** / **`3.993e-03`** |
+| `outputs/ext_50_geometry_only.txt` | the geometry-only arm and the **tight bound** 12.28 predicted |
+| `outputs/ext_31_substrate_scope.txt` | the quartic source read through the degree-2 basis: **`7.82e-02`** |
+| `outputs/ext_51_presensor.txt` | the pre-sensor equivalence **`7.399e-08`** |
+| `outputs/ext_38_third_substrate.txt` | the quartic substrate's centre and width |
+| `outputs/ext_35_seeding.txt` | the seeded trainer, and the proto arm's **`+0.0069`** |
+| `outputs/ext_11_twin_error.txt` | `+0.5817` under twin error, i.e. the operator's robustness to a wrong model |
+| `outputs/ext_25`–`34` (eight) | the base-version corrections of sections 12.15–12.19 |
+
+**`ext_23_criterion_audit.txt` is deliberately NOT among them**, although it contains
+eleven of those figures. Its own text says *"No new run: both reports already carry the
+four arms per cell, so this re-reads"* -- it measures none of them, so shipping it would
+have looked like coverage while providing none. The rest of the fifty-one reports are a
+run's intermediate output, reproducible by running the script this document does cite.
+
+**One figure has no artifact at all.** The moons classification result `0.9861` (section
+12.2) appears in no report, live or removed -- the audit searched all forty-four of the
+removed ones for it and found nothing -- so which run produced it is unresolved. It is the
+only one of the twenty-five load-bearing figures in that position, and it is stated here
+rather than left for a reader to discover: **that number can currently only be checked by
+re-running the classification experiments**, which CI does (`ext_07`, `ext_13`).
+
 Reproduce with:
 
 ```

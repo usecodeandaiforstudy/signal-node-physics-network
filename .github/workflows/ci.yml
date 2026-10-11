@@ -114,23 +114,27 @@ jobs:
     # -- THE SUBSET IS MEASURED, NOT CHOSEN. ---------------------------------
     # FINDINGS.md carries a reproduce command for all 51 extension scripts, and
     # until now CI ran exactly ONE of them -- so every number in section 12 was
-    # unverified by CI.  These 30 are every script that, measured one at a time,
-    # completes in under about 12 seconds; together they take ~85 s.  Each runs
-    # with --assert, which is what makes a number a claim rather than a
+    # unverified by CI.  These 33 are every script measured to finish quickly --
+    # most under about 12 seconds, ext_50 at 14.6 s; together they take ~100 s.
+    # Each runs with --assert, which is what makes a number a claim rather than a
     # printout: without it a script prints its results and exits 0 regardless.
     #
-    # THE 21 NOT RUN HERE ARE EXCLUDED FOR COST, NOT FOR DOUBT, and they are
+    # THE 18 NOT RUN HERE ARE EXCLUDED FOR COST, NOT FOR DOUBT, and they are
     # named so nobody has to guess:
     #   ext_03 181 s   ext_14  46 s   ext_16 101 s   ext_18 131 s
     #   ext_19  50 s   ext_20 >90 s   ext_21  23 s   ext_22 106 s
     #   ext_27 >90 s   ext_28 >90 s   ext_32 >90 s   ext_34 >90 s
     #   ext_35 >90 s   ext_36 203 s   ext_39  97 s   ext_42 393 s
     #   ext_46  30 s   ext_47  25 s
-    #   ext_49, ext_50, ext_51 -- added after this list was written
     # They stay reproducible from the reproduce block; they are just too slow to
     # run on every push.  ext_46 and ext_47 are the two benchmarks and are worth
     # running by hand.
-    - name: Extension scripts (30 of 48, measured under ~12 s each)
+    #
+    # ext_49, ext_50 and ext_51 were added once their cost was MEASURED rather
+    # than guessed -- 0.1 s, 14.6 s and 0.0 s, read from the wall time each report
+    # prints -- because they carry three of the newest results and were the only
+    # ones not guarded here.
+    - name: Extension scripts (33 of 51, measured under ~15 s each)
       run: |
         set -e
         for s in \
@@ -144,7 +148,8 @@ jobs:
           ext_31_substrate_scope ext_33_gate_power ext_37_m_real \
           ext_38_third_substrate ext_40_drift_rate ext_41_authoritative \
           ext_43_calibration_in_deep ext_44_regression_defect \
-          ext_45_deep_benchmark ext_48_lookup_table ; do
+          ext_45_deep_benchmark ext_48_lookup_table \
+          ext_49_yukawa_family ext_50_geometry_only ext_51_presensor ; do
           echo "--- $s"
           python "extensions/multigraph/$s.py" --assert
         done
