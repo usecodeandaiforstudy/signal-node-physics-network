@@ -166,8 +166,14 @@ jobs:
     # extension's, so the base document's twenty-nine citations were unguarded -- and the
     # failure mode is not hypothetical: renaming an artifact updated one of those citations
     # without bringing the file, so the document came to point at something that does not
-    # exist, and only that check caught it.  A path written as a brace-list
-    # (`outputs/{a,b,c}_report.txt`) is prose rather than a filename and is skipped.
+    # exist, and only that check caught it.
+    #
+    # TWO KINDS OF ENTRY ARE PROSE, NOT PATHS, and both must be skipped: a brace-list
+    # (`outputs/{a,b,c}_report.txt`) and a glob (`outputs/abl_*.txt`, which FINDINGS.md uses
+    # to say "the whole ablation family is tracked").  Extending this check to the base
+    # document without skipping the glob is what broke CI -- and the mistake was invisible
+    # locally, because PowerShell's Test-Path EXPANDS wildcards while os.path.exists does
+    # not, so the same check reported 0 missing here and 2 there.
     - name: Repository conventions (every script asserts and writes)
       run: |
         python - <<'PY'
@@ -184,7 +190,7 @@ jobs:
         for doc in ('FINDINGS.md', 'extensions/multigraph/FINDINGS.md'):
             text = open(doc, encoding='utf-8').read()
             cited = sorted(set(re.findall(r'`(outputs/[^`]+?\.(?:txt|png))`', text)))
-            real = [c for c in cited if '{' not in c]
+            real = [c for c in cited if '{' not in c and '*' not in c and '?' not in c]
             total += len(real)
             for c in real:
                 if not os.path.exists(c):
