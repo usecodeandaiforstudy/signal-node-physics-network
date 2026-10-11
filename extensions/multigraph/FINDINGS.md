@@ -1162,8 +1162,7 @@ is not the base's, so ext_07's R^2 values should not be read against `FINDINGS.m
 | `extensions/multigraph/ext_50_geometry_only.py` | **section 12.35**: geometry-only search -- 12.28's bound is tight, and is now a measurement |
 | `extensions/multigraph/ext_51_presensor.py` | **section 12.36**: pre-sensor superposition -- DESIGN 7's last open question, answered |
 | [`BASE_CORRECTIONS.md`](BASE_CORRECTIONS.md) | **the work list**: every base claim section 12 corrects, with its line number, its replacement, and its evidence |
-| `outputs/train_01_grouped_fd_report.txt` | **section 12.8**: regenerated `train_01`; identical across K by construction |
-| `outputs/train_02_grouped_spsa_report.txt` | **section 12.8**: regenerated `train_02`; genuinely K-dependent, and it passes |
+| `experiments/train_01_grouped_fd.py`, `experiments/train_02_grouped_spsa.py` | **section 12.8**: the two regenerated base scripts. Their reports are NOT shipped -- nothing else cites them -- so run the script to see the numbers; `train_01` is identical across K by construction, `train_02` is genuinely K-dependent and it passes |
 | `extensions/multigraph/trainer.py` | `features` gained `substrate` and `measured` (ext_17); `node_amplitude`; `n_random` (ext_14); `restarts=M` (ext_19) |
 | `outputs/` | the reports, `ext_<NN>_<name>.txt` and a matching `_plot.png`, one pair per experiment 01-22 |
 | `outputs/ext_ckpt/` | the resumable sweep cells: 15 for ext_08, 18 for ext_10, 18 for ext_13 |
