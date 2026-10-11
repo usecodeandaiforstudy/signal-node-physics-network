@@ -161,6 +161,13 @@ jobs:
     # both violated in practice -- ext_10 raised NameError on EVERY run while its
     # committed report sat there looking current -- so they are checked here
     # rather than trusted.
+    #
+    # The citation check now reads BOTH findings documents.  It used to read only the
+    # extension's, so the base document's twenty-nine citations were unguarded -- and the
+    # failure mode is not hypothetical: renaming an artifact updated one of those citations
+    # without bringing the file, so the document came to point at something that does not
+    # exist, and only that check caught it.  A path written as a brace-list
+    # (`outputs/{a,b,c}_report.txt`) is prose rather than a filename and is skipped.
     - name: Repository conventions (every script asserts and writes)
       run: |
         python - <<'PY'
@@ -173,12 +180,16 @@ jobs:
                 bad.append(f + ': no --assert')
             if 'Report(' not in s:
                 bad.append(f + ': writes no report')
-        find = open('extensions/multigraph/FINDINGS.md', encoding='utf-8').read()
-        cited = sorted(set(re.findall(r'`(outputs/[^`]+?\.(?:txt|png))`', find)))
-        for c in cited:
-            if not os.path.exists(c):
-                bad.append(c + ': cited by FINDINGS.md but missing')
-        print(str(len(scripts)) + ' extension scripts, ' + str(len(cited)) + ' cited artifacts')
+        total = 0
+        for doc in ('FINDINGS.md', 'extensions/multigraph/FINDINGS.md'):
+            text = open(doc, encoding='utf-8').read()
+            cited = sorted(set(re.findall(r'`(outputs/[^`]+?\.(?:txt|png))`', text)))
+            real = [c for c in cited if '{' not in c]
+            total += len(real)
+            for c in real:
+                if not os.path.exists(c):
+                    bad.append(doc + ' cites ' + c + ', which does not exist')
+        print(str(len(scripts)) + ' extension scripts, ' + str(total) + ' cited artifacts in 2 documents')
         for b in bad:
             print('  ' + b)
         sys.exit(1 if bad else 0)
