@@ -97,6 +97,11 @@ def main():
     dims = [int(x) for x in args.dims.split(",") if x.strip()]
     n_probes = [int(x) for x in args.n_probes.split(",") if x.strip()]
 
+    # The device layer draws from the GLOBAL np.random, so without this the realisation
+    # differs every run and a borderline assertion can flip: ext_06's C2 margin was 133x
+    # one run and 9.73x the next, against a 10x bar.  This is defect 58 in CONTRIBUTING.md,
+    # and the fix is the same one the other thirty scripts already carry.
+    np.random.seed(0)
     set_ideal()
     rep = Report("ext_06_node_operator.txt")
     for line in header("ext_06 - is the closed-form geometry operator correct?",

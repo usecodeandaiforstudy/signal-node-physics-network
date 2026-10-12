@@ -120,6 +120,11 @@ def main():
     args, _u = ap.parse_known_args()
     do_assert = do_assert or args.do_assert
 
+    # The device layer draws from the GLOBAL np.random, so without this the realisation
+    # differs every run and a borderline assertion can flip: ext_06's C2 margin was 133x
+    # one run and 9.73x the next, against a 10x bar.  This is defect 58 in CONTRIBUTING.md,
+    # and the fix is the same one the other thirty scripts already carry.
+    np.random.seed(0)
     set_ideal()
     set_diffusion_defaults(level="none")
     added = install_base_family()

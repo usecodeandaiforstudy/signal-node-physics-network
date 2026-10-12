@@ -114,6 +114,10 @@ def main():
     ap = argparse.ArgumentParser(description="ext_23: quantify the win criterion")
     ap.add_argument("--assert", dest="do_assert", action="store_true")
     args, _u = ap.parse_known_args()
+    # The device layer draws from the GLOBAL np.random; without this the realisation
+    # differs every run and a borderline assertion can flip -- ext_06's C2 margin was
+    # 133x one run and 9.73x the next against a 10x bar.  Defect 58 in CONTRIBUTING.md.
+    np.random.seed(0)
     do_assert = do_assert or args.do_assert
 
     rep = Report("ext_23_criterion_audit.txt")
