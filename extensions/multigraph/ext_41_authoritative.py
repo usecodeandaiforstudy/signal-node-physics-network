@@ -288,7 +288,7 @@ def main():
     rep(f"\n  wall time {time.time()-t0:.1f}s")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     plt = try_plots()
     if plt is not None:
@@ -323,7 +323,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_41_authoritative_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     # the claim P2 makes is that the wrapper truncates a MULTI-OUTPUT readout, and the
     # claim P3 makes is that the scalar runs are rank 1.  Both are asserted, not assumed.

@@ -398,7 +398,7 @@ def main():
     rep(f"\n  wall time {time.time()-t0:.1f}s")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     plt = try_plots()
     if plt is not None:
@@ -435,7 +435,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_40_drift_rate_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     ok = (all(np.isfinite(curves[t][d]) for t in TASKS for d in DELTAS)
           and all(np.isfinite(wtol[t][d]) for t in TASKS for d in W_DELTAS))

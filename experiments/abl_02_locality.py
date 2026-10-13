@@ -349,7 +349,7 @@ def main(argv=None):
     # Save the report BEFORE plotting: an early pipe close (e.g. piping through
     # Select-Object -First N) kills the process on its next print.
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
     # ---------------------------------------------------------------------------------------
     # Plots
@@ -400,7 +400,7 @@ def main(argv=None):
         rep(f"  Plots: {p1}\n         {p2}")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
 
 if __name__ == "__main__":

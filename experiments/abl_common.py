@@ -105,7 +105,7 @@ def rel(path):
     evidence to tidy its formatting is the trade this repository refuses elsewhere.
     """
     try:
-        return os.path.relpath(str(path), ROOT_DIR).replace(os.sep, "/")
+        return os.path.relpath(str(path), ROOT_DIR).replace(os.sep, '/')
     except ValueError:                      # a different drive: no relative path exists
         return str(path)
 
@@ -1566,7 +1566,7 @@ class Report:
         # before this change still carry the absolute form; they were left alone,
         # because they are evidence and editing evidence to tidy it is the wrong trade.
         try:
-            return os.path.relpath(self.path, os.path.dirname(OUT_DIR)).replace(os.sep, "/")
+            return os.path.relpath(self.path, os.path.dirname(OUT_DIR)).replace(os.sep, '/')
         except ValueError:                      # different drives: no relative path exists
             return self.path
 

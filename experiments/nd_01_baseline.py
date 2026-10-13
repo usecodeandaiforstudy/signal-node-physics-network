@@ -462,7 +462,7 @@ def main():
     plt.tight_layout()
     path = os.path.join(OUT_DIR, "v3_e01_nd_baseline.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
-    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
     plt.close()
 
     return all_results

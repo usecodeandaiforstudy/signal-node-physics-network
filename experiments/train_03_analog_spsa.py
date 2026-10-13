@@ -227,7 +227,7 @@ L(f"  Training time:     {t_train:.0f}s")
 L(f"\n  Key: SPSA needs only ΔL = L(θ+Δ) − L(θ−Δ), not L itself.")
 L(f"       An analog differential amplifier computes ΔL directly.")
 L(f"       The entire training loop operates in analog domain.")
-L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}"); L("="*60)
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}"); L("="*60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")
 

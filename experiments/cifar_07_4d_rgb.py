@@ -511,7 +511,7 @@ plt.suptitle("C07: 4D Encoding RGB — RBF Particles in (x, y, channel, I)"
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L(f"  Report: {REPORT_FILE}")
 L("=" * 60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f:

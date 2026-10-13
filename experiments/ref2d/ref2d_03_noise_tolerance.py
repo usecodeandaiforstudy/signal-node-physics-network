@@ -213,7 +213,7 @@ def main():
     plt.tight_layout()
     path = os.path.join(OUTPUT_DIR, "03_noise_tolerance.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
-    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
     plt.close()
 
     return {"accuracies": accuracies, "r2_values": r2_values}

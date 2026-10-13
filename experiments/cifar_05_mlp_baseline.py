@@ -197,7 +197,7 @@ L(f"{'='*60}")
 L(f"  RBF E21 (4-layer, 2884p):  peak test 39.3%, peak train 53.6%")
 L(f"  MLP E24 (4-layer, {n_param}p): peak test {peak_test*100:.1f}%, peak train {peak_train*100:.1f}%")
 
-L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}"); L("="*60)
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}"); L("="*60)
 with open(REPORT_FILE,"w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
 
 # ═══════════════════════════════════════════════════

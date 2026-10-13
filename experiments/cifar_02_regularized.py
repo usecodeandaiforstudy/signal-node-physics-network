@@ -454,7 +454,7 @@ plt.suptitle("E21: Regularized Training (L2 + Center + Width)", fontsize=14, fon
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L(f"  Report: {REPORT_FILE}")
 L("=" * 60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f:

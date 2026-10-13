@@ -317,7 +317,7 @@ def main():
     rep(f"\n  wall time {time.time()-t0:.1f}s")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     plt = try_plots()
     if plt is not None:
@@ -359,7 +359,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_27_nonmonotone_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     # The assert encodes what the measurement supports: every family and size produced a
     # full diagnostic history, and the lambda grid was swept.  It cannot encode the

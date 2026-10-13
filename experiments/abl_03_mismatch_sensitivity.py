@@ -417,7 +417,7 @@ def main(argv=None):
     # Save the report BEFORE plotting: an early pipe close (e.g. piping through
     # Select-Object -First N) kills the process on its next print.
     _saved = rep.save()
-    print(f"\nReport saved: {os.path.relpath(_saved, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(_saved, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
     # ---------------------------------------------------------------------------------------
     # Plot
@@ -463,7 +463,7 @@ def main(argv=None):
         p = os.path.join(OUT_DIR, "abl_03_mismatch_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"  Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, "/")}")
+        print(f"  Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
 
 if __name__ == "__main__":

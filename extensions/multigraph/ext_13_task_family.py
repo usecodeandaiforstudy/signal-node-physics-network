@@ -374,7 +374,7 @@ def main():
     rep(f"\n  wall time {time.time()-t0:.1f}s")
 
     path = rep.save()
-    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+    print(f"\nReport saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     plt = try_plots()
     if plt is not None:
@@ -408,7 +408,7 @@ def main():
         p = os.path.join(ROOT, "outputs", "ext_13_task_family_plot.png")
         plt.savefig(p, dpi=150)
         plt.close()
-        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, "/")}")
+        print(f"Plot: {os.path.relpath(p, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
 
     if do_assert and n == 0:
         raise SystemExit(1)
