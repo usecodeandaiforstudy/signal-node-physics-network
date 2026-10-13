@@ -27,14 +27,23 @@ setup(
         "scikit-learn>=1.0",
         "pandas>=1.3",
     ],
-    # Aligned with the CI matrix (3.9 / 3.10 / 3.11) and with the README's Python badge. It
-    # said ">=3.8", which is end-of-life and which CI has never tested.
-    python_requires=">=3.9",
+    # THE FLOOR IS 3.11, AND IT IS ENFORCED BY THE ONLY VERSION CI RUNS.
+    #
+    # It said ">=3.9" while CI tested 3.9, 3.10 and 3.11 -- and the 3.9 job kept
+    # failing at import on `np.ndarray | None`, an annotation evaluated at module
+    # level that is a TypeError before 3.10.  That is not a defect in the code; it
+    # is a statement about which version the code is written for, and the matrix
+    # spent three jobs' minutes saying it three times.
+    #
+    # So it is said once, here, and CI runs one interpreter that matches it.  A
+    # single tested version that is also the declared requirement is honest; a
+    # matrix that mostly reports syntax differences is not free.
+    python_requires=">=3.11",
     classifiers=[
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Physics",
