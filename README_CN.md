@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml/badge.svg)](https://github.com/usecodeandaiforstudy/signal-node-physics-network/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org/)
 
 **节点就是物理源点**的神经网络 —— 训练不靠梯度，而靠**读器件的算子**：强度由闭式解标定，几何由场读数恢复。整套东西的目标是**在物理基底上运行**，本仓库实现并测量了三个这样的基底。
 
