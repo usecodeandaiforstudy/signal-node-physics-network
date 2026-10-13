@@ -133,6 +133,15 @@ outputs/ext_cache/
 # itself, so a run from inside experiments/ wrote there instead of to the repository's own
 # outputs/.  That script now follows the convention and the nested directory is gone; this
 # rule stays only so that a stale copy left on someone's disk is not picked up.
+#
+# THAT SCRIPT IS NOW TRACKED, recorded here because the tracking question was open for a
+# while and its answer is not visible from the file itself.  It was written alongside the
+# CIFAR line, then left untracked while its output directory was sorted out, then committed
+# by GitHub's conflict editor during a merge -- which is not a decision, so the decision was
+# made explicitly afterwards: KEEP IT.  It runs (the `--smoke` path was exercised), it reads
+# `outputs/cifar_01_baseline_report.txt` under the name that file now carries, and both
+# READMEs already list `experiments/cifar_01…cifar_07` as one family.  Its own outputs stay
+# untracked, like every other run product no document cites.
 experiments/outputs/
 
 test_outputs/
