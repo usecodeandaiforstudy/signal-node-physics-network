@@ -1,0 +1,98 @@
+==================================================================
+  ext_30 - the equal-parameter comparison, constructed
+  task=4d D=4 target total=312 fixed budget=600 seeds=3 epochs=40
+  2026-10-06 11:31:05
+==================================================================
+
+  The base's section 11 item 2 says an equal-parameter-count comparison is NOT
+  constructible here, because geometry costs D+1 per particle against 1 for a
+  scalar readout -- so the rule can only be tested by varying the ratio.
+
+  IT IS CONSTRUCTIBLE.  A layer with output width V has geometry share
+  (D+1)/(D+1+V), so V is a continuous knob on the SHARE; holding the total fixed is
+  then an integer problem, and two layers solve it exactly:
+      T = (D+1+V)*N1 + 3*N2
+  with N1 = T // (D+1+V) and N2 the remainder over 3.
+
+  Every point below sits at EXACTLY the same single-channel total.  And the
+  budget is FIXED at 600 probes/epoch for all of them, per 12.10:
+  `effective_budget` would otherwise move the budget along with the share.
+
+  key     V    particles  geometry  readout   total   share  readout/train
+  --------------------------------------------------------------------------
+  Q1      1        (52,)       260       52     312   83.3%         0.203x
+  Q2      2      (42, 6)       222       90     312   71.2%         0.352x
+  Q4      4      (34, 2)       174      138     312   55.8%         0.539x
+  Q8      8        (24,)       120      192     312   38.5%         0.750x
+  Q16    16      (14, 6)        82      230     312   26.3%         0.898x
+
+====================================================================================================
+  P1  the four arms along the share axis, at ONE total
+====================================================================================================
+
+  key     share  readout/train   geometry    readout       full     hybrid  best search   win
+  ----------------------------------------------------------------------------------------------------
+  Q1      83.3%         0.203x    +0.1120    +0.3733    +0.2642    +0.5721      +0.3733   YES
+  Q2      71.2%         0.352x    +0.1450    +0.3924    +0.3551    +0.5903      +0.3924   YES
+  Q4      55.8%         0.539x    +0.1296    +0.2802    +0.2401    +0.6300      +0.2802   YES
+  Q8      38.5%         0.750x    +0.0753    +0.0734    +0.0922    +0.5692      +0.0922   YES
+  Q16     26.3%         0.898x    +0.0611    +0.1454    +0.1727    +0.5388      +0.1727   YES
+
+====================================================================================================
+  P2  which quantity moves the arms -- the SHARE or the READOUT/TRAIN ratio?
+====================================================================================================
+
+  At a fixed total these two move in OPPOSITE directions, so they separate here.
+  A quantity controls an arm if that arm's spread across the axis tracks it.
+
+  arm                              values across the axis   vs share   vs ratio
+  ------------------------------------------------------------------------------
+  geometry             +0.112 +0.145 +0.130 +0.075 +0.061     +0.790     -0.790
+  weights              +0.373 +0.392 +0.280 +0.073 +0.145     +0.901     -0.901
+  full                 +0.264 +0.355 +0.240 +0.092 +0.173     +0.753     -0.753
+  hybrid               +0.572 +0.590 +0.630 +0.569 +0.539     +0.431     -0.431
+
+  spread across the axis: geometry 0.0839, weights 0.3191, full 0.2629, hybrid 0.0912
+
+  AND THE POINT OF THE EXERCISE: the total is CONSTANT across every row above,
+  so any spread at all is the ALLOCATION and not the count.  The largest spread
+  is 0.3191 on weights, against a total held at 312.
+
+====================================================================================================
+  VERDICT
+====================================================================================================
+
+  the hybrid wins 5/5 points along the share axis at one total
+
+  (1) SECTION 11 ITEM 2 IS WRONG ABOUT CONSTRUCTIBILITY.  The comparison exists,
+      it is exact, and it is run here; the reason it looked impossible is that
+      `V` was not treated as a knob on the share.
+
+  (2) AND THE CALIBRATED ARM IS NEARLY ALLOCATION-INDEPENDENT, which is the
+      sharpest statement this design buys.  Across the same five points the search
+      arms move a lot and the hybrid barely does:
+
+      arm          spread    margin over best search
+      ----------------------------------------------
+      geometry     0.0839 
+      weights      0.3191 
+      full         0.2629 
+      hybrid       0.0912                    +0.1988
+
+      the hybrid's MARGIN by point: 83% +0.1988, 71% +0.1979, 56% +0.3498, 38% +0.4770, 26% +0.3662
+
+      It GROWS as the allocation worsens, so the calibration is a SUBSTITUTE FOR
+      A GOOD ALLOCATION: it pays most exactly where the search arms do worst.
+      **That is a stronger form of section 6's recommendation than 'calibrating
+      helps' -- it says what the calibration is buying.**
+
+  (3) AT A CONSTANT TOTAL THE ARMS STILL MOVE, and the largest mover is
+      `weights` with a spread of 0.3191.  So the ALLOCATION carries
+      information the COUNT does not -- the parameter-count rule of section 5
+      is not the whole story, and this design says by how much.
+
+  SCOPE: one task, one fixed budget, 3 seeds, 40 epochs, and one target total.
+  A larger target total or a second task could move the spreads; nothing here
+  bounds them.
+
+  wall time 0.5s

@@ -1,0 +1,75 @@
+============================================================
+  E21: Regularized Training — Mitigating Overfitting
+============================================================
+  2026-10-05 19:50:28
+  Classes: 5, Resolution: 32x32
+  Arch: L0(3D→3D,25p,res) → L1(3D→12D,49p) → L2(12D→8D,28p) → L3(8D→6D,20p)
+  Regularization: AdamW(wd=1e-5) + center(λ=0.0005) + width(λ=0.005)
+  Training: autograd 600ep | Inference: physical + noise sweep
+
+--- Data ---
+  Train: 500, Test: 150
+
+--- Digital Training (autograd + regularization) ---
+  Trainable params: 2884
+  ep   25/600 | loss=1.6647 (CE=1.6088+reg=0.0560) | train=0.260 | test=0.233
+  ep   50/600 | loss=1.5801 (CE=1.5504+reg=0.0297) | train=0.300 | test=0.280
+  ep   75/600 | loss=1.4986 (CE=1.4779+reg=0.0207) | train=0.354 | test=0.340
+  ep  100/600 | loss=1.4393 (CE=1.4213+reg=0.0179) | train=0.374 | test=0.280
+  ep  125/600 | loss=1.4036 (CE=1.3870+reg=0.0166) | train=0.400 | test=0.320
+  ep  150/600 | loss=1.3948 (CE=1.3792+reg=0.0156) | train=0.384 | test=0.307
+  ep  175/600 | loss=1.3761 (CE=1.3609+reg=0.0152) | train=0.416 | test=0.293
+  ep  200/600 | loss=1.3625 (CE=1.3477+reg=0.0148) | train=0.398 | test=0.340
+  ep  225/600 | loss=1.3724 (CE=1.3580+reg=0.0144) | train=0.394 | test=0.333
+  ep  250/600 | loss=1.3423 (CE=1.3281+reg=0.0142) | train=0.408 | test=0.313
+  ep  275/600 | loss=1.3294 (CE=1.3151+reg=0.0142) | train=0.422 | test=0.320
+  ep  300/600 | loss=1.3282 (CE=1.3141+reg=0.0141) | train=0.446 | test=0.320
+  ep  325/600 | loss=1.3129 (CE=1.2989+reg=0.0140) | train=0.442 | test=0.333
+  ep  350/600 | loss=1.3086 (CE=1.2946+reg=0.0140) | train=0.442 | test=0.347
+  ep  375/600 | loss=1.3027 (CE=1.2888+reg=0.0139) | train=0.430 | test=0.347
+  ep  400/600 | loss=1.3532 (CE=1.3395+reg=0.0138) | train=0.438 | test=0.313
+  ep  425/600 | loss=1.2907 (CE=1.2769+reg=0.0138) | train=0.446 | test=0.327
+  ep  450/600 | loss=1.2875 (CE=1.2737+reg=0.0138) | train=0.444 | test=0.333
+  ep  475/600 | loss=1.2817 (CE=1.2680+reg=0.0137) | train=0.450 | test=0.333
+  ep  500/600 | loss=1.2797 (CE=1.2660+reg=0.0137) | train=0.460 | test=0.340
+  ep  525/600 | loss=1.2773 (CE=1.2637+reg=0.0137) | train=0.462 | test=0.340
+  ep  550/600 | loss=1.2744 (CE=1.2608+reg=0.0136) | train=0.462 | test=0.360
+  ep  575/600 | loss=1.2730 (CE=1.2593+reg=0.0136) | train=0.460 | test=0.353
+  ep  600/600 | loss=1.2708 (CE=1.2572+reg=0.0136) | train=0.460 | test=0.347
+  Restored best model (test acc=0.360)
+  Training done: 3676s, 24 evals
+
+  Digital test accuracy: 36.0%
+
+--- Physical Deployment ---
+  Digital-Physical feature MSE (10 test imgs): 0.000018
+
+  Noise sweep:
+      none: accuracy=32.7%
+       low: accuracy=34.7%
+    medium: accuracy=30.0%
+      high: accuracy=24.0%
+
+  Physical confusion (no noise):
+    airplane     6   5   9   5   5  (20%)
+    automobile   2  20   1   5   2  (67%)
+    bird         4   7   9   4   6  (30%)
+    cat          3   9   9   4   5  (13%)
+    deer         5   3   4   8  10  (33%)
+
+============================================================
+  SUMMARY
+============================================================
+  Digital train: 46.2% (peak) → 46.0% (final)
+  Digital test:  36.0% (best, early-stop @ 600ep)
+  Train-Test gap: 11.3% (E18 was 9.9%)
+  Final CE loss:  1.2572 | Reg loss: 0.0136
+  Training time: 3676s
+  Digital-Physical gap: 0.000018 MSE
+  Physical noise drop:    none=32.7% → high=24.0% (26.5% degradation)
+  Physical trainable:     YES — all params in PhysicalRBFLayerND
+  Pipeline:               autograd train → from_digital → physical infer
+
+  Plot: F:\singal-node-physics-network\outputs\e21_regularized_plot.png
+  Report: F:\singal-node-physics-network\outputs\e21_regularized_report.txt
+============================================================

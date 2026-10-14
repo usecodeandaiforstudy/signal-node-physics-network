@@ -1,13 +1,150 @@
-# Reference data (not for version control)
+# Local scratch.  Move unwanted-but-not-deletable files here: reference/ is
+# ignored, so nothing in it reaches the repository, and nothing is destroyed.
 reference/
 v2/
 
 # Downloaded datasets (run experiments/download_cifar.py to fetch)
 cifar/
 
-# Experiment outputs
+# Experiment outputs.
+#
+# `outputs/*` rather than `outputs/`: ignoring the DIRECTORY would make git skip
+# it entirely, and no `!` negation inside it could ever take effect.  Ignoring the
+# CONTENTS lets the evidence below be tracked while caches and legacy reports stay
+# out.
+#
+# Tracked on purpose (FINDINGS.md cites these as its evidence; without them a
+# fresh clone has a conclusions page pointing at files that do not exist):
+#   outputs/abl_*.txt    ablation reports  (sections 5, 6, 8, 11)
+#   outputs/abl_*.png    their figures
+#   outputs/sub_01_*     the substrate verification suite (sections 2, 3, 8)
+# Everything else under outputs/ is ignored: outputs/abl_cache/ (the model caches)
+# and every report or figure no document names.  experiments/cifar_07_4d_rgb.py
+# READS outputs/cifar_01_baseline_report.txt, so that pair must not be moved or
+# deleted without updating the reader.
+# The patterns below are ANCHORED with a leading slash on purpose.  Unanchored,
+# `outputs/*` and its negations match a directory named `outputs` at ANY depth,
+# so `experiments/outputs/abl_something.txt` would have been whitelisted too.
+# Verified with `git check-ignore -v`: an unanchored negation did let a nested
+# copy through.  Anchoring keeps the whitelist to the repository's own outputs/.
+/outputs/*
+!/outputs/abl_*.txt
+!/outputs/sub_01_*.txt
+# Added when the missing artifacts were found: five scripts PRINTED their results and saved
+# nothing, so their numbers existed only in a terminal, and the CIFAR line's flagship number
+# lived in an untracked report that a comparison script then HARD-CODED.  A number that
+# cannot be cited cannot be checked, which is what made the CIFAR comparison unresolvable
+# (extension FINDINGS.md 12.32).  These are tracked for the reason stated above -- a document
+# names them -- and `cifar_02_regularized_report.txt` is the one 12.32 quotes.
+# The `nd_*` reports were dropped from the whitelist entirely.  Only three exist --
+# nd_04_himal_pipeline, nd_05_himal_comparison, nd_07_physical_verify -- and no document
+# names any of them.  (An earlier edit here listed six `nd_NN_report.txt` files that do
+# not exist: written from memory, and caught by listing the directory.)
+!/outputs/cifar_01_baseline_report.txt
+!/outputs/cifar_01_baseline_report_PRE_SEED.txt
+!/outputs/cifar_02_regularized_report.txt
+!/outputs/cifar_02_regularized_report_UNSEEDED.txt
+!/outputs/cifar_02_regularized_report_PRE_SEED.txt
+!/outputs/cifar_03_3layer_reg_report.txt
+!/outputs/cifar_03_3layer_reg_report_PRE_SEED.txt
+!/outputs/cifar_04_large_data_report.txt
+!/outputs/cifar_04_large_data_report_PRE_SEED.txt
+!/outputs/cifar_05_mlp_baseline_report.txt
+!/outputs/cifar_05_mlp_baseline_report_PRE_SEED.txt
+!/outputs/cifar_06_three_way_compare_report.txt
+!/outputs/cifar_06_three_way_compare_report_PRE_SEED.txt
+
+# The FIVE figures a document actually cites, whitelisted by name.  Plots are not
+# evidence the way a report is: a plot is regenerable from the report's numbers by
+# re-running its script, and no claim depends on the image itself.  Everything else
+# under outputs/ that is a figure stays untracked, which took about sixty files out
+# of the repository -- most of them the extension's, none of which any document cites.
+# The name-by-name form is deliberate: a pattern like `!/outputs/*_plot.png` would
+# re-admit every figure the moment a script emitted one.
+!/outputs/abl_01_scaling_diffusion_shareaxis_plot.png
+!/outputs/abl_01_capacity_split_diffusion_shareaxis_plot.png
+!/outputs/abl_02_coupling.png
+!/outputs/abl_02_parallel.png
+!/outputs/abl_06_task_sweep_plot.png
+
+# The EXTENSION's evidence set: EIGHTEEN REPORTS, named one by one.
+#
+# The rule here used to be `!/outputs/ext_*.txt`, which tracked every report all fifty-one
+# scripts ever wrote.  The extension's artifact map cites the SCRIPTS, not the reports, so
+# forty-five of those fifty-three files were named by no document and were removed as a
+# run's intermediate output.
+#
+# THAT WAS TOO BLUNT, and the mistake is worth recording.  "Is the filename mentioned in a
+# document" is a weaker test than "does a number a document leans on come from here".  An
+# audit of the twenty-five load-bearing figures found that ten of the removed reports were
+# the PRIMARY SOURCE for one or more of them -- the operator cascade's +0.9825 and +0.5817
+# live in ext_10, the search arm's +0.2291 and the deep calibration's -0.0710 in ext_43, the
+# table's 2.482e-05 and 1.168e-03 in ext_48 -- so those ten are back.  A reader can now
+# check those numbers without re-running the scripts.
+#
+# The other thirty-five stayed out, and one distinction decided it: ext_23_criterion_audit
+# says in its own text "No new run: both reports already carry the four arms per cell, so
+# this re-reads" -- it QUOTES eleven figures and measures none, so restoring it would have
+# looked like coverage while providing none.
+!/outputs/ext_10_generalization.txt
+!/outputs/ext_11_twin_error.txt
+!/outputs/ext_13_task_family.txt
+!/outputs/ext_25_budget_matched.txt
+!/outputs/ext_26_base_family.txt
+!/outputs/ext_27_nonmonotone.txt
+!/outputs/ext_29_reservoir.txt
+!/outputs/ext_30_equal_params.txt
+!/outputs/ext_31_substrate_scope.txt
+!/outputs/ext_32_residual_mode.txt
+!/outputs/ext_33_gate_power.txt
+!/outputs/ext_34_deployment_harm.txt
+!/outputs/ext_35_seeding.txt
+!/outputs/ext_38_third_substrate.txt
+!/outputs/ext_43_calibration_in_deep.txt
+!/outputs/ext_48_lookup_table.txt
+!/outputs/ext_49_yukawa_family.txt
+!/outputs/ext_50_geometry_only.txt
+!/outputs/ext_51_presensor.txt
+
+# Four STALE ablation-A figures, ignored BY NAME rather than by widening the rule
+# above.  No script in the repository emits a `_smoke` or a non-`_shareaxis` plot
+# name any more, and a repository-wide search finds these four cited in no
+# document -- so they are orphans of an earlier version of
+# experiments/abl_01_capacity_split.py.  The figures FINDINGS.md actually cites
+# (abl_01_scaling_diffusion_shareaxis_plot.png and
+# abl_01_capacity_split_diffusion_shareaxis_plot.png) are tracked and must stay
+# so: a clone that cannot see them has a conclusions page pointing at files that
+# do not exist, which is the defect the whitelist above exists to prevent.
+# These patterns come AFTER the `!` negations on purpose -- a later pattern wins.
+/outputs/abl_01_capacity_split_plot.png
+/outputs/abl_01_scaling_plot.png
+/outputs/abl_01_capacity_split_diffusion_smoke_plot.png
+/outputs/abl_01_scaling_diffusion_smoke_plot.png
+
+# The extension keeps its OWN model cache.  It must never write into
+# outputs/abl_cache/: that cache is keyed by (task, arch, arm, seed, epochs,
+# budget) and ablation C LOADS from it to reuse ablation A's models, so a
+# colliding key would make abl_03 evaluate an extension model as if it were a
+# base model (DESIGN section 9.1).  Covered by /outputs/* already; written out
+# so nobody "tidies" it away.
+outputs/ext_cache/
+
+# experiments/cifar_07_4d_rgb.py used to resolve a nested experiments/outputs/ relative to
+# itself, so a run from inside experiments/ wrote there instead of to the repository's own
+# outputs/.  That script now follows the convention and the nested directory is gone; this
+# rule stays only so that a stale copy left on someone's disk is not picked up.
+#
+# THAT SCRIPT IS NOW TRACKED, recorded here because the tracking question was open for a
+# while and its answer is not visible from the file itself.  It was written alongside the
+# CIFAR line, then left untracked while its output directory was sorted out, then committed
+# by GitHub's conflict editor during a merge -- which is not a decision, so the decision was
+# made explicitly afterwards: KEEP IT.  It runs (the `--smoke` path was exercised), it reads
+# `outputs/cifar_01_baseline_report.txt` under the name that file now carries, and both
+# READMEs already list `experiments/cifar_01…cifar_07` as one family.  Its own outputs stay
+# untracked, like every other run product no document cites.
+experiments/outputs/
+
 test_outputs/
-outputs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

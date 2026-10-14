@@ -16,7 +16,15 @@ from torch.utils.data import DataLoader
 from typing import Optional, List, Tuple, Dict
 from sklearn.decomposition import PCA
 
-plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
+# `font.sans-serif`, not `font.family`.  A missing name in `font.family` is not
+# skipped the way it is in the sans-serif list, so the old line -- which named two
+# families that exist only on Linux and macOS -- made matplotlib fall back to its
+# default font.  That font has no U+2212, so every negative tick label in every
+# figure rendered as a dummy box, and every run printed a screenful of
+# "findfont: Font family ... not found" warnings.  `axes.unicode_minus = False`
+# was already set and could not help: it chooses the ASCII hyphen only if the
+# font is the one that was asked for.
+plt.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
 

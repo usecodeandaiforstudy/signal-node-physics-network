@@ -3,7 +3,7 @@
 RBF particle network vs MLP comparison + decision boundary visualization
 """
 import sys, os, time
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import numpy as np, torch, torch.nn as nn, torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.datasets import make_circles, make_moons
@@ -16,7 +16,7 @@ from matplotlib.colors import ListedColormap
 
 from rbf_network import ResidualRBFNetwork
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(ROOT, "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 

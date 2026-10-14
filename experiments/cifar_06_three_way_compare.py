@@ -18,7 +18,7 @@ All models share:
   - Same training: 600 epochs, MultiStepLR[400,550], LR=0.005
   - Same loss: CE with learnable prototype vectors
 
-Output: outputs/e25_compare_report.txt + _plot.png
+Output: outputs/cifar_06_three_way_compare_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -30,8 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e25_compare_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e25_compare_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_06_three_way_compare_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_06_three_way_compare_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")
@@ -47,6 +47,7 @@ def L(s): print(s, flush=True); report.append(s)
 N_CLASSES = 5; IMG_SIZE = 32
 N_TRAIN = 100; N_TEST = 30
 EPOCHS = 600; LR = 0.005
+SEED = 0                      # model init, data split, and sampling
 TEMPERATURE = 0.06; PROTO_REG = 0.02
 EVAL_EVERY = 25; EARLY_STOP_PATIENCE = 14
 
@@ -200,6 +201,15 @@ L(f"\n--- RBF (E21) ---")
 L(f"  Params: {rbf_params} | Peak train={rbf_train}% | Peak test={rbf_test}% (from E21)")
 
 # MLP
+# ONE SEED COVERS THE MODEL INITIALISATIONS.  The DATA SPLIT was already seeded
+# (`np.random.seed(c*100)` in the per-class loop) but the TORCH INITIALISATION was
+# NOT, so every number here was a single draw from an unseeded process -- the same
+# defect found and fixed in training/himal_nd.py and training/proto_nd.py.  Seeded
+# once, before the FIRST model, so every arm of this comparison draws from one
+# stream and the comparison is between arms rather than between draws.
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
 mlp=MLPModel()
 res_mlp=train_model("MLP (1024→32→16→8→6)", mlp, tr_f, train_lbl, te_f, test_lbl, True)
 results["MLP"]=res_mlp
@@ -227,7 +237,7 @@ L(f"  RBF (2884p) vs CNN ({res_cnn[0]}p): test {rbf_test:.1f}% vs {res_cnn[2]*10
 L(f"\n  Key insight: RBF with fewest params (2884) achieves better test")
 L(f"  than MLP with 11.7x more params (33644). Only CNN's conv inductive")
 L(f"  bias beats it, but CNN cannot be implemented in pure analog circuits.")
-L(f"\n  Plot: {PLOT_FILE} | Report: {REPORT_FILE}"); L("="*60)
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}"); L("="*60)
 with open(REPORT_FILE,"w",encoding="utf-8") as f: f.write("\n".join(report)+"\n")
 
 # ═══════════════════════════════════════════════════

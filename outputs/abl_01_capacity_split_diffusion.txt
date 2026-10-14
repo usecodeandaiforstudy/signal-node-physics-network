@@ -1,0 +1,72 @@
+==================================================================
+  Ablation A - Capacity split: geometry vs readout matrix
+  substrate=diffusion task=4d archs=['F2'] arms=['geometry', 'weights', 'hybrid', 'hybrid_once', 'full'] seeds=2 epochs=40 budget=AUTO (2 sweeps of the largest arm)
+  2026-09-29 18:56:53
+==================================================================
+
+--- Part 0: forward-chain self-test ---
+  both substrates compute the same function from the same parameters,
+  so the numbers below are produced by real physics on either medium
+
+--- Data (4d) ---
+  train=(256, 4) test=(128, 4)  y std=1.247
+
+--- Architecture census (single channel, scalar residual readout) ---
+  F2 (matrix-free, front-loaded) layers=3 in_dims=[4, 1, 1] out_dims=[1, 1, 1] geom=224 (81%) readout=52 (19%)
+      arm sizes {'geometry': 224, 'weights': 52, 'hybrid': 224, 'hybrid_once': 224, 'full': 276} -> probes/epoch {'geometry': 600, 'weights': 600, 'hybrid': 600, 'hybrid_once': 600, 'full': 600}, sweeps/epoch {'geometry': 2.68, 'weights': 11.54, 'hybrid': 2.68, 'hybrid_once': 2.68, 'full': 2.17}
+  NOTE: the number of epochs is identical everywhere; the protocol is
+        equal_probes. equal_probes gives equal measurement cost
+        and therefore MORE sweeps to the smaller arm; equal_sweeps gives
+        equal coverage at unequal cost. An arm that wins one and loses
+        the other is more efficient per measurement, not a better
+        representation -- which is why both protocols should be run.
+  [F2/geometry seed=0] test R2=+0.0902 probes/ep=600 fwd=48000 calib=0 (12.8s)
+  [F2/geometry seed=1] test R2=+0.0974 probes/ep=600 fwd=48000 calib=0 (14.2s)
+  [F2/weights seed=0] test R2=+0.3837 probes/ep=600 fwd=48000 calib=0 (14.0s)
+  [F2/weights seed=1] test R2=+0.4509 probes/ep=600 fwd=48000 calib=0 (13.6s)
+  [F2/hybrid seed=0] test R2=+0.4841 probes/ep=600 fwd=48000 calib=13312 (14.0s)
+  [F2/hybrid seed=1] test R2=+0.6014 probes/ep=600 fwd=48000 calib=13312 (13.9s)
+  [F2/hybrid_once seed=0] test R2=+0.5880 probes/ep=600 fwd=48000 calib=13312 (13.6s)
+  [F2/hybrid_once seed=1] test R2=+0.5930 probes/ep=600 fwd=48000 calib=13312 (14.3s)
+  [F2/full seed=0] test R2=+0.2255 probes/ep=600 fwd=48000 calib=0 (14.6s)
+  [F2/full seed=1] test R2=+0.3495 probes/ep=600 fwd=48000 calib=0 (15.4s)
+
+
+==================================================================
+  RESULTS -?test R^2 at equal analog measurement budget
+==================================================================
+  arch  capacity split             arm        params  geom% probes/ep  sweeps   R2 mean   +-std  retained
+  ----------------------------------------------------------------------------------------------------------------
+  F2    matrix-free, front-loaded  geometry      276    81%       600    2.68   +0.0938  0.0036      0.33
+  F2    matrix-free, front-loaded  weights       276    81%       600   11.54   +0.4173  0.0336      1.45
+  F2    matrix-free, front-loaded  hybrid        276    81%       600    2.68   +0.5427  0.0586      1.89
+  F2    matrix-free, front-loaded  hybrid_once     276    81%       600    2.17   +0.5905  0.0025      2.05
+  F2    matrix-free, front-loaded  full          276    81%       600    2.17   +0.2875  0.0620      1.00
+  ('retained' = R2_arm / R2_full, shown only when R2_full >= 0.05;
+   otherwise n/a, because a ratio against a non-fitting reference is noise)
+
+  'hybrid' = geometry probed by FD (same budget as the geometry arm)
+             + source strengths CALIBRATED in closed form.
+  W_ij IS the excitation strength of particle j, so the calibration is
+  an offline source-strength setting, not a numerical shortcut.
+  Cost accounting for arch F2: the calibration is ONE-TIME
+    physical route : 13312 measurement-equivalents (n_train x sum_k N_k)
+    digital twin   : 0 physical measurements
+    per-epoch FD   : 1200 forward passes/epoch x 40 epochs = 48000
+  Compare the one-time cost against the TOTAL FD cost before
+  concluding that calibrating is cheaper -- on this problem it is not;
+  it is cheaper only when the epoch count or the particle count is
+  large.  What it does buy unconditionally is that W is then EXACT.
+
+==================================================================
+  VERDICT -?Phase 1 (each arm trained from scratch)
+==================================================================
+  F2: geometry R2=+0.0938 vs weights R2=+0.4173 -> WEIGHTS carries more skill
+
+  The readout matrix dominates in all 3 architectures: under this
+  budget the geometry is a feature map, not the carrier of capacity.
+
+  Total wall time: 140s
+  Substrate: diffusion
+  Cache: F:\singal-node-physics-network\outputs\abl_cache (keyed by task/substrate/arch/arm/seed/epochs/budget; reused by abl_03)
+  Plot: F:\singal-node-physics-network\outputs\abl_01_capacity_split_plot.png

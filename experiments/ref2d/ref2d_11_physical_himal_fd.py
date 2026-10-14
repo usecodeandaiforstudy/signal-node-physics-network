@@ -19,7 +19,7 @@ the 6-component analog circuit model, not PyTorch tensor math.
 """
 
 import sys, os, time
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import numpy as np
 import torch
 import torch.nn as nn
@@ -37,7 +37,7 @@ from rbf_network.core import ResidualRBFNetwork, RBFLayer
 from physical_simulator.layer import PhysicalRBFLayer
 from physical_simulator import NoiseConfig
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = os.path.join(ROOT, "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 

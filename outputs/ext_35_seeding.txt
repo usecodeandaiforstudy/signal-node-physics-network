@@ -1,0 +1,72 @@
+==================================================================
+  ext_35 - does `seed` make HiMALND reproducible?
+  layer_sizes=(20, 15, 10) quick_epochs=3 seeds=1
+  2026-10-04 22:45:43
+==================================================================
+
+  `BASE_CORRECTIONS.md` entry 0: HiMALND took no `seed` and never seeded the
+  global RNG, so two calls with identical arguments gave different networks.
+  The fix seeds once at the top of `train`, which is sufficient because the
+  class has exactly two randomness sources and both hang off `train`:
+      `_init_layer`  -- centres, W_gauss, W_act   (3x np.random.uniform)
+      `_spsa_step`   -- the SPSA perturbation      (1x np.random.choice)
+
+====================================================================================================
+  P1  two runs, identical arguments, identical result
+====================================================================================================
+
+  parameters returned  : 930 floats
+  bit-identical        : **True**
+  depth curve identical : **True**   ['+0.146547', '+0.151586', '+0.152015']
+
+  (Before the fix this was False, and how different the two runs were depended
+  on what had run earlier in the process -- which is why the old numbers were
+  single draws rather than measurements.)
+
+====================================================================================================
+  P2  a different seed must change the result, or the parameter is useless
+====================================================================================================
+
+  seed 0 vs seed 1     : parameters differ = **True**
+  depth curve seed 0   : ['+0.146547', '+0.151586', '+0.152015']
+  depth curve seed 1   : ['+0.260753', '+0.263261', '+0.263326']
+
+  A seed that changed nothing would pass P1 while doing no work, so this is the
+  check that the parameter is load-bearing.
+
+====================================================================================================
+  P3  at the PUBLISHED configuration: how much of the depth gain is the draw?
+====================================================================================================
+
+  This is the question entry 0 leaves behind.  `reg_01`'s +0.013 and `reg_02`'s
+  +0.064 were single unseeded draws, so the honest report of any re-run is a
+  spread and not a point.
+
+  **THE SPREAD IS ALREADY MEASURED, in `ext_32`** -- the same configuration,
+  seeds 0-2, both modes, and it reports `proto +0.0069 (sd 0.0045)` against
+  `direct -0.0284 (sd 0.0152)`.  So this part runs ONE confirmation per mode
+  rather than repeating a 50-minute sweep: its job is to show that the number
+  is now reproducible AT A STATED SEED, which is what entry 0 asked for.
+
+  mode       seed    R2 (L1)   R2 (L1+L2)  R2 (L1+L2+L3)   DEPTH GAIN
+  ------------------------------------------------------------------
+  proto         0    +0.2761      +0.2745        +0.2878      +0.0117
+  proto      mean                                             +0.0117   (sd nan, n=1)
+
+  direct        0    +0.2761      +0.2655        +0.2460      -0.0301
+  direct     mean                                             -0.0301   (sd nan, n=1)
+
+====================================================================================================
+  VERDICT
+====================================================================================================
+
+  **THE FIX WORKS: identical arguments give a bit-identical network, and a
+  different seed gives a different one.**  Entry 0's test is met on both
+  sides, so numbers from this class can now be reported with the seed that
+  produced them.
+
+  WHAT THIS DOES NOT DO: it does not re-run every script that quotes a number
+  from this class.  It establishes that they CAN be re-run reproducibly, and
+  P3 reports what one of them should report -- a spread, not a point.
+
+  wall time 817.2s

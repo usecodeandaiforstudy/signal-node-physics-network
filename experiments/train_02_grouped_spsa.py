@@ -20,7 +20,7 @@ Question:
 
 Task: 1D sin(x) regression, single-layer RBF, 40 particles, 160 params.
 
-Output: outputs/e14_parallel_spsa.png + _report.txt
+Output: outputs/train_02_grouped_spsa.png + _report.txt
 """
 import sys, os, time
 import numpy as np
@@ -39,8 +39,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e14_parallel_spsa_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e14_parallel_spsa.png")
+REPORT_FILE = os.path.join(OUT_DIR, "train_02_grouped_spsa_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "train_02_grouped_spsa.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False
@@ -133,7 +133,13 @@ def _build_group_masks(n_particles, dim, n_vars, n_params, K):
 
         mask = np.zeros(n_params, dtype=bool)
         for p in particles:
-            mask[p * D:(p + 1) * D] = True
+            # centers is (D, N), .ravel() is C-order, so particle p's centre
+            # coordinates are at d*N + p -- NOT p*D + d.  The earlier version
+            # used p*D and therefore masked the same dimension of different
+            # particles; results previously reported from this script must be
+            # regenerated.
+            for d in range(D):
+                mask[d * N + p] = True
             mask[D * N + p] = True
             offset_wg = D * N + N
             for k in range(V):
@@ -467,9 +473,9 @@ fig.suptitle("E14: Grouped SPSA vs Per-Parameter FD — Speed/Accuracy Tradeoff"
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
-L(f"\n  Report saved: {REPORT_FILE}")
+L(f"\n  Report saved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L(f"{'='*60}")
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")

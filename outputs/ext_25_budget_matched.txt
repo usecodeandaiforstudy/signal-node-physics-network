@@ -1,0 +1,73 @@
+==================================================================
+  ext_25 - fix the budget, vary only N
+  task=4d seed=0 epochs=40 budgets=[600, 2400] archs=['S52', 'S104', 'S208']
+  2026-10-06 11:30:57
+==================================================================
+
+  WHY: ext_24 could not answer section 11's tail because `effective_budget`
+  derives the per-epoch budget from the architecture, so raising N raised the
+  budget too (600 -> 1200 -> 2500) and moved the hybrid curve's FIRST point
+  (1200 -> 2400 -> 5000) past the 3000 grid point.  At N=208 the low-budget
+  comparison was UNDEFINED, not bad.  Passing an explicit budget fixes it:
+  the first point is then identical for every N.
+
+  AND IT INTRODUCES A RISK: a fixed budget can be too small for a bigger network.
+  `budget` is probes per epoch and each probe costs 2 forward passes, so a full
+  sweep of an N-particle layer needs 2*(D+2)*N forward passes -- at budget 600 an
+  N=208 layer manages 0.24 sweeps/epoch.  Section 7 of the base reports exactly
+  this situation as INCONCLUSIVE.  So every cell is checked against the 0.05
+  learning floor and a cell that fails it is NOT counted as a win.
+
+  runtime archs added: ['S52', 'S104', 'S208']
+
+====================================================================================================
+  P1  N x FIXED budget, one task, one seed
+====================================================================================================
+
+   budget arch      N  sweeps/ep  frontier  best search     hybrid   win  @3000 hybrid  @3000 best  @3000 win   1st m   floor
+  ----------------------------------------------------------------------------------------------------------------------
+      600 S52      52       3.85     48000      +0.3839    +0.5884   YES       +0.4665     +0.0605        YES    1200      ok
+      600 S104    104       1.92     48000      +0.3776    -0.3625    no       -0.5424     +0.0335         no    1200      ok
+      600 S208    208       0.96     48000      +0.2560    +0.0850    no       -0.0233     +0.0007         no    1200      ok
+
+     2400 S52      52      15.38    192000      +0.5341    +0.5963   YES          +nan        +nan         no    4800      ok
+     2400 S104    104       7.69    192000      +0.5711    -0.2125    no          +nan        +nan         no    4800      ok
+     2400 S208    208       3.85    192000      +0.5113    +0.2960    no          +nan        +nan         no    4800      ok
+
+  'sweeps/ep' = forward passes spent per epoch / forward passes a full sweep of
+  that layer needs.  'floor' is whether the BEST search arm clears the learning
+  floor: a row marked LOW is uninformative and is not counted as a win.
+
+====================================================================================================
+  VERDICT: with the budget fixed, does the low-budget advantage survive N?
+====================================================================================================
+
+  budget 600:
+    first curve point for every N: [1200]  -> @3000 DEFINED for all N
+    sweeps/epoch: N=52 3.85, N=104 1.92, N=208 0.96
+    cells clearing the floor: 3/3
+    @3000 hybrid leads at: N=52 YES, N=104 NO, N=208 NO
+    at the frontier it leads at: N=52 YES, N=104 NO, N=208 NO
+
+  budget 2400:
+    first curve point for every N: [4800]  -> @3000 undefined somewhere
+    sweeps/epoch: N=52 15.38, N=104 7.69, N=208 3.85
+    cells clearing the floor: 3/3
+    @3000 hybrid leads at: N=52 NO, N=104 NO, N=208 NO
+    at the frontier it leads at: N=52 YES, N=104 NO, N=208 NO
+
+  budget 600: within the cells that clear the floor, the @3000
+    margin goes N=52 +0.4060 -> N=208 -0.0240
+  budget 2400: within the cells that clear the floor, the @3000
+    margin goes N=52 +nan -> N=208 +nan
+
+  THE ADVANTAGE DOES NOT SURVIVE at every usable cell, and the cells where
+  it fails are named above.  This is the answer ext_24 could not give, and
+  it is a real one because the budget is now held fixed.
+
+  SCOPE: one task, one seed, single-layer matrix-free architectures, and 40
+  epochs.  The scaled family is not the base's own (whose families are
+  three-layer at the same total particle count), so this bounds the claim for
+  THIS family and the base's tail still needs its own budget-matched run.
+
+  wall time 0.3s

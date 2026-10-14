@@ -1,0 +1,107 @@
+==================================================================
+  ext_43 - the closed-form calibration, inside the deep trainer
+  epochs=60 seeds=3 particles=20
+  2026-10-06 11:31:29
+==================================================================
+
+  The project's largest single claim is that the strengths should be CALIBRATED in
+  closed form, not searched (FINDINGS.md section 6: 15-30x fewer measurements).  And
+  the deep paths do not do it: `training/himal_nd.py` runs per-parameter FD / SPSA on
+  EVERY parameter, and the CIFAR line runs autograd.  **On the project's own deepest
+  demonstration the strengths are still searched.**
+
+  SCOPE, CHECKED BEFORE ACTING: `HiMALND`'s REGRESSION path is
+  `out = (hA + hB)/2` with `h = z @ W^T` -- LINEAR in the strengths -- and its own
+  docstring says it is STAGEWISE RESIDUAL ('L2/L3 learn y - accumulated_pred'),
+  which is the structure `solve_readout_closed_form` is built on.  Its
+  CLASSIFICATION path is nearest-prototype voting and is NOT linear, so the
+  calibration does not apply there -- that is the case DESIGN.md's table already
+  marks 'readout linear in strengths? no'.
+
+  AND A SIMPLIFICATION FOUND ON THE WAY: `_forward_layer` returns `out_g + out_a`,
+  i.e. `z @ (W_gauss + W_act)^T`.  **The two channels are DEGENERATE -- only their
+  sum matters** -- so the calibration solves the sum and the other channel is zeroed.
+  Solving only one and leaving the other would ADD the old weights back on the next
+  forward and undo the solve; that mistake is written down here because it is silent.
+
+====================================================================================================
+  P1  the cost share, from the parameter layout
+====================================================================================================
+
+  `get_params_vector` = centres (D*N) + h (N) + W_gauss (n_vars*N) + W_act (n_vars*N).
+  Every one of those is perturbed twice per FD step, so the share of the search's
+  budget spent on the READOUT is:
+
+   n_vars  readout share of the parameter vector
+  ------------------------------------------------
+        1                                 33.3%
+        2                                 50.0%
+        3                                 60.0%
+        4                                 66.7%
+
+  **A third of the search's work at `n_vars = 1`, and it is work the calibration does
+  exactly.**  That is what the wrapper reclaims, and the arm it is tested against
+  keeps spending it -- so the comparison below is CONSERVATIVE.
+
+====================================================================================================
+  P2  search vs calibration, the base's own trainer, paired seeds
+====================================================================================================
+
+  seed   SEARCH (shipped)   CALIB (wrapped)   calib - search   readout R2 during training
+  ----------------------------------------------------------------------------------------
+     0            +0.2195           +0.2552          +0.0357                       0.3440
+     1            +0.2473           +0.2457          -0.0016                       0.3826
+     2            +0.2204           -0.0265          -0.2469                       0.3700
+
+====================================================================================================
+  P3  VERDICT
+====================================================================================================
+
+  **CONTROL FIRST: the shipped SEARCH arm averages +0.2291 against the
+  project's own 0.05 floor -- it LEARNS, so the comparison is meaningful.**
+
+  calibration minus search, per seed: +0.0357, -0.0016, -0.2469
+  mean -0.0710, calibration better on 1 of 3 seeds
+
+  **THE CALIBRATION DOES NOT HELP HERE**, on the same forward budget and with
+  the comparison stacked in its favour.  That is a NEGATIVE answer to the
+  worklist's item 1 and it is worth as much as a positive one: it would mean the
+  deep path's strengths are not the bottleneck, and the search is earning its
+  forwards on the GEOMETRY rather than on the readout.
+
+  **WHAT THE WRAPPER DOES NOT FIX, and it is the honest limit.**  The calibration
+  is applied AFTER the SPSA step, so the search still moves the readout and the
+  calibration then corrects it; a true 'calibrate, do not search' arm would remove
+  those coordinates from the parameter vector, which is a change to
+  `get_params_vector` -- a BASE method -- and is NOT done here.  **The measurement
+  therefore bounds the gain from below rather than measuring it.**
+
+  **WHAT THE PER-LAYER SOLVE SHOWS, which is why the answer is negative rather than
+  disappointing.**  The solve fits its own residual target to `R^2 ~ 0.34-0.38` on
+  every seed, so the calibration WORKS per layer -- and it still does not improve the
+  end-to-end result.  **So the readout is not the bottleneck of the deep path, and the
+  search is earning its forwards on the GEOMETRY.**  That is a negative answer to
+  worklist item 1, and it is the answer the measurement supports.
+
+  **AND THE CALIBRATION CAN HURT: seed 2 is `-0.2469`.**  The wrapper overwrites the
+  searched readout with a ridge solve on a held-out slice of the layer's OWN data, and
+  when that slice is unrepresentative the replacement is worse than what the search
+  had.  With one seed in three materially negative, the honest reading is that the
+  calibration is not RELIABLY better here, not merely that it fails to be better.
+
+  **WHAT CHANGED BETWEEN THIS RUN AND THE PREVIOUS ONE, because it is the context that
+  makes this measurement mean anything.**  The first run of this script could not
+  compare at all: the SEARCH arm scored `-0.0341` and did not clear the floor, so the
+  control refused.  `ext_44` then showed WHY -- `HiMALND.predict`'s regression branch
+  returned the last layer's raw output, which is a RESIDUAL, instead of the
+  accumulation `train` builds -- and that defect was FIXED in the base (12.29).  **So
+  this is the first comparison ever made on the deep regression path, and the first
+  time that path has cleared the project's own learning floor.**
+
+  **AND THE COST SIDE IS STILL OPEN.**  A calibration costs `n_train * N` measurements
+  under the base's own model (`readout_calibration_cost`), which is not free -- 12.21
+  and 12.27 both measured that the same measurements often buy more elsewhere.  Here
+  the arm that pays that cost does not even win on accuracy, so the question does not
+  need asking; on a task where it DID win, it would.
+
+  wall time 8.3s

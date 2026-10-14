@@ -10,7 +10,7 @@ All 5 improvements integrated:
 
 All ops from physical_simulator.components.
 
-Output: outputs/e12_california_reg_v6_report.txt + .png
+Output: outputs/reg_06_california_v6_report.txt + .png
 """
 import sys, os, time, types
 import numpy as np
@@ -35,8 +35,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e12_california_reg_v6_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e12_california_reg_v6.png")
+REPORT_FILE = os.path.join(OUT_DIR, "reg_06_california_v6_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "reg_06_california_v6.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False
@@ -379,7 +379,7 @@ ax.set_xlabel("Residual"); ax.set_ylabel("Count")
 ax.set_title(f"Residuals (std={res.std():.2f})")
 fig.suptitle("E12 v6: California Housing — Full Physical Integration", fontsize=11)
 plt.tight_layout(); plt.savefig(PLOT_FILE, dpi=150); plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
 L(f"\n{'='*60}")
 L(f"  v5 baseline (A+B+C, 25/18/14p, 80ep): R²=0.477")
@@ -389,4 +389,4 @@ L(f"{'='*60}")
 
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report)+"\n")
-L(f"Saved: {REPORT_FILE}")
+L(f"Saved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")

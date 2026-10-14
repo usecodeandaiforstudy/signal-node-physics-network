@@ -1,0 +1,58 @@
+============================================================
+  E23: 4-Layer + More Data + Extended Training — Push Past 40%
+============================================================
+  2026-08-01 22:30:49
+  Classes: 5, Resolution: 32x32, Train: 150/class
+  Arch: L0(3D→3D,25p,res) → L1(3D→12D,49p) → L2(12D→8D,28p) → L3(8D→6D,20p)
+  Reg: center(λ=0.0005) + width(λ=0.005)
+  Training: 1000ep, LR=0.004, MultiStepLR[500,750,900] gamma=0.3
+
+--- Data ---
+  Train: 750 (150/class), Test: 150 (30/class)
+  Params: 2884
+
+--- Training (150 img/class, 1000ep, full-batch) ---
+  ep  100 | loss=1.5243 (CE=1.5049+reg=0.0194) | train=0.328 | test=0.207 | lr=4.00e-03
+  ep  200 | loss=1.3738 (CE=1.3598+reg=0.0139) | train=0.425 | test=0.327 | lr=4.00e-03
+  ep  300 | loss=1.2873 (CE=1.2751+reg=0.0122) | train=0.465 | test=0.340 | lr=4.00e-03
+  ep  400 | loss=1.2691 (CE=1.2573+reg=0.0118) | train=0.475 | test=0.313 | lr=4.00e-03
+  ep  500 | loss=1.2474 (CE=1.2357+reg=0.0117) | train=0.479 | test=0.333 | lr=1.20e-03
+  ep  600 | loss=1.2296 (CE=1.2179+reg=0.0117) | train=0.485 | test=0.340 | lr=1.20e-03
+  ep  700 | loss=1.2251 (CE=1.2134+reg=0.0117) | train=0.484 | test=0.333 | lr=1.20e-03
+  ep  800 | loss=1.2184 (CE=1.2067+reg=0.0117) | train=0.488 | test=0.333 | lr=3.60e-04
+  Early stop at ep 840
+  Restored best test (36.7%)
+
+  Done: 5405s
+  Peak train: 49.2% @ ep 540
+  Peak test:  36.7% @ ep 480
+  Best test (early-stop): 36.7%
+
+--- Physical Deployment ---
+  D-P MSE: 0.000000
+  Physical   none: 36.7%
+  Physical    low: 35.3%
+  Physical medium: 28.7%
+  Physical   high: 28.0%
+
+  Physical confusion:
+    airplane    11   6   3   7   3  (37%)
+    automobile   8  15   0   4   3  (50%)
+    bird         3   4  12   7   4  (40%)
+    cat          6   4   6  12   2  (40%)
+    deer         7   6   5   7   5  (17%)
+
+============================================================
+  SUMMARY
+============================================================
+  Peak train:     49.2% @ ep 540
+  Peak test:      36.7% @ ep 480
+  Best test (es): 36.7%
+  Final train/test: 48.9% / 33.3%
+  Gap:            15.6%
+  Time:           5405s
+  D-P gap:        0.000000 MSE
+  Noise drop:     none=36.7% → high=28.0% (23.6%)
+
+  Plot: F:\singal-node-physics-network\outputs\e23_large_reg_4layer_plot.png | Report: F:\singal-node-physics-network\outputs\e23_large_reg_4layer_report.txt
+============================================================

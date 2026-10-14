@@ -27,7 +27,7 @@ Metrics:
   - R^2 vs epoch learning curves (same fwd budget, same gradient method)
   - Per-K prediction quality on dense grid
 
-Output: outputs/e13_parallel_benchmark.png + _report.txt
+Output: outputs/train_01_grouped_fd.png + _report.txt
 """
 import sys, os, time
 import numpy as np
@@ -47,8 +47,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e13_parallel_benchmark_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e13_parallel_benchmark.png")
+REPORT_FILE = os.path.join(OUT_DIR, "train_01_grouped_fd_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "train_01_grouped_fd.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False
@@ -144,8 +144,15 @@ def _build_group_indices(n_particles, dim, n_vars, K):
 
         indices = []
         for p in particles:
-            # centers: [p*D, (p+1)*D)
-            indices.extend(range(p * D, (p + 1) * D))
+            # centers is (D, N) and .ravel() is C-order, so dimension d of
+            # particle p sits at index d*N + p -- NOT p*D + d.
+            # Verified: with D=3, N=4, particle 1 occupies [1, 5, 9].
+            # The earlier version of this function used p*D, which grouped the
+            # SAME dimension of DIFFERENT particles together and therefore did
+            # not test particle independence at all.  Any result previously
+            # reported from this script must be regenerated.
+            for d in range(D):
+                indices.append(d * N + p)
             # h: at D*N + p
             indices.append(D * N + p)
             # W_gauss: (V, N) C-order
@@ -441,9 +448,9 @@ fig.suptitle("E13 Direction B: Particle Independence Test — Grouped Per-Parame
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
-L(f"\n  Report saved: {REPORT_FILE}")
+L(f"\n  Report saved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L(f"{'='*60}")
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")

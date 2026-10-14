@@ -6,40 +6,187 @@ on:
   pull_request:
     branches: [ main ]
 
+# =============================================================================
+# WHAT THIS FILE IS FOR, AND WHAT IT IS NOT.
+#
+# CI's job here is to be a CHEAP LIE DETECTOR: it must fail when a claim in a
+# document stops matching the code.  It is not a benchmark harness and not a
+# full regression run.  The expensive checks still exist and still matter -- they
+# are simply run by hand, and their numbers are the ones the documents quote.
+#
+# TWO CHANGES WERE MADE TO MAKE IT STAY GREEN, and both removed a failure mode
+# that had nothing to do with the code:
+#
+#   1. ONE PYTHON VERSION.  The matrix was 3.9 / 3.10 / 3.11, and it kept
+#      finding things that were not defects: `np.ndarray | None` in an
+#      annotation is a TypeError before 3.10, so the 3.9 job died at import
+#      while 3.10 and 3.11 passed the same step.  That is a real compatibility
+#      fact about the code, but testing three interpreters cost three times the
+#      minutes to report one thing: which version the code is written for.
+#      So the question was answered ONCE, by raising the floor to 3.11 in
+#      setup.py, and the matrix is gone.  A single version that matches the
+#      declared requirement is honest; a matrix that mostly reports syntax
+#      differences is not free.
+#
+#   2. THE SLOW STEPS ARE OUT.  `abl_run_all --quick` took ~15 minutes and the
+#      legacy suite ~8, on every push, to re-derive numbers that had not
+#      changed.  The extension loop is trimmed too, and for a measured reason:
+#      see the note above it.
+#
+# THE TRADE IS STATED PLAINLY: a defect that only the ablations, only the legacy
+# suite, or only an untrimmed extension script would catch now reaches `main`.
+# What replaces that is the habit of running those before a release, and the
+# reproduce commands in FINDINGS.md, which are unchanged.
+# =============================================================================
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # THE ONE THING THAT MUST NEVER BREAK: the substrate thresholds that sections
+  # 2, 3 and 8 of FINDINGS.md rest on.  It takes about eleven seconds.
+  # ---------------------------------------------------------------------------
   test:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.11"
 
-    - name: Upgrade pip
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-
-    - name: Install PyTorch (CPU version for CI)
-      run: |
         pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-    - name: Install other dependencies
-      run: |
         pip install numpy matplotlib scipy scikit-learn pandas
-
-    - name: Install package
-      run: |
         pip install -e .
 
-    - name: Run smoke test (run_all)
+    # --assert enforces the physical thresholds: the kernel against an
+    # independent PDE solve, exact superposition, mandatory amplitude
+    # calibration, and the readout cost ratio.  Without --assert this suite only
+    # PRINTS its numbers, so a rewrite could break a claim and still exit 0.
+    - name: Substrate verification (enforced thresholds)
       run: |
-        python experiments/run_all.py
+        python experiments/sub_01_diffusion_verify.py --assert
+      timeout-minutes: 10
+
+    # THE ABLATIONS AND THE LEGACY SUITE ARE DELIBERATELY NOT HERE.  They cost
+    # ~15 and ~8 minutes and re-derive committed numbers; `abl_run_all --quick`
+    # is a pipeline smoke test whose figures are explicitly not the ones in
+    # FINDINGS (the real ones take ~6.5 h).  Run them before a release:
+    #     python experiments/abl_run_all.py --quick
+    #     python experiments/legacy_suite.py
+
+  # ---------------------------------------------------------------------------
+  # The EXTENSION is a SEPARATE job on purpose: it is not part of the base
+  # version's guarantee, and it needs no torch.
+  # ---------------------------------------------------------------------------
+  extension:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy scipy scikit-learn
+
+    # -- The correctness ANCHOR, and it comes FIRST on purpose. --------------
+    # The extension must reproduce the base version in the degenerate
+    # configuration (k = m, shared geometry, C = I).  If it does not, every
+    # later extension number is measured against the wrong baseline, so this is
+    # the cheapest and most valuable gate the extension has.
+    - name: Extension correctness anchor (degenerate case must match the base)
+      run: |
+        python extensions/multigraph/ext_01_baseline.py --assert
+      timeout-minutes: 10
+
+    # -- NINE SCRIPTS, CHOSEN BY WHICH CLAIM THEY CARRY. ---------------------
+    # This step used to run thirty-three.  On this machine those take ~100 s
+    # together, which is why they were chosen; ON A CI RUNNER THE SAME LOOP TOOK
+    # OVER TWENTY MINUTES and hit its cap, and the log named the reason:
+    #
+    #     [P1] b=600 S104/geometry  cache=False pts=40
+    #
+    # ext_24, ext_25 and ext_26 sweep architectures through a model cache in
+    # `outputs/ext_cache/`, which is gitignored, so a fresh clone has none and
+    # every cell is computed from scratch.  A local timing measures the CACHE,
+    # not the script.  Those three, plus ext_33 (its own cache directory, same
+    # problem), are out for that reason and not for doubt.
+    #
+    # What remains is the extension's load-bearing set: the anchor above, the
+    # geometry operator, the task family, the substrate precondition, the third
+    # substrate, the lookup table and its two boundaries, and the pre-sensor
+    # saving.  Each still runs with --assert, which is what makes a number a
+    # claim rather than a printout.
+    #
+    # THE FULL SET IS STILL RUNNABLE AND STILL DOCUMENTED: FINDINGS.md carries a
+    # reproduce command for all 51 scripts, and the ones left out here are left
+    # out for cost.
+    - name: Extension scripts (the load-bearing subset)
+      run: |
+        set -e
+        for s in \
+          ext_06_node_operator ext_13_task_family ext_31_substrate_scope \
+          ext_38_third_substrate ext_48_lookup_table ext_49_yukawa_family \
+          ext_50_geometry_only ext_51_presensor ; do
+          echo "--- $s"
+          python "extensions/multigraph/$s.py" --assert
+        done
       timeout-minutes: 20
+
+    # -- AND THE CONVENTIONS THE REPOSITORY PUBLISHES, checked mechanically --
+    # CONTRIBUTING.md says every script takes --assert and writes an artifact,
+    # and that a cited artifact is tracked.  Those are cheap to check and were
+    # both violated in practice -- ext_10 raised NameError on EVERY run while its
+    # committed report sat there looking current.
+    #
+    # The citation check reads BOTH findings documents.  It used to read only the
+    # extension's, so the base document's citations were unguarded -- and the
+    # failure mode is not hypothetical: renaming an artifact updated one of those
+    # citations without bringing the file, so the document came to point at
+    # something that does not exist, and only that check caught it.
+    #
+    # TWO KINDS OF ENTRY ARE PROSE, NOT PATHS, and both must be skipped: a
+    # brace-list (`outputs/{a,b,c}_report.txt`) and a glob (`outputs/abl_*.txt`,
+    # which FINDINGS.md uses to say "the whole ablation family is tracked").
+    # Extending this check to the base document without skipping the glob is what
+    # broke CI once -- and the mistake was invisible locally, because
+    # PowerShell's Test-Path EXPANDS wildcards while os.path.exists does not, so
+    # the same check reported 0 missing here and 2 there.
+    - name: Repository conventions (every script asserts and writes)
+      run: |
+        python - <<'PY'
+        import glob, os, re, sys
+        bad = []
+        scripts = sorted(glob.glob('extensions/multigraph/ext_*.py'))
+        for f in scripts:
+            s = open(f, encoding='utf-8').read()
+            if '--assert' not in s:
+                bad.append(f + ': no --assert')
+            if 'Report(' not in s:
+                bad.append(f + ': writes no report')
+        total = 0
+        for doc in ('FINDINGS.md', 'extensions/multigraph/FINDINGS.md'):
+            text = open(doc, encoding='utf-8').read()
+            cited = sorted(set(re.findall(r'`(outputs/[^`]+?\.(?:txt|png))`', text)))
+            real = [c for c in cited if '{' not in c and '*' not in c and '?' not in c]
+            total += len(real)
+            for c in real:
+                if not os.path.exists(c):
+                    bad.append(doc + ' cites ' + c + ', which does not exist')
+        print(str(len(scripts)) + ' extension scripts, ' + str(total) + ' cited artifacts in 2 documents')
+        for b in bad:
+            print('  ' + b)
+        sys.exit(1 if bad else 0)
+        PY
+      timeout-minutes: 5

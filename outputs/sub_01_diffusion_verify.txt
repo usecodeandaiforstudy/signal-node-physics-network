@@ -1,0 +1,210 @@
+====================================================================
+  Diffusion-field substrate -- verification suite
+  Project: singal-node-physics-network
+  2026-10-10 18:55:31
+====================================================================
+====================================================================
+  PART 0: interface equivalence -- same parameters, same contract
+====================================================================
+  parameter vector length: diffusion=81 circuit=81 (production layer=81)
+  layout identical (both substrates, element-wise): YES
+  set_params_from_vector round trip identical: YES
+
+  substrate                            max|out_g - digital|   max|out_a - digital|
+  --------------------------------------------------------------------------------
+  analog circuit (NoiseConfig none)               6.529e-07              3.958e-07
+  diffusion cell (ideal, float64)                 7.635e-08              4.600e-08
+  diffusion cell (ideal, float32)                 7.451e-08              5.960e-08
+
+  Read this carefully.  In the ideal limit BOTH substrates agree with the
+  digital model; in float32 both are rounding-limited at ~1e-7.  The
+  difference is not the size of the number, it is what the number means:
+    circuit   : exp() comes from a behavioural device model, so agreement
+                is a statement about the simulator's arithmetic, and the
+                exponent scaling (v_t = 1.0) has to be assumed perfect
+    diffusion : exp() IS the Green's function of a real PDE, so the same
+                agreement is a statement about physics, and Part 1 checks
+                the kernel against an independent PDE solve
+
+====================================================================
+  PART 1: kernel fidelity vs an independent PDE solve
+====================================================================
+  grid: 1201 points, dx=1.000e-05 m, dt=4.000e-07 s, 12501 steps, cfl=0.400
+  source width sigma0 = 0.200 mm, diffusion length sqrt(2 D T) = 1.0000 mm
+
+  comparison                                               max relative error
+  ----------------------------------------------------------------------------
+  finite-difference PDE solve   vs   analytic solution              1.618e-05
+  substrate propagator (conv.)  vs   PDE solve                      1.618e-05
+  substrate propagator (conv.)  vs   analytic solution              4.112e-14
+
+  Line 2 is the one that matters: the substrate's closed-form propagator,
+  applied numerically, reproduces an independent finite-difference solution
+  of the diffusion equation.  Line 1 bounds the scheme's own error, so the
+  substrate is verified as PHYSICS rather than as an implementation
+  detail.  Nothing here is compared against itself.
+
+====================================================================
+  PART 2: superposition -- the 'combine' step is a physical law here
+====================================================================
+  12 signed point sources, amplitudes N(0,1), at random positions
+  test                                                       relative error
+  --------------------------------------------------------------------------
+  field(all) - [field(even) + field(odd)]                         2.858e-16
+  vectorised sum - literal one-source-at-a-time loop              0.000e+00
+
+  Both are at float64 rounding level, i.e. the layer's sum over particles
+  is EXACT.  This is what makes 'activate then combine' a physical law on
+  this substrate rather than a circuit that approximates a sum: the PDE is
+  linear, so no intermodulation, no saturation, no cross-talk terms exist.
+  A thresholded medium (an excitable/spiking substrate) would fail exactly
+  this test, and that is the check to run before adopting any new medium.
+
+====================================================================
+  PART 3: the Green's-function prefactor and why calibration is needed
+====================================================================
+  cell: D=0.001 m^2/s, h=0.5 input units -> 0.500 mm
+  narrow-channel delay t = h^2/(4 k D) = 125.00 us
+  per-source calibration gain g = (4 pi D t)^(dim/2) = 1.2533e-03
+
+  injection scheme                               max abs error vs digital
+  --------------------------------------------------------------------------
+  q_ij = W_ij * g_j   (calibrated)                              5.915e-08
+  q_ij = W_ij          (not calibrated)                         9.976e+00
+
+  The uncalibrated error is the per-source prefactor variance: sources with
+  different widths have different peak amplitudes, so forgetting g_j scales
+  each particle's contribution by a different factor.  Physically g_j is a
+  pulse energy, so the calibration is a per-source amplitude setting -- but
+  it must be redone every time a width h_j changes, i.e. on every training
+  step that touches a width.  That is the real cost this substrate adds.
+
+====================================================================
+  PART 4: one trained model, three substrates
+====================================================================
+  task: y = sin(x), single RBF layer, 30 particles, dual channel, PU on
+  training: ridge regression on frozen features (closed form)
+  digital test R2 = 1.00000
+
+  substrate                            test R2   max|pred - digital|
+  --------------------------------------------------------------------
+  digital model (torch)                1.00000             0.000e+00
+  analog circuit (ideal)               1.00000             1.103e-06
+  diffusion: carrier (D=1e-3)          1.00000             9.992e-08
+  diffusion: photon (D=1e+5)           1.00000             9.992e-08
+
+  Same trained weights, three substrates, no retraining.  The parameter
+  vector is byte-identical (Part 0), which is the operational content of
+  'the architecture is substrate agnostic'.
+
+  Note on the size of the deviation: the digital layer guards its PU divide
+  with '+ 1e-8', so agreement with ANY physical substrate is floor-limited
+  at about 1e-8 by that epsilon, not by the substrate.  This is the reason
+  the circuit substrate's 7.8e-7 should not be read as physical fidelity.
+
+  DiffusionRBFLayerND D=1 N=30 V=1 norm=pu calibrate=True
+    carrier diffusion: D=0.001 m^2/s dim=2 axis_scale=(0.001,) h_scale=0.001 m/unit domain=infinite images=0 sensor=32bit noise=0 pos_res=0 m strength_noise=0 sign=signed
+
+====================================================================
+  PART 5: non-idealities -- each one a named physical effect
+====================================================================
+  condition                                      max abs deviation       rel
+  --------------------------------------------------------------------------
+  readout noise/drift/quant: low                         3.398e-03 3.398e-03
+  readout noise/drift/quant: medium                      2.896e-02 2.896e-02
+  readout noise/drift/quant: high                        2.602e-01 2.603e-01
+  positioner resolution 1 um                             4.853e-04 4.854e-04
+  positioner resolution 10 um                            4.295e-03 4.295e-03
+  positioner resolution 100 um                           5.041e-02 5.042e-02
+  positioner resolution 1000 um                          4.779e-01 4.780e-01
+  reflecting cell, 7.7 mm (kernel h=0.45 mm)             1.493e-02 1.493e-02
+
+  Boundary design rule (isolated source at the centre of a reflecting cell):
+    cell width / h    boundary-induced rel. error
+  ------------------------------------------------
+               2.0                      2.713e-01
+               3.0                      2.222e-02
+               5.0                      7.453e-06
+               8.0                      2.531e-14
+              12.0                      0.000e+00
+              20.0                      0.000e+00
+
+  A reflecting cell must therefore be roughly an order of magnitude wider
+  than the kernel, or the returning field has to be subtracted explicitly
+  with image sources (which is what the n_images setting does).
+
+  The operative rule is the distance from the SOURCE to the nearest wall,
+  not the cell width -- a particle sitting against a wall sees its own image
+  at twice that distance no matter how big the cell is:
+    source-to-wall / h    boundary-induced rel. error
+  ----------------------------------------------------
+                   0.5                      6.065e-01
+                   1.0                      1.353e-01
+                   1.5                      1.111e-02
+                   2.0                      3.355e-04
+                   3.0                      1.523e-08
+                   5.0                      0.000e+00
+
+  The trained model above sits in a cell whose half-width is 3.84 mm while its outermost particles are at 3.20 mm,
+  i.e. source-to-wall/h - 1.4, which is exactly
+  the regime where the table still shows a per-cent effect.  Layout, not
+  cell size, is what protects the kernel.
+
+  positive-only medium (thermal-like) cannot inject negative strengths.
+  Realised as two identical cells with opposite drive, then subtracted:
+    field measurements per probe block: signed=4, differential=8 (2.0x)
+  Carrier diffusion needs no such scheme: electrons and holes give both signs.
+
+====================================================================
+  PART 6: measurement cost model (field measurements per layer per block)
+====================================================================
+  probes inside a block are read in parallel by a sensor array, so the cost
+  is per block and not per input sample.
+
+  substrate / scheme                              measurements   vs naive
+  ------------------------------------------------------------------------
+  diffusion, strength-encoded, signed, dual channel             4      0.06x
+  diffusion, strength-encoded, differential, dual             8      0.13x
+  diffusion, per-particle naive readout, dual               62      1.00x
+  analog-circuit substrate (memristor MVM, one shot)             1      0.02x
+
+  N=30 particles, n_vars=1, use_pu=True
+  strength encoding turns the readout matrix into per-source pulse
+  amplitudes, so ONE injection computes a whole output channel: the
+  measurement count depends on the number of OUTPUTS, not on the number
+  of particles.  Speedup vs the naive per-particle readout: 15.5x.
+  The partition-of-unity denominator costs one extra unit-strength
+  measurement; that is the price of PU on any field substrate.
+
+  [assert] all 7 enforced thresholds hold -- the physical claims that
+  sections 2, 3 and 8 of FINDINGS.md rest on are intact.
+
+====================================================================
+  SUMMARY
+====================================================================
+  parameter layout shared with the production layer      : YES
+  kernel vs independent PDE solve, max rel. error        : 1.62e-05
+  superposition error (12 sources, signed)               : 2.86e-16
+  calibrated transfer error vs digital model             : 5.92e-08
+  uncalibrated (prefactor ignored)                       : 9.98e+00
+  worst non-ideality deviation                           : 4.78e-01
+  boundary: source-to-wall/h for 1e-3 rel. error         : 2.0x
+  positioner spec keeping output error < 0.5%            : <= 10 um
+  measurements per block, strength-encoded dual          : 4 (naive 62)
+  wall time: 24.0s
+
+  What this establishes, and what it does not:
+   + a second substrate implements the same network with a byte-identical
+     parameter vector, so trained weights move across media unchanged
+   + the kernel is verified against a PDE solve, i.e. as physics
+   + superposition is exact, so the combine step is a physical law
+   + cross-substrate trade-off, measured rather than asserted:
+       diffusion : kernel exact, superposition exact, but n_vars+1 field
+                   measurements per block
+       circuit   : ONE shot for the whole readout (memristor crossbar),
+                   but exp() is a behavioural device model, not a PDE
+   - this is a numerical substrate: the Green's function is evaluated in
+     closed form.  Real cells add timing jitter, temperature drift of D,
+     and source-size effects, none of which are modelled here
+   - the numbers assume the geometry printed in Part 5; they are
+     illustrations of the scaling laws, not device specifications

@@ -1,0 +1,68 @@
+==================================================================
+  ext_26 - the base's own family, budget held fixed
+  task=4d seed=0 epochs=40 budgets=[600, 2400] archs=['T52', 'T104', 'T208']
+  2026-10-06 11:30:58
+==================================================================
+
+  ext_25 removed ext_24's confound and answered NEGATIVELY -- but it said in its
+  own scope note that the family it scaled is NOT the base's own.  The base's
+  families are three-layer at the same total particle count, and a three-layer
+  front-loaded family stores its parameters differently, so the base's own
+  controlling quantity (readout params per sample) grows differently with N.
+
+  This scales the BASE's shape by proportion:
+    T52   particles=(40, 8, 4)  out_dims=(1, 1, 1)
+    T104  particles=(80, 16, 8)  out_dims=(1, 1, 1)
+    T208  particles=(160, 32, 16)  out_dims=(1, 1, 1)
+
+  T52 is IDENTICAL to the base's own F2 (asserted at install time), so it doubles
+  as an anchor at the base's own size.
+
+  runtime archs added: ['T52', 'T104', 'T208']
+
+========================================================================================================
+  P1  the base's family, N x FIXED budget
+========================================================================================================
+
+   budget arch      N  params  sweeps/ep  frontier  best search     hybrid   win  @3000 hybrid  @3000 best  @3000 win   1st m   floor
+  --------------------------------------------------------------------------------------------------------------------------
+      600 T52      52     276       4.35     48000      +0.3837    +0.5891   YES       +0.4676     +0.0033        YES    1200      ok
+      600 T104    104     552       2.17     48000      +0.4987    +0.0351    no       -0.0916     +0.0153         no    1200      ok
+      600 T208    208    1104       1.09     48000      +0.1489    +0.1047    no       -0.0587     -0.0080         no    1200      ok
+
+     2400 T52      52     276      17.39    192000      +0.4895    +0.5867   YES          +nan        +nan         no    4800      ok
+     2400 T104    104     552       8.70    192000      +0.5800    +0.0936    no          +nan        +nan         no    4800      ok
+     2400 T208    208    1104       4.35    192000      +0.1857    +0.1864   YES          +nan        +nan         no    4800      ok
+
+
+========================================================================================================
+  VERDICT: does the base's own family behave like the single-layer one?
+========================================================================================================
+
+  budget 600:
+    first curve point across N: [1200]  -> @3000 DEFINED for all N
+    sweeps/epoch:  N=52 4.35, N=104 2.17, N=208 1.09
+    clearing the floor: 3/3
+    @3000 margin across the usable cells: N=52 +0.4644, N=104 -0.1069, N=208 -0.0508
+    -> DOES NOT SURVIVE on this family at this budget
+
+  budget 2400:
+    first curve point across N: [4800]  -> @3000 undefined somewhere
+    sweeps/epoch:  N=52 17.39, N=104 8.70, N=208 4.35
+    clearing the floor: 3/3
+    only 0 usable cell(s) -- no within-budget verdict
+
+  'USABLE' means the cell clears the learning floor AND its first curve point is
+  below 3000; a cell failing either carries no verdict.
+
+  THE ANCHOR: T52 IS the base's F2, run here at budget 600 with
+  the budget held fixed.  Its frontier best-search is +0.3837 and
+  hybrid +0.5891; compare with the base's own F2 rows under
+  effective_budget, which is a DIFFERENT budget and therefore not the same cell.
+
+  SCOPE: one task, one seed, 40 epochs.  The family is now the base's own SHAPE,
+  scaled -- not the base's own sizes, which are fixed at 52, so this is as close
+  to the base's own tail as one task and one seed allow.  A multi-seed version
+  would be needed before any of it is quoted as the base's result.
+
+  wall time 0.3s

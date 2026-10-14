@@ -1,0 +1,56 @@
+============================================================
+  E23: 4-Layer + More Data + Extended Training — Push Past 40%
+============================================================
+  2026-10-05 22:23:11
+  Classes: 5, Resolution: 32x32, Train: 150/class
+  Arch: L0(3D→3D,25p,res) → L1(3D→12D,49p) → L2(12D→8D,28p) → L3(8D→6D,20p)
+  Reg: center(λ=0.0005) + width(λ=0.005)
+  Training: 1000ep, LR=0.004, MultiStepLR[500,750,900] gamma=0.3
+
+--- Data ---
+  Train: 750 (150/class), Test: 150 (30/class)
+  SEED=0  (model init, data split, and sampling)
+  Params: 2884
+
+--- Training (150 img/class, 1000ep, full-batch) ---
+  ep  100 | loss=1.5247 (CE=1.5077+reg=0.0170) | train=0.347 | test=0.307 | lr=4.00e-03
+  ep  200 | loss=1.3485 (CE=1.3344+reg=0.0141) | train=0.429 | test=0.340 | lr=4.00e-03
+  ep  300 | loss=1.3025 (CE=1.2891+reg=0.0135) | train=0.449 | test=0.327 | lr=4.00e-03
+  ep  400 | loss=1.2819 (CE=1.2687+reg=0.0132) | train=0.464 | test=0.347 | lr=4.00e-03
+  ep  500 | loss=1.2744 (CE=1.2615+reg=0.0129) | train=0.467 | test=0.320 | lr=1.20e-03
+  Early stop at ep 580
+  Restored best test (36.0%)
+
+  Done: 5023s
+  Peak train: 48.7% @ ep 580
+  Peak test:  36.0% @ ep 220
+  Best test (early-stop): 36.0%
+
+--- Physical Deployment ---
+  D-P MSE: 0.000020
+  Physical   none: 35.3%
+  Physical    low: 36.0%
+  Physical medium: 36.0%
+  Physical   high: 22.7%
+
+  Physical confusion:
+    airplane    12   4   2   4   8  (40%)
+    automobile   4  14   2   5   5  (47%)
+    bird         6   2   6   5  11  (20%)
+    cat          6   5   3  13   3  (43%)
+    deer         8   5   3   6   8  (27%)
+
+============================================================
+  SUMMARY
+============================================================
+  Peak train:     48.7% @ ep 580
+  Peak test:      36.0% @ ep 220
+  Best test (es): 36.0%
+  Final train/test: 48.7% / 33.3%
+  Gap:            15.3%
+  Time:           5023s
+  D-P gap:        0.000020 MSE
+  Noise drop:     none=35.3% → high=22.7% (35.8%)
+
+  Plot: F:\singal-node-physics-network\outputs\e23_large_reg_4layer_plot.png | Report: F:\singal-node-physics-network\outputs\e23_large_reg_4layer_report.txt
+============================================================

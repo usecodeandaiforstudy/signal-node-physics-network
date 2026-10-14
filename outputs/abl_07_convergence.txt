@@ -1,0 +1,60 @@
+==================================================================
+  Ablation G - convergence, schedule, gate sample size
+  parts=['a', 'b', 'c'] arch=F2 seeds=1 substrate=diffusion
+  2026-10-02 13:42:49
+==================================================================
+
+--- self-test ---
+
+==============================================================================
+  Part A: EPOCHS x BUDGET -- convergence gap or asymptotic gap?
+==============================================================================
+  arch F2, arms geometry vs readout, 1 seed per cell so the
+  grid fits in the compute budget; the question is the SHAPE, not the
+  precision of any single cell.
+
+   budget  epochs   geometry    readout       gap    geo fwd
+  ------------------------------------------------------------
+      300      20    -0.0245    +0.1600   +0.1845      12000
+      300      40    +0.0427    +0.2773   +0.2346      24000
+
+  Reading it: if the gap shrinks toward 0 as epochs grow at FIXED
+  budget, the result is about convergence rate.  If it plateaus at a
+  positive value, the readout genuinely carries more of the fit.
+
+   budget    gap@20    gap@40    gap@80   gap@160        trend
+  --------------------------------------------------------------
+      300   +0.1845   +0.2346   asymptotic
+
+==============================================================================
+  Part B: CALIBRATION SCHEDULE -- how often must it be attempted?
+==============================================================================
+  arch F2, arm hybrid, budget 600 probes/epoch, 1 seeds
+
+   attempt every         R2    +-std  attempts  accepted       fwd
+  ----------------------------------------------------------------
+      1 epoch(s)    +0.5891   0.0000        40         1     48000
+     once (ep 0)    +0.5891   0.0000         1         1     48000
+
+  If the R^2 column is flat across the schedule, the attempt period can
+  be lengthened for free -- the gate, not the schedule, is what decides.
+
+==============================================================================
+  Part C: GATE SAMPLE SIZE -- how big must the validation slice be?
+==============================================================================
+  Shrinking the slice makes the gate's score noisier, so a WORSE
+  calibration can win by luck.  Run on `10d`, the task where the
+  calibration is known to be harmful, so any acceptance is a mistake.
+
+  arch F2, budget 1000 probes/epoch, 1 seeds, 40 epochs
+
+   holdout  val samples  best search     hybrid  accepted   harm?
+  ----------------------------------------------------------------
+         4           64      +0.0582    +0.0266         0     YES   (of 40 attempts)
+
+  'harm' means the calibrated arm ends MEANINGFULLY below the best
+  search arm on a task where every accepted calibration is a mistake.
+  At holdout=4 the gate should reject everything (80/80); the question
+  is how far it can be shrunk before it starts letting harm through.
+
+  total wall time 159s

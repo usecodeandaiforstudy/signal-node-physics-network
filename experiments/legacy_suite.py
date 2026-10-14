@@ -1,6 +1,10 @@
 """
-run_all.py — Full Verification Suite
-======================================
+legacy_suite.py — the original nine-part verification suite
+============================================================
+Kept because the early sections of FINDINGS.md still cite its numbers.  The name it
+used to carry, `run_all.py`, did not say what it was: there is a second runner,
+`abl_run_all.py`, which is the ablation batch runner and the current one.
+
 Runs all verifiable experiments and extracts key numbers:
   Part 1:  Digital-physical consistency
   Part 2:  FD classification depth proof (moons, multi-seed)
@@ -12,13 +16,13 @@ Runs all verifiable experiments and extracts key numbers:
   Part 8:  V3 ND digital baseline (moons, PyTorch)
   Part 9:  Depth ablation (equal 9 particles, 1L vs 3L)
 
-Output: outputs/run_all_report.txt
+Output: outputs/legacy_suite_report.txt
 """
 import subprocess, sys, os, time, re
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE)
-OUT = os.path.join(ROOT, "outputs", "run_all_report.txt")
+OUT = os.path.join(ROOT, "outputs", "legacy_suite_report.txt")
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 report = []
@@ -502,4 +506,4 @@ L("=" * 60)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")
 
-L(f"\nReport saved: {OUT}")
+L(f"\nReport saved: {os.path.relpath(OUT, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")

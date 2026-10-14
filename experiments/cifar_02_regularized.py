@@ -22,7 +22,7 @@ digital controller from ADC-read analog signals. No extra analog gradient
 circuits are needed (SPSA/FD only requires the scalar loss value).
 Training uses PyTorch autograd; deployment exports to PhysicalRBFLayerND.
 
-Output: outputs/e21_regularized_report.txt + _plot.png
+Output: outputs/cifar_02_regularized_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -37,8 +37,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e21_regularized_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e21_regularized_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_02_regularized_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_02_regularized_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")
@@ -61,6 +61,7 @@ L1_P=49; L1_G=7; L1_O=12
 L2_P=28; L2_O=8
 L3_P=20; L3_O=6
 EPOCHS = 600; LR = 0.005
+SEED = 0                      # model init, data split, and sampling
 TEMPERATURE = 0.06; PROTO_REG = 0.02
 EVAL_EVERY = 25
 EARLY_STOP_PATIENCE = 14
@@ -77,6 +78,11 @@ L("=" * 60)
 L(f"  {time.strftime('%Y-%m-%d %H:%M:%S')}")
 L(f"  Classes: {N_CLASSES}, Resolution: {IMG_SIZE}x{IMG_SIZE}")
 L(f"  Arch: L0(3D→3D,{L0_P}p,res) → L1(3D→{L1_O}D,{L1_P}p) → L2({L1_O}D→{L2_O}D,{L2_P}p) → L3({L2_O}D→{L3_O}D,{L3_P}p)")
+# THE SEED IS PART OF THE RESULT.  Without this line a reader cannot tell which
+# seed produced the numbers below, which is half of why this line's results were
+# not checkable (extension FINDINGS.md 12.32).
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
+
 L(f"  Regularization: AdamW(wd=1e-5) + center(λ={LAMBDA_C}) + width(λ={LAMBDA_H})")
 L(f"  Training: autograd {EPOCHS}ep | Inference: physical + noise sweep")
 
@@ -203,6 +209,14 @@ class DeepRBF3D(nn.Module):
 # 3. Digital training
 # ═══════════════════════════════════════════════════
 L("\n--- Digital Training (autograd + regularization) ---")
+# ONE SEED COVERS THE MODEL INITIALISATION.  Before this, the DATA SPLIT was seeded
+# (`np.random.seed(c*100)` in the per-class loop) but the TORCH INITIALISATION was
+# NOT, so every number this script published was a single draw from an unseeded
+# process -- the same defect found and fixed in training/himal_nd.py and
+# training/proto_nd.py.  Set here rather than inside the loop so the model, the
+# optimiser state and the sampling all come from one stream.
+torch.manual_seed(SEED)
+np.random.seed(SEED)
 model = DeepRBF3D()
 n_param = sum(p.numel() for p in model.parameters())
 L(f"  Trainable params: {n_param}")
@@ -440,7 +454,7 @@ plt.suptitle("E21: Regularized Training (L2 + Center + Width)", fontsize=14, fon
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot: {PLOT_FILE}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L(f"  Report: {REPORT_FILE}")
 L("=" * 60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f:

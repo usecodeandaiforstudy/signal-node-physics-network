@@ -20,7 +20,7 @@ Regularization (all physically realizable via analog circuits + single ADC):
   Center repulsion:  λ_c * Σ exp(-||c_i - c_j||² / 2σ²)  — prevent collapse
   Width deviation:   λ_h * Σ (h_j - h_init)²              — maintain coverage
 
-Output: outputs/e22_reg_3layer_peak_report.txt + _plot.png
+Output: outputs/cifar_03_3layer_reg_report.txt + _plot.png
 """
 import sys, os, pickle, time
 import numpy as np
@@ -35,8 +35,8 @@ from simulator.layer_nd import PhysicalRBFLayerND
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e22_reg_3layer_peak_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e22_reg_3layer_peak_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "cifar_03_3layer_reg_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "cifar_03_3layer_reg_plot.png")
 
 CIFAR_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "cifar")
@@ -57,6 +57,7 @@ L2_P=25; L2_O=8
 L3_P=20; L3_O=6
 # Extended training for peak finding
 EPOCHS = 1000; LR = 0.004
+SEED = 0                      # model init, data split, and sampling
 TEMPERATURE = 0.06; PROTO_REG = 0.02
 EVAL_EVERY = 20; EARLY_STOP_PATIENCE = 18  # 360 epochs
 # Regularization (same as E21 successful config)
@@ -156,6 +157,15 @@ class DeepRBF3LayerReg(nn.Module):
         reg_h = sum(self._reg_width(ly) for ly in [self.l1, self.l2, self.l3])
         return ce + PROTO_REG * proto_reg + LAMBDA_C * reg_c + LAMBDA_H * reg_h
 
+# ONE SEED COVERS THE MODEL INITIALISATION.  Before this, the DATA SPLIT was seeded
+# (`np.random.seed(c*100)` in the per-class loop) but the TORCH INITIALISATION was
+# NOT, so every number this script published was a single draw from an unseeded
+# process -- the same defect found and fixed in training/himal_nd.py and
+# training/proto_nd.py.  Set here rather than inside the loop so the model, the
+# optimiser state and the sampling all come from one stream.
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+L(f"  SEED={SEED}  (model init, data split, and sampling)")
 model = DeepRBF3LayerReg()
 n_param = sum(p.numel() for p in model.parameters())
 L(f"  Params: {n_param}")
@@ -288,7 +298,7 @@ L(f"  D-P gap:       {dp_mse:.6f} MSE")
 noise_drop = (acc_phys["none"] - acc_phys["high"]) / max(acc_phys["none"], 1e-10) * 100
 L(f"  Physical noise drop:  none={acc_phys['none']*100:.1f}% → high={acc_phys['high']*100:.1f}% ({noise_drop:.1f}%)")
 
-L(f"\n  Plot: {PLOT_FILE} | Report: {REPORT_FILE}")
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 L("=" * 60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f: f.write("\n".join(report) + "\n")
 

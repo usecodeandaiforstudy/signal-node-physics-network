@@ -122,9 +122,38 @@ class HiMALND:
         spsa_decay_steps: float = 100.0,
         task: str = "regression",
         n_classes: int = 2,
+        residual_mode: str = "proto",
+        seed: int = 0,
     ):
         if task not in ("regression", "classification"):
             raise ValueError(f"Unknown task: {task}")
+        # How the residual target for layers 2..3 is formed in regression:
+        #   "proto"  -- original y minus the accumulated PROTO-WEIGHTED
+        #               prediction (what the predict path sums, so train and
+        #               predict agree)
+        #   "direct" -- original y minus the accumulated RAW scalar output
+        #               h_m[:, 0] of the previous layers.  THEORY.md 3.2 and 7.3
+        #               reported this as ~5x better with the sign in its favour;
+        #               re-measured under control (extension FINDINGS.md 12.17)
+        #               the sign REVERSES -- direct's depth gain is -0.0284 against
+        #               proto's +0.0069 -- because "direct" fits layers 2-3 to the
+        #               residual of the RAW output while the inference path sums
+        #               the PROTO predictions, so the deeper layers are trained
+        #               against a residual the inference never reconstructs.
+        #               "proto" is therefore the default because the alternative is
+        #               MEASURED HARMFUL, not merely unverified.
+        if residual_mode not in ("proto", "direct"):
+            raise ValueError(f"Unknown residual_mode: {residual_mode}")
+        self.residual_mode = residual_mode
+
+        # Reproducibility.  EVERY random draw this trainer makes -- the layer
+        # initialisation in `_init_layer` and the SPSA perturbation in
+        # `_spsa_step` -- comes from the GLOBAL `np.random` state, and `train`
+        # seeds it once at entry.  Before this, two calls with identical
+        # arguments produced DIFFERENT networks depending on what had run
+        # before, so every number published from this class was a single draw
+        # from an unseeded process (extension FINDINGS.md 12.17).
+        self.seed = int(seed)
 
         self.layer_sizes = layer_sizes
         self.output_dims = output_dims
@@ -774,6 +803,12 @@ class HiMALND:
 
         Returns layers_A, layers_B, data_split.
         """
+        # ONE seed covers every random draw below: the layer initialisation
+        # (`_init_layer`) and the SPSA perturbation (`_spsa_step`) are the only
+        # two sources, and both are reached from here.  Two calls with identical
+        # arguments and the same `seed` now give identical networks.
+        np.random.seed(self.seed)
+
         data = self.split_data(X, y, method=split_method)
         self._split_value = float(data["split_value"])
         self._split_method = split_method
@@ -797,10 +832,17 @@ class HiMALND:
         # Track current input dimension
         cur_dim = self.input_dim
 
-        # Accumulated proto-weighted predictions for residual computation
+        # Accumulated predictions for residual computation
         # Each layer learns: residual = y_original - acc_prev
+        #   residual_mode="proto"  -> acc is the proto-weighted prediction that
+        #                             the predict path also sums (default)
+        #   residual_mode="direct" -> acc is the raw scalar output h[:, 0] of
+        #                             each layer, i.e. the scheme THEORY.md 7.3
+        #                             claims is ~5x better
         acc_proto_A = None  # proto-weighted accumulated prediction on A-zone
         acc_proto_B = None
+        acc_direct_A = None  # raw h[:, 0] accumulation, used by "direct"
+        acc_direct_B = None
         y_orig_A = data["yA"].copy().reshape(-1, 1) if data["yA"].ndim == 1 else data["yA"].copy()
         y_orig_B = data["yB"].copy().reshape(-1, 1) if data["yB"].ndim == 1 else data["yB"].copy()
 
@@ -821,9 +863,13 @@ class HiMALND:
                     cur_yA = y_orig_A.copy()
                     cur_yB = y_orig_B.copy()
                 else:
-                    # Residual target = original y - accumulated proto prediction
-                    cur_yA = y_orig_A - acc_proto_A[:, :y_orig_A.shape[1]]
-                    cur_yB = y_orig_B - acc_proto_B[:, :y_orig_B.shape[1]]
+                    # Residual target = original y - accumulated prediction
+                    if self.residual_mode == "direct":
+                        cur_yA = y_orig_A - acc_direct_A[:, :y_orig_A.shape[1]]
+                        cur_yB = y_orig_B - acc_direct_B[:, :y_orig_B.shape[1]]
+                    else:
+                        cur_yA = y_orig_A - acc_proto_A[:, :y_orig_A.shape[1]]
+                        cur_yB = y_orig_B - acc_proto_B[:, :y_orig_B.shape[1]]
             else:
                 cur_yA = data["yA"].copy().reshape(-1, 1) if data["yA"].ndim == 1 else data["yA"].copy()
                 cur_yB = data["yB"].copy().reshape(-1, 1) if data["yB"].ndim == 1 else data["yB"].copy()
@@ -872,7 +918,7 @@ class HiMALND:
                 self.proto_h_B.append(h_proto_B)
                 self.proto_y_B.append(y_proto_B)
 
-                # ── Update accumulated proto-weighted prediction ──
+                # ── Update accumulated predictions for the next layer's target ──
                 # Use the freshly-stored protos to compute this layer's contribution
                 pred_iA = self._proto_predict(hA, y_proto_A, h_proto_A)
                 pred_iB = self._proto_predict(hB, y_proto_B, h_proto_B)
@@ -882,6 +928,25 @@ class HiMALND:
                 else:
                     acc_proto_A = _zero_pad_sum(acc_proto_A, pred_iA)
                     acc_proto_B = _zero_pad_sum(acc_proto_B, pred_iB)
+
+                # Raw scalar output of this layer, for residual_mode="direct".
+                # The orientation of h is not guaranteed, so the sample axis is
+                # identified against the A-zone sample count.
+                def _first_col(h, n_ref):
+                    h = np.asarray(h, dtype=np.float64)
+                    if h.ndim == 1:
+                        return h.reshape(-1, 1)
+                    if h.shape[0] != n_ref and h.shape[1] == n_ref:
+                        h = h.T
+                    return h[:, :1]
+
+                d_iA = _first_col(hA, y_orig_A.shape[0])
+                d_iB = _first_col(hB, y_orig_B.shape[0])
+                if acc_direct_A is None:
+                    acc_direct_A, acc_direct_B = d_iA, d_iB
+                else:
+                    acc_direct_A = _zero_pad_sum(acc_direct_A, d_iA)
+                    acc_direct_B = _zero_pad_sum(acc_direct_B, d_iB)
 
             # Next layer input = this layer's output (wire-direct)
             cur_XA, cur_XB = hA.copy(), hB.copy()
@@ -901,6 +966,41 @@ class HiMALND:
 
     # ── Inference ──
 
+    def _proto_accumulate(
+        self, layers: List[PhysicalRBFLayerND], X: np.ndarray,
+        proto_h: List[np.ndarray], proto_y: List[np.ndarray],
+    ) -> Optional[np.ndarray]:
+        """
+        Run one network's cascade and SUM each layer's proto-weighted contribution.
+
+        This is the prediction `train` is built around -- its accumulation loop carries the
+        comment "Proto maps h_i -> residual target (or full y for layer 1).  At predict
+        time these are summed -> recovers original y" -- and layers 2 and 3 are trained on
+        `y - acc`, so each layer's own output is a RESIDUAL rather than the target.
+
+        Returns None when the prototypes are not available for every layer, so the caller
+        can fall back rather than guess.
+        """
+        if not layers or len(proto_h) < len(layers) or len(proto_y) < len(layers):
+            return None
+        h = np.asarray(X, dtype=np.float32).copy()
+        acc = None
+        for i, layer in enumerate(layers):
+            h = self._forward_layer(layer, h)
+            if h.shape[0] != X.shape[0]:
+                h = h.T
+            h = self._match_shape(h, (X.shape[0], h.shape[-1]))
+            ph = np.asarray(proto_h[i], dtype=np.float64)
+            py = np.asarray(proto_y[i], dtype=np.float64)
+            # the stored prototype matrix can be in the transposed frame
+            if ph.shape[1] != h.shape[1] and ph.shape[0] == h.shape[1]:
+                ph = ph.T
+            if ph.shape[1] != h.shape[1]:
+                return None
+            pred_i = self._proto_predict(np.asarray(h, dtype=np.float64), py, ph)
+            acc = pred_i if acc is None else _zero_pad_sum(acc, pred_i)
+        return acc
+
     def predict(
         self, layers_A: List[PhysicalRBFLayerND], layers_B: List[PhysicalRBFLayerND],
         X: np.ndarray,
@@ -917,22 +1017,34 @@ class HiMALND:
         if self.task == "classification":
             return self._predict_classification(layers_A, layers_B, X)
 
+        # REGRESSION RETURNS THE ACCUMULATED SUM, NOT THE LAST LAYER'S OUTPUT.
+        #
+        # This branch used to `return (hA + hB) / 2.0`, i.e. the last layer's raw output --
+        # which contradicts the docstring above AND the training path, where layers 2/3
+        # learn `y - acc` and so emit RESIDUALS.  Measured (extension FINDINGS.md 12.29):
+        # the same trained models score -0.0341 through the old return and +0.2291 through
+        # the accumulation, with the per-zone scores near zero either way, which rules out
+        # the A/B median split as the explanation.  The defect survived because no
+        # published number depends on the regression path -- its only two callers were a
+        # speed benchmark and a script that was retracted.
+        acc_A = self._proto_accumulate(layers_A, X, self.proto_h_A, self.proto_y_A)
+        acc_B = self._proto_accumulate(layers_B, X, self.proto_h_B, self.proto_y_B)
+        if acc_A is not None and acc_B is not None:
+            d = min(acc_A.shape[1], acc_B.shape[1])
+            return (acc_A[:, :d] + acc_B[:, :d]) / 2.0
+
+        # FALL BACK, and say so rather than silently returning a residual: a model restored
+        # without its prototypes cannot be read the intended way.
         hA = X.copy()
         hB = X.copy()
-
         for i in range(len(layers_A)):
             hA_out = self._forward_layer(layers_A[i], hA)
             hB_out = self._forward_layer(layers_B[i], hB)
-
             if hA_out.shape[0] != hA.shape[0]:
                 hA_out = hA_out.T
             if hB_out.shape[0] != hB.shape[0]:
                 hB_out = hB_out.T
-
-            # Wire-direct: output IS next input
             hA, hB = hA_out, hB_out
-
-        # Final output = average of last layer's A/B predictions
         return (hA + hB) / 2.0
 
     def _predict_classification(

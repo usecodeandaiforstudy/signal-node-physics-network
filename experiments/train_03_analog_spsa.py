@@ -21,7 +21,7 @@ Experiment:
                 loss difference via analog_subtractor
                 no ADC used for gradient updates
 
-Output: outputs/e26_analog_spsa_no_adc_report.txt + _plot.png
+Output: outputs/train_03_analog_spsa_report.txt + _plot.png
 """
 import sys, os, time
 import numpy as np
@@ -35,8 +35,8 @@ from physical_simulator.components import analog_subtractor, NoiseConfig
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
-REPORT_FILE = os.path.join(OUT_DIR, "e26_analog_spsa_no_adc_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e26_analog_spsa_no_adc_plot.png")
+REPORT_FILE = os.path.join(OUT_DIR, "train_03_analog_spsa_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "train_03_analog_spsa_plot.png")
 
 report = []
 def L(s): print(s, flush=True); report.append(s)
@@ -227,7 +227,7 @@ L(f"  Training time:     {t_train:.0f}s")
 L(f"\n  Key: SPSA needs only ΔL = L(θ+Δ) − L(θ−Δ), not L itself.")
 L(f"       An analog differential amplifier computes ΔL directly.")
 L(f"       The entire training loop operates in analog domain.")
-L(f"\n  Plot: {PLOT_FILE} | Report: {REPORT_FILE}"); L("="*60)
+L(f"\n  Plot: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')} | Report: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}"); L("="*60)
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")
 

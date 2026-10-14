@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Physical-Domain RBF Particle Neural Network"
+abstract: >-
+  A neural network whose nodes are movable particles in a physical field, trained by
+  operators that read the device rather than by gradients. The operators recover each
+  particle's position and width from field readings in closed form, report a consistency
+  residual that detects a substrate the family does not cover, and cost zero forward
+  evaluations; see THEORY.md for the mathematics and FINDINGS.md for what is measured.
+authors:
+  # The repository's commits carry only a GitHub noreply address, so no real name is
+  # recorded anywhere in it. None is invented here: replace this with the author's name
+  # and affiliation before the first release that anyone is expected to cite.
+  - alias: "usecodeandaiforstudy"
+    affiliation: "Independent"
+type: software
+license: MIT
+repository-code: "https://github.com/usecodeandaiforstudy/signal-node-physics-network"
+url: "https://github.com/usecodeandaiforstudy/signal-node-physics-network"
+version: "0.1.0"
+date-released: "2026-10-06"
+keywords:
+  - "RBF network"
+  - "physical neural network"
+  - "analog computing"
+  - "closed-form read-out"
+  - "substrate precondition"
+  - "reproducibility"

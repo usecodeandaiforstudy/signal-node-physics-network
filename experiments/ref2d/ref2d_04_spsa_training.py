@@ -15,7 +15,7 @@ Key metrics:
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import numpy as np
 import torch
@@ -186,7 +186,7 @@ def main():
     plt.tight_layout()
     path = os.path.join(OUTPUT_DIR, "04_spsa_vs_bp.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
-    print(f"\n  Figure saved: {path}")
+    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).replace(os.sep, '/')}")
     plt.close()
 
     # Ratio

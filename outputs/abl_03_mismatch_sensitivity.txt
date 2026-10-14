@@ -1,0 +1,83 @@
+==================================================================
+  Ablation C - damage sensitivity of geometry vs weights
+  substrate=circuit task=4d archs=['G', 'M', 'W'] arms=['geometry', 'weights', 'full'] seeds=1 reps=1
+  2026-10-02 13:34:21
+==================================================================
+  geometry axis: mismatch (gain/width, additive)  (0.0, 0.01, 0.02, 0.05, 0.1)
+  weight   axis: memristor drift (multiplicative on W)  (0.0, 0.0005, 0.001, 0.005, 0.02)
+
+--- Part 0: forward-chain self-test ---
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! SMOKE RUN (--quick): 1 seed, few epochs, 1 noise realization.
+  ! Correlations below are not meaningful at this scale.
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+--- Data (4d) --- train=(256, 4) test=(128, 4)
+
+--- Part 1: models ---
+  [G/geometry seed=0] loaded from cache (e=40, budget=200)
+  [G/weights seed=0] loaded from cache (e=40, budget=200)
+  [G/full seed=0] loaded from cache (e=40, budget=200)
+  [M/geometry seed=0] loaded from cache (e=40, budget=200)
+  [M/weights seed=0] loaded from cache (e=40, budget=200)
+  [M/full seed=0] loaded from cache (e=40, budget=200)
+  [W/geometry seed=0] loaded from cache (e=40, budget=200)
+  [W/weights seed=0] loaded from cache (e=40, budget=200)
+  [W/full seed=0] loaded from cache (e=40, budget=200)
+
+  arch  arm        trainable  arch readout share  learned weight frac
+  --------------------------------------------------------------------
+  G     geometry         204               31.1%                   0%
+  G     weights           92               31.1%                 100%
+  G     full             296               31.1%                  31%
+  M     geometry         260               41.4%                   0%
+  M     weights          184               41.4%                 100%
+  M     full             444               41.4%                  41%
+  W     geometry         500               52.8%                   0%
+  W     weights          560               52.8%                 100%
+  W     full            1060               52.8%                  53%
+
+--- Part 2: two-axis damage grid, test R^2, mean of 1 noise realization(s) ---
+  225 grid cells evaluated in 0s
+
+==================================================================
+  Part 3a: sensitivity per arm (averaged over architectures and seeds)
+==================================================================
+  arm        R2 clean    R2@mis     drop     rel  R2@drift     drop     rel    (mis=0.1, drift=0.02)
+  ------------------------------------------------------------------------------------
+  geometry    -0.0010   -0.0065   0.0055   5.388   -0.0009  -0.0001  -0.120
+  weights     +0.0856   +0.0888  -0.0032  -0.038   +0.0887  -0.0031  -0.036
+  full        +0.0142   +0.0143  -0.0001  -0.006   +0.0135   0.0007   0.048
+
+  H-check at arm level (drift damage, weights arm vs geometry arm):
+    G: drift drop  geometry=+0.0000  weights=-0.0035  -> geometry more sensitive
+    M: drift drop  geometry=-0.0005  weights=-0.0028  -> geometry more sensitive
+    W: drift drop  geometry=+0.0001  weights=-0.0029  -> geometry more sensitive
+    0/3 architectures agree with H1
+
+==================================================================
+  Part 3b: does damage follow where the learned capacity sits?
+==================================================================
+  n = 9 models (3 archs x 3 arms x 1 seeds)
+
+  H1 (drift): damage should GROW with the learned weight fraction
+    corr(learned weight frac, drift drop abs) = -0.696
+    corr(learned weight frac, drift drop rel) = -0.055
+  H2 (mismatch): damage should FALL with the learned weight fraction
+    corr(learned weight frac, mismatch drop abs) = -0.435
+    corr(learned weight frac, mismatch drop rel) = -0.028
+
+  Secondary x-axis (architectural readout share; only 3 distinct values, low power):
+    corr(arch readout share, drift drop rel)    = +0.031
+    corr(arch readout share, mismatch drop rel) = -0.149
+
+==================================================================
+  VERDICT
+==================================================================
+  H1 (drift hits learned readout weights):     NOT SUPPORTED  (r=-0.055)
+  H2 (mismatch hits learned geometry):         NOT SUPPORTED  (r=-0.028)
+
+  Neither prediction holds at this scale. Either the trained models are
+  too small for the effect to appear, or the effect is not there -?report
+  it as a negative result and scale up particles/epochs before concluding.

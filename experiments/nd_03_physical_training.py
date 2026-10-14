@@ -1,4 +1,4 @@
-﻿"""
+"""
 V3 Physical Domain Training: Proto-Guided Pure Physical FD Training
 
 Zero digital autograd — every gradient comes from finite differences
@@ -240,7 +240,7 @@ def main():
     plt.tight_layout()
     path = os.path.join(OUT_DIR, "v3_physical_training.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
-    print(f"\n  Figure saved: {path}")
+    print(f"\n  Figure saved: {os.path.relpath(path, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
     plt.close()
 
     # ── Summary ──

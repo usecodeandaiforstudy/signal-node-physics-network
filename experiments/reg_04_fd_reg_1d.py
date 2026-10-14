@@ -11,7 +11,7 @@ Key improvements over v1:
 
 Purpose: Compare single-network vs HiMAL dual-network on smooth 1D regression.
 
-Output: outputs/e11_fd_reg_1d_single.png + _report.txt
+Output: outputs/reg_04_fd_reg_1d.png + _report.txt
 """
 import sys, os, time
 import numpy as np
@@ -31,8 +31,8 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-REPORT_FILE = os.path.join(OUT_DIR, "e11_fd_reg_1d_single_report.txt")
-PLOT_FILE   = os.path.join(OUT_DIR, "e11_fd_reg_1d_single.png")
+REPORT_FILE = os.path.join(OUT_DIR, "reg_04_fd_reg_1d_report.txt")
+PLOT_FILE   = os.path.join(OUT_DIR, "reg_04_fd_reg_1d.png")
 
 rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "DejaVu Sans"]
 rcParams["axes.unicode_minus"] = False
@@ -369,7 +369,7 @@ fig.suptitle("E11-FD-REG-1D: Single-Network sin(x) Regression", fontsize=13)
 plt.tight_layout()
 plt.savefig(PLOT_FILE, dpi=150)
 plt.close()
-L(f"\n  Plot saved: {PLOT_FILE}")
+L(f"\n  Plot saved: {os.path.relpath(PLOT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 
 L(f"\n{'='*55}")
 if r2_dense > 0.8:
@@ -380,6 +380,6 @@ else:
     L(f"  VERDICT: NEEDS WORK (R^2={r2_dense:.4f} < 0.50)")
 L(f"{'='*55}")
 
-L(f"\nSaved: {REPORT_FILE}")
+L(f"\nSaved: {os.path.relpath(REPORT_FILE, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).replace(os.sep, '/')}")
 with open(REPORT_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(report) + "\n")
