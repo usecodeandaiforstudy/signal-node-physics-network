@@ -181,6 +181,38 @@ difference between the arms — rather than from a comparison run through two di
 That distinction is what makes the sign meaningful, and it is why the table is stated as a result
 rather than as a preference.
 
+### 3.3 A measured two-stage pipeline
+
+Because every stage above is solvable in closed form, a pipeline can be assembled in which no
+gradient crosses a stage boundary:
+
+```
+stage 1   m(x) = sum_j w_j phi_j(u)(x)     w solved so that m approximates G_sigma * u
+          r(x) = u(x) - lam * m(x)          a field again, the same dimension as u
+stage 2   phi_k(r) -> positional mean        the layer of section 2
+stage 3   ridge to +-1 one-vs-rest          lambda per class on a held-out split
+```
+
+Each stage has its own objective and its own solver. The interface between stages 1 and 2 is a
+**field** rather than a feature vector, so the number of nodes in stage 2 does not depend on
+stage 1. The target of stage 1 is a **blurred** image: fitting it to `u` itself is kernel
+interpolation, which reaches `R^2 = 0.999` and leaves a residual that is not a trend.
+
+Measured on the repository's CIFAR subset (5 classes, grayscale, 100 training images per class):
+
+| | accuracy |
+|---|---|
+| particle layer on the raw image, 100 nodes | 46.5% |
+| same, with the local-mean subtraction | **50.9%** |
+| the repository's CNN, same splits, epoch chosen on validation | **51.1%** |
+
+The subtraction also takes the additive-illumination sensitivity from **-2.55** to **+0.01**
+points per 0.1 of offset.
+
+**What this does not establish.** The test images come from the training batches, so the
+comparison is internal. And a *fitted* first stage was measured to be worth only `+0.40` over a
+zero-parameter fixed blur, so the gain here is in the subtraction, not in the fitting.
+
 ---
 
 ## 4. The geometry operator
