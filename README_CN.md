@@ -112,6 +112,27 @@ log z_j(x) = -alpha_j ||x||^2 + gamma_j . x - delta_j
 
 完整记录 —— 测了什么、怎么测的、以及什么限定了这些数字 —— 在 [`FINDINGS.md`](FINDINGS.md)：其中 [§9](FINDINGS.md) 是限定这些数字的 caveat、[§11](FINDINGS.md) 是还开着什么。**引用任何数字之前请先读它们。**
 
+### 4.1 CIFAR 子集上的两段流水线
+
+`experiments/fun_*` 在粒子层前面加了一步**减去局部均值**，三个阶段的解都是闭式的：
+
+```
+r(x) = u(x) - lam * m(x),   m(x) = sum_j w_j phi_j(u)(x)     w 拟合到 G_sigma * u
+phi_k(r) -> 位置平均 -> 岭回归到 +-1 的 one-vs-rest
+```
+
+**没有梯度跨过阶段边界**：第一阶段是一次最小二乘，读出是每类一次岭回归。
+
+| 在本仓库的 5 类灰度子集上测得 | 精度 |
+|---|---|
+| 粒子层直接作用在原图，100 个节点 | 46.5% |
+| 同上，加一步减去局部均值 | **50.9%** |
+| 本仓库的 CNN，同切分、epoch 由验证集选 | **51.1%** |
+
+减法同时去掉了对加性光照的敏感度：每 0.1 偏移的精度变化从 **-2.55** 变成 **+0.01** 点。
+
+**测试图取自训练批次（和 `cifar_*` 脚本一致），所以这些数字只在仓库内部可比。** 各阶段、文件清单、评估规则以及试过但没效果的做法，都在 [`FUNCTIONAL_PIPELINE.md`](FUNCTIONAL_PIPELINE.md)。
+
 ---
 
 ## 5. 快速开始
@@ -163,6 +184,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `extensions/multigraph/FINDINGS.md` | 扩展自己的记录：§12.1–12.36 —— 每个算子结果、每个负面结果，以及一份带编号的缺陷清单 |
 | `extensions/multigraph/DESIGN.md` | 多图扩展的设计：记号、两个半边、组合算子的数学、参数经济学、以及任何实现都必须满足的约束 |
 | `extensions/multigraph/BASE_CORRECTIONS.md` | 扩展对本体头号主张的审计 —— 一条主张一项，附定案的那个测量 |
+| `FUNCTIONAL_PIPELINE.md` | CIFAR 子集上的两段流水线：节点原语与它的准入条件、两个阶段与各自的解法、测得的数字、试过但没效果的做法、使用的评估规则、以及边界 |
 | `CONTRIBUTING.md` | 本仓库实际运行的约定：一个数字怎么写下来、一条主张怎么撤回 |
 | `CITATION.cff` | 如何引用 |
 
@@ -196,6 +218,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `experiments/abl_run_all.py` | 跑全部七个（`--quick` 供 CI 冒烟） |
 | `experiments/nd_01…nd_09` | ND 数字基线、物理前向验证、物理训练、HiMAL 管线、对比、消融、验证、基准 |
 | `experiments/cifar_01…cifar_07` | CIFAR-10 那条线 —— 本项目**最早**的工作：3D 点云编码、autograd 训练、物理导出、三方对比。已播种可复现；数字小是设计使然 |
+| `experiments/fun_common.py`、`fun_01_detrend.py`、`fun_02_baseline_remeasure.py` | **两段流水线**：共享的节点原语与抽样规则、带闭式解法的"减去局部均值"阶段，以及把 epoch 改由验证集挑选之后重测的 CNN 基线。见 [`FUNCTIONAL_PIPELINE.md`](FUNCTIONAL_PIPELINE.md) |
 | `experiments/reg_01…reg_06` | 回归任务，含 California Housing |
 | `experiments/train_01…train_03` | 分组有限差分、分组 SPSA、以及零 ADC 的模拟 SPSA |
 | `experiments/ref2d/` | 2 维参考系列，含 v1 训练器 |

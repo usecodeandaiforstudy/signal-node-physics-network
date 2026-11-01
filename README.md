@@ -153,6 +153,32 @@ The full record — what was measured, how, and what qualifies it — is
 [`FINDINGS.md`](FINDINGS.md): [§9](FINDINGS.md) states the caveats that bound the numbers, and
 [§11](FINDINGS.md) what remains open. **Read those before citing a number.**
 
+### 4.1 A two-stage pipeline on the CIFAR subset
+
+`experiments/fun_*` puts a **local-mean subtraction** in front of the particle layer, and fits
+every stage in closed form:
+
+```
+r(x) = u(x) - lam * m(x),   m(x) = sum_j w_j phi_j(u)(x)     w fitted to G_sigma * u
+phi_k(r) -> positional mean -> ridge to +-1 one-vs-rest
+```
+
+No gradient crosses a stage boundary: stage 1 is one least-squares solve, the readout is one
+ridge solve per class.
+
+| measured on the repository's 5-class grayscale subset | accuracy |
+|---|---|
+| particle layer on the raw image, 100 nodes | 46.5% |
+| same, with the local-mean subtraction | **50.9%** |
+| the repository's CNN, same splits, epoch chosen on validation | **51.1%** |
+
+The subtraction also removes the additive-illumination sensitivity: the accuracy change per
+0.1 of added offset goes from **-2.55** to **+0.01** points.
+
+**The test images come from the same training batches, as the `cifar_*` scripts do, so these
+numbers are internally comparable only.** The stages, the file list, the evaluation rules and
+the attempts that did not pay are in [`FUNCTIONAL_PIPELINE.md`](FUNCTIONAL_PIPELINE.md).
+
 ---
 
 ## 5. Quick start
@@ -205,6 +231,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `extensions/multigraph/FINDINGS.md` | the extension's own record: sections 0–11 plus 23 subsections numbered 12.x — every operator result, every negative result, and the substrates' evidence |
 | `extensions/multigraph/DESIGN.md` | the design of the multi-graph extension: notation, the two halves, the combination operator's mathematics, parameter economics, and the constraints any implementation must satisfy |
 | `extensions/multigraph/BASE_CORRECTIONS.md` | the extension's audit of the base version's headline claims — one item per claim, with the measurement that settles it |
+| `FUNCTIONAL_PIPELINE.md` | the two-stage pipeline on the CIFAR subset: the node primitive and its admission condition, the two stages and their solvers, the measured numbers, the attempts that did not pay, the evaluation rules used, and the boundaries |
 | `CONTRIBUTING.md` | the conventions this repository runs on: how a number gets written down, and how it gets verified before it is published |
 | `CITATION.cff` | how to cite it |
 
@@ -238,6 +265,7 @@ print((model.predict(X_te).ravel() == y_te.ravel()).mean())
 | `experiments/abl_run_all.py` | runs all seven (`--quick` for the CI smoke test) |
 | `experiments/nd_01…nd_09` | the ND digital baseline, the physical forward check, physical training, the HiMAL pipeline, comparisons, ablations, verification, benchmarks |
 | `experiments/cifar_01…cifar_07` | the CIFAR-10 line — the project's **earliest** work: 3-D point-cloud encoding, autograd training, physical export, three-way comparison. Seeded and reproducible; the numbers are small by design |
+| `experiments/fun_common.py`, `fun_01_detrend.py`, `fun_02_baseline_remeasure.py` | the **two-stage pipeline**: the shared node primitive and sampling rule, the local-mean stage with its closed-form solve, and the CNN baseline re-measured with its epoch chosen on a validation split. See [`FUNCTIONAL_PIPELINE.md`](FUNCTIONAL_PIPELINE.md) |
 | `experiments/reg_01…reg_06` | the regression tasks, including California Housing |
 | `experiments/train_01…train_03` | grouped finite differences, grouped SPSA, and zero-ADC analog SPSA |
 | `experiments/ref2d/` | the 2-D reference series, including the v1 trainers |
